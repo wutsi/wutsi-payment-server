@@ -1,0 +1,197 @@
+openapi: "3.0.0"
+info:
+  title: "Wutsi Payment API"
+  description: |
+    API for managing payment
+  version: "1.0.0"
+
+servers:
+  - url: https://wutsi-payment-server-test.herokuapp.com
+    description: Sandbox
+  - url: https://wutsi-payment-server-prod.herokuapp.com
+    description: Production
+
+paths:
+  /v1/charge:
+    post:
+      operationId: "create-charge"
+      description: Charge a customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChargeRequest'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateChargeResponse'
+      tags:
+        - Payment
+      security:
+        - api_key: [ 'payment-charge' ]
+
+  /v1/charge/{id}:
+    post:
+      operationId: "get-charge"
+      description: Return a charge information
+      parameters:
+        - in: path
+          name: id
+          description: ID of the charge
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetChargeResponse'
+      tags:
+        - Payment
+      security:
+        - api_key: [ 'payment-charge' ]
+
+
+components:
+  securitySchemes:
+    api_key:
+      type: apiKey
+      in: header
+      name: Authorization
+
+  schemas:
+    CreateChargeRequest:
+      type: object
+      properties:
+        merchantId:
+          type: integer
+          format: int64
+          description: Account ID of the merchant who charges the customer
+        customerId:
+          type: integer
+          format: int64
+          description: Account ID of the customer who get charged
+        applicationId:
+          type: integer
+          format: int64
+          description: ID of the application associated with this transaction
+        paymentMethodToken:
+          type: string
+          format: uuid
+          description: Payment method used by customer to get charged
+        externalId:
+          type: string
+          description: ID of the product purchased
+        description:
+          type: string
+          description: Description of the transaction
+        amount:
+          type: number
+          format: double
+          description: Amout to charge to the customer
+          minimum: 0
+        currency:
+          type: string
+          description: 3 letter currency code
+          maxLength: 3
+      required:
+        - paymentMethodToken
+        - description
+        - currency
+
+    CreateChargeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID of the transaction
+
+    GetChargeResponse:
+      type: object
+      properties:
+        charge:
+          type: object
+          $ref: "#/components/schemas/Charge"
+
+    Charge:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID of the transaction
+        merchantId:
+          type: integer
+          format: int64
+          description: Account ID of the merchant who charges the customer
+        customerId:
+          type: integer
+          format: int64
+          description: Account ID of the customer who get charged
+        applicationId:
+          type: integer
+          format: int64
+          description: ID of the application associated with this transaction
+        paymentMethodToken:
+          type: string
+          format: uuid
+          description: Payment method used by customer to get charged
+        externalId:
+          type: string
+          description: ID of the product purchased
+        description:
+          type: string
+          description: Description of the transaction
+        amount:
+          type: number
+          format: double
+          description: Amout to charge to the customer
+        fees:
+          type: number
+          format: double
+          description: Fees associated with the transaction
+        net:
+          type: number
+          format: double
+          description: Net amount
+        transactionId:
+          type: string
+          description: Transaction ID
+        financialTransactionId:
+          type: string
+          description: Transaction ID from financial institution
+        paymentMethodType:
+          type: string
+          description: Type of payment method
+        paymentMethodProvider:
+          type: string
+          description: Provider of the payment method
+        currency:
+          type: string
+          description: 3 letter currency code
+          maxLength: 3
+        status:
+          type: string
+          description: Transaction status
+        errorCode:
+          type: string
+          description: Error code
+          nullable: true
+        errorDetails:
+          type: string
+          description: Error Details
+        supplierErrorCode:
+          type: string
+          description: Error Details
+        created:
+          type: string
+          format: date-time
+          description: Date/Time of the transaction
