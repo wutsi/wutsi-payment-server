@@ -67,9 +67,13 @@ wutsi:
       mtn:
         enabled: true
         environment: sandbox
-        callback-url: "https://wutsi-payment-server-test.herokuapp.com/v1/mtn/callback"
+        callback-url: https://wutsi-payment-server-test.herokuapp.com/v1/mtn/callback
+        collection:
+          subscription-key: 8f69aa83ec244a82b9b3006dbb91dead
+        disbursement:
+          subscription-key: 575487abb6b44f508eb102d5b002dd69
     security:
-      type: "jwt"
+      type: jwt
     cache:
       type: local
     stream:
