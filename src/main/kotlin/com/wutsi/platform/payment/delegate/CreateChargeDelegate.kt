@@ -12,14 +12,17 @@ import com.wutsi.platform.payment.dao.ChargeRepository
 import com.wutsi.platform.payment.dto.CreateChargeRequest
 import com.wutsi.platform.payment.dto.CreateChargeResponse
 import com.wutsi.platform.payment.entity.ChargeEntity
+import com.wutsi.platform.payment.exception.ChargeException
 import com.wutsi.platform.payment.model.CreatePaymentRequest
 import com.wutsi.platform.payment.model.Party
 import com.wutsi.platform.payment.service.AccountService
 import com.wutsi.platform.payment.service.GatewayProvider
 import com.wutsi.platform.payment.service.SecurityManager
 import com.wutsi.platform.payment.service.SecurityService
+import com.wutsi.platform.payment.util.ErrorURN
 import org.springframework.stereotype.Service
 import java.util.UUID
+import javax.transaction.Transactional
 
 @Service
 class CreateChargeDelegate(
@@ -29,6 +32,9 @@ class CreateChargeDelegate(
     private val gatewayProvider: GatewayProvider,
     private val securityManager: SecurityManager
 ) {
+    @Transactional(
+        dontRollbackOn = [ChargeException::class]
+    )
     fun invoke(request: CreateChargeRequest): CreateChargeResponse {
         val customer = accountService.findAccount(request.customerId, "customerId", PARAMETER_TYPE_PAYLOAD)
         securityManager.checkOwnership(customer)
@@ -82,13 +88,28 @@ class CreateChargeDelegate(
                 amount = request.amount,
                 gatewayTransactionId = transactionId,
                 status = status,
-                errorCode = error?.code?.name,
+                errorCode = error?.code,
                 supplierErrorCode = error?.supplierErrorCode,
                 userId = securityManager.currentUserId()
             )
         )
+
+        // Throw exception on failure
+        if (status == STATUS_FAILED)
+            throw ChargeException(
+                error = com.wutsi.platform.core.error.Error(
+                    code = ErrorURN.TRANSACTION_FAILED.urn,
+                    downstreamCode = error?.code?.name,
+                    data = mapOf(
+                        "id" to charge.id
+                    )
+                )
+            )
+
+        // Return success
         return CreateChargeResponse(
-            id = charge.id
+            id = charge.id,
+            status = status.name
         )
     }
 }

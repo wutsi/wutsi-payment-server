@@ -1,6 +1,6 @@
 spring:
   flyway:
-    clean-disabled: true
+    clean-disabled: false
 
   jpa:
     show-sql: false

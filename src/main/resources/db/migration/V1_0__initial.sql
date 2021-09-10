@@ -13,7 +13,7 @@ CREATE TABLE T_CHARGE(
     currency                    VARCHAR(3),
     status                      INT,
     gateway_transaction_id      VARCHAR(100) NOT NULL,
-    error_code                  VARCHAR(100),
+    error_code                  INT,
     supplier_error_code         VARCHAR(100),
     created                     TIMESTAMPTZ NOT NULL DEFAULT now(),
 
@@ -31,7 +31,6 @@ CREATE TABLE T_TRANSACTION(
     fees                        DECIMAL(20, 4) NOT NULL DEFAULT 0,
     net                         DECIMAL(20, 4) NOT NULL DEFAULT 0,
     currency                    VARCHAR(3),
-    gateway_transaction_id      VARCHAR(100) NOT NULL,
     financial_transaction_id    VARCHAR(100),
     created                     TIMESTAMPTZ NOT NULL DEFAULT now(),
 

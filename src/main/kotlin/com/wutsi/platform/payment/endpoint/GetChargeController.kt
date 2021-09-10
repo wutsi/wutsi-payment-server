@@ -4,8 +4,8 @@ import com.wutsi.platform.payment.delegate.GetChargeDelegate
 import com.wutsi.platform.payment.dto.GetChargeResponse
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.CrossOrigin
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 import javax.validation.constraints.NotBlank
 
@@ -25,7 +25,7 @@ import javax.validation.constraints.NotBlank
 public class GetChargeController(
     private val `delegate`: GetChargeDelegate
 ) {
-    @PostMapping("/v1/charges/{id}")
+    @GetMapping("/v1/charges/{id}")
     @PreAuthorize(value = "hasAuthority('payment-charge')")
     public fun invoke(@PathVariable(name = "id") @NotBlank id: String): GetChargeResponse =
         delegate.invoke(id)

@@ -26,7 +26,7 @@ abstract class AbstractSecuredController {
     private lateinit var tracingContext: TracingContext
 
     @MockBean
-    lateinit var securityAPI: WutsiSecurityApi
+    lateinit var securityApi: WutsiSecurityApi
 
     @BeforeEach
     open fun setUp() {
@@ -38,7 +38,7 @@ abstract class AbstractSecuredController {
             algorithm = "RSA",
             content = Base64.getEncoder().encodeToString(keyProvider.getPublicKeyById("1").encoded)
         )
-        doReturn(GetKeyResponse(key)).whenever(securityAPI).getKey(any())
+        doReturn(GetKeyResponse(key)).whenever(securityApi).getKey(any())
     }
 
     protected fun createResTemplate(

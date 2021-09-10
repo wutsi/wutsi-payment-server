@@ -4,6 +4,7 @@ import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.PaymentMethodProvider.PAYMENT_METHOD_PROVDER_INVALID
 import com.wutsi.platform.payment.PaymentMethodType
 import com.wutsi.platform.payment.PaymentMethodType.PAYMENT_METHOD_TYPE_INVALID
+import com.wutsi.platform.payment.core.ErrorCode
 import com.wutsi.platform.payment.core.Status
 import java.time.OffsetDateTime
 import javax.persistence.Entity
@@ -36,7 +37,8 @@ data class ChargeEntity(
     @Enumerated
     val status: Status = Status.STATUS_UNKNOWN,
 
-    val errorCode: String? = null,
+    @Enumerated
+    val errorCode: ErrorCode? = null,
     val supplierErrorCode: String? = null,
     val gatewayTransactionId: String = "",
     val created: OffsetDateTime = OffsetDateTime.now()
