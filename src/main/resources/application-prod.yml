@@ -11,10 +11,10 @@ spring:
     password: ${SPRING_DATABASE_PASSWORD}
 
 wutsi:
-  client-id: "wutsi-payment"
+  client-id: wutsi-payment
   platform:
     security:
-      type: "jwt"
+      type: jwt
     cache:
       type: memcached
       memcached:
@@ -22,6 +22,7 @@ wutsi:
         password: ${MEMCACHIER_PASSWORD}
         servers: ${MEMCACHIER_SERVERS}
     stream:
+      type: rabbitmq
       rabbitmq:
         url: ${CLOUDAMQP_URL}
 

@@ -77,10 +77,10 @@ wutsi:
     cache:
       type: local
     stream:
-      name: "${wutsi.application.name}"
+      name: ${wutsi.application.name}
       type: local
     tracing:
-      client-id: "${wutsi.application.name}"
+      client-id: ${wutsi.application.name}
       device-id-provider:
         type: header
 
