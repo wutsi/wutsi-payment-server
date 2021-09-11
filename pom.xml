@@ -34,7 +34,7 @@
     <postgresql.version>42.2.23</postgresql.version>
     <flyway.version>7.15.0</flyway.version>
     <wutsi-platform-core.version>0.0.42</wutsi-platform-core.version>
-    <wutsi-platform-payment.version>0.0.20</wutsi-platform-payment.version>
+    <wutsi-platform-payment.version>0.0.26</wutsi-platform-payment.version>
     <wutsi-account-sdk.version>1.0.5</wutsi-account-sdk.version>
   </properties>
 

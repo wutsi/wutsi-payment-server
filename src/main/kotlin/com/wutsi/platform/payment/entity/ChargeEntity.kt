@@ -1,9 +1,8 @@
 package com.wutsi.platform.payment.entity
 
 import com.wutsi.platform.payment.PaymentMethodProvider
-import com.wutsi.platform.payment.PaymentMethodProvider.PAYMENT_METHOD_PROVDER_INVALID
+import com.wutsi.platform.payment.PaymentMethodProvider.UNKNOWN
 import com.wutsi.platform.payment.PaymentMethodType
-import com.wutsi.platform.payment.PaymentMethodType.PAYMENT_METHOD_TYPE_INVALID
 import com.wutsi.platform.payment.core.ErrorCode
 import com.wutsi.platform.payment.core.Status
 import java.time.OffsetDateTime
@@ -24,10 +23,10 @@ data class ChargeEntity(
     val paymentMethodToken: String = "",
 
     @Enumerated
-    val paymentMethodType: PaymentMethodType = PAYMENT_METHOD_TYPE_INVALID,
+    val paymentMethodType: PaymentMethodType = PaymentMethodType.UNKNOWN,
 
     @Enumerated
-    val paymentMethodProvider: PaymentMethodProvider = PAYMENT_METHOD_PROVDER_INVALID,
+    val paymentMethodProvider: PaymentMethodProvider = UNKNOWN,
 
     val externalId: String = "",
     val description: String = "",
@@ -35,7 +34,7 @@ data class ChargeEntity(
     val currency: String = "",
 
     @Enumerated
-    val status: Status = Status.STATUS_UNKNOWN,
+    val status: Status = Status.UNKNOWN,
 
     @Enumerated
     val errorCode: ErrorCode? = null,

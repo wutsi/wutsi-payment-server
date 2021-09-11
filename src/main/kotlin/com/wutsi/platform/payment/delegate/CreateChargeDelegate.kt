@@ -7,7 +7,7 @@ import com.wutsi.platform.payment.PaymentMethodType
 import com.wutsi.platform.payment.core.Error
 import com.wutsi.platform.payment.core.Money
 import com.wutsi.platform.payment.core.Status
-import com.wutsi.platform.payment.core.Status.STATUS_FAILED
+import com.wutsi.platform.payment.core.Status.FAILED
 import com.wutsi.platform.payment.dao.ChargeRepository
 import com.wutsi.platform.payment.dto.CreateChargeRequest
 import com.wutsi.platform.payment.dto.CreateChargeResponse
@@ -67,7 +67,7 @@ class CreateChargeDelegate(
             status = response.status
             transactionId = response.transactionId
         } catch (ex: PaymentException) {
-            status = STATUS_FAILED
+            status = FAILED
             transactionId = ex.error.transactionId
             error = ex.error
         }
@@ -80,8 +80,8 @@ class CreateChargeDelegate(
                 merchantId = merchant.id,
                 applicationId = application.id,
                 paymentMethodToken = paymentMethod.token,
-                paymentMethodProvider = PaymentMethodProvider.values().find { it.shortName == paymentMethod.provider }!!,
-                paymentMethodType = PaymentMethodType.values().find { it.shortName == paymentMethod.type }!!,
+                paymentMethodProvider = PaymentMethodProvider.valueOf(paymentMethod.provider),
+                paymentMethodType = PaymentMethodType.valueOf(paymentMethod.type),
                 description = request.description,
                 externalId = request.externalId,
                 currency = request.currency,
@@ -95,7 +95,7 @@ class CreateChargeDelegate(
         )
 
         // Throw exception on failure
-        if (status == STATUS_FAILED)
+        if (status == FAILED)
             throw ChargeException(
                 error = com.wutsi.platform.core.error.Error(
                     code = ErrorURN.TRANSACTION_FAILED.urn,

@@ -199,7 +199,7 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(request.description, charge.description)
         assertEquals(request.externalId, charge.externalId)
         assertEquals(ex.error.transactionId, charge.gatewayTransactionId)
-        assertEquals(Status.STATUS_FAILED, charge.status)
+        assertEquals(Status.FAILED, charge.status)
         assertEquals(ex.error.code, charge.errorCode)
         assertEquals(ex.error.supplierErrorCode, charge.supplierErrorCode)
         assertEquals(user.id, charge.userId)
@@ -226,8 +226,8 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         phone = Phone(
             number = phoneNumber
         ),
-        type = PaymentMethodType.PAYMENT_METHOD_TYPE_MOBILE_PAYMENT.shortName,
-        provider = PaymentMethodProvider.PAYMENT_METHOD_PROVIDER_MTN.shortName
+        type = PaymentMethodType.MOBILE_PAYMENT.name,
+        provider = PaymentMethodProvider.MTN.name
     )
 
     private fun createApplication(id: Long, active: Boolean = true) = Application(
@@ -237,6 +237,6 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
 
     private fun createPaymentResponse() = CreatePaymentResponse(
         transactionId = UUID.randomUUID().toString(),
-        status = Status.STATUS_PENDING
+        status = Status.PENDING
     )
 }
