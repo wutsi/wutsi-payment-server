@@ -88,6 +88,7 @@ logging:
   level:
     root: INFO
     com.wutsi.platform.payment: DEBUG
+    com.wutsi.platform.core: DEBUG
   pattern:
     console: "%d type=%level logger=%class{20} thread=%thread %m%n"
     file: "%d type=%level logger=%class{20} thread=%thread %m%n"
