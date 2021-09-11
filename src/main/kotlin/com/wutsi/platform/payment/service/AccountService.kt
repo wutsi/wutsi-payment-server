@@ -20,6 +20,7 @@ class AccountService(
             throw NotFoundException(
                 error = Error(
                     code = ACCOUNT_NOT_ACTIVE.urn,
+                    message = "Invalid status: ${account.status}",
                     parameter = parameterName?.let {
                         Parameter(
                             name = it,
