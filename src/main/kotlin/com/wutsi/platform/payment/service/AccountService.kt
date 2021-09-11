@@ -16,7 +16,7 @@ class AccountService(
 ) {
     fun findAccount(id: Long, parameterName: String? = null, parameterType: ParameterType? = null): Account {
         val account = api.getAccount(id).account
-        if (account.status != "active")
+        if ("ACTIVE".equals(account.status, true))
             throw NotFoundException(
                 error = Error(
                     code = ACCOUNT_NOT_ACTIVE.urn,

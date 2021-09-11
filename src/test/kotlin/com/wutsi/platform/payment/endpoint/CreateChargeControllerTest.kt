@@ -216,7 +216,7 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         applicationId = application.id
     )
 
-    private fun createAccount(id: Long, status: String = "active") = Account(
+    private fun createAccount(id: Long, status: String = "ACTIVE") = Account(
         id = id,
         status = status
     )
