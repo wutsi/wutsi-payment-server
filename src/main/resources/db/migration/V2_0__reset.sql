@@ -1,3 +1,4 @@
+DROP TABLE T_CHARGE;
 CREATE TABLE T_CHARGE(
     id                          VARCHAR(36) NOT NULL,
     merchant_id                 BIGINT NOT NULL,
@@ -13,13 +14,14 @@ CREATE TABLE T_CHARGE(
     currency                    VARCHAR(3),
     status                      INT,
     gateway_transaction_id      VARCHAR(100) NOT NULL,
-    error_code                  VARCHAR(100),
+    error_code                  INT,
     supplier_error_code         VARCHAR(100),
     created                     TIMESTAMPTZ NOT NULL DEFAULT now(),
 
     PRIMARY KEY(id)
 );
 
+DROP TABLE T_TRANSACTION;
 CREATE TABLE T_TRANSACTION(
     id                          VARCHAR(36) NOT NULL,
     type                        INT NOT NULL DEFAULT 0,
@@ -31,7 +33,6 @@ CREATE TABLE T_TRANSACTION(
     fees                        DECIMAL(20, 4) NOT NULL DEFAULT 0,
     net                         DECIMAL(20, 4) NOT NULL DEFAULT 0,
     currency                    VARCHAR(3),
-    gateway_transaction_id      VARCHAR(100) NOT NULL,
     financial_transaction_id    VARCHAR(100),
     created                     TIMESTAMPTZ NOT NULL DEFAULT now(),
 
