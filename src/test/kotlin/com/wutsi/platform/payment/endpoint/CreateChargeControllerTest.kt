@@ -125,7 +125,7 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
 
     @Test
     fun `charge with inactive user`() {
-        customer = createAccount(CUSTOMER_ID, "suspended")
+        customer = createAccount(CUSTOMER_ID, "SUSPENDED")
         doReturn(GetAccountResponse(customer)).whenever(accountApi).getAccount(eq(CUSTOMER_ID))
 
         val request = createCreateChargeRequest()
