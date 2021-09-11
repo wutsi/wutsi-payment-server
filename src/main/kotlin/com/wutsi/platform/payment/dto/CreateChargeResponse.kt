@@ -1,6 +1,8 @@
 package com.wutsi.platform.payment.dto
 
-data class CreateChargeResponse(
-    val id: String = "",
-    val status: String = ""
+import kotlin.String
+
+public data class CreateChargeResponse(
+    public val id: String = "",
+    public val status: String = ""
 )

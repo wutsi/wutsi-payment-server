@@ -12,7 +12,7 @@ servers:
     description: Production
 
 paths:
-  /v1/charge:
+  /v1/charges:
     post:
       operationId: "create-charge"
       description: Charge a customer
@@ -34,8 +34,8 @@ paths:
       security:
         - api_key: [ 'payment-charge' ]
 
-  /v1/charge/{id}:
-    post:
+  /v1/charges/{id}:
+    get:
       operationId: "get-charge"
       description: Return a charge information
       parameters:
@@ -84,7 +84,6 @@ components:
           description: ID of the application associated with this transaction
         paymentMethodToken:
           type: string
-          format: uuid
           description: Payment method used by customer to get charged
         externalId:
           type: string
@@ -113,6 +112,9 @@ components:
           type: string
           format: uuid
           description: ID of the transaction
+        status:
+          type: string
+          description: Transaction status
 
     GetChargeResponse:
       type: object
@@ -128,6 +130,10 @@ components:
           type: string
           format: uuid
           description: ID of the transaction
+        userId:
+          type: integer
+          format: int64
+          description: ID of the user who performed the transactions
         merchantId:
           type: integer
           format: int64
@@ -140,6 +146,7 @@ components:
           type: integer
           format: int64
           description: ID of the application associated with this transaction
+          nullable: true
         paymentMethodToken:
           type: string
           format: uuid
@@ -154,26 +161,9 @@ components:
           type: number
           format: double
           description: Amout to charge to the customer
-        fees:
-          type: number
-          format: double
-          description: Fees associated with the transaction
-        net:
-          type: number
-          format: double
-          description: Net amount
-        transactionId:
+        gatewayTransactionId:
           type: string
           description: Transaction ID
-        financialTransactionId:
-          type: string
-          description: Transaction ID from financial institution
-        paymentMethodType:
-          type: string
-          description: Type of payment method
-        paymentMethodProvider:
-          type: string
-          description: Provider of the payment method
         currency:
           type: string
           description: 3 letter currency code
@@ -185,12 +175,22 @@ components:
           type: string
           description: Error code
           nullable: true
-        errorDetails:
-          type: string
-          description: Error Details
         supplierErrorCode:
           type: string
           description: Error Details
+          nullable: true
+        paymentMethodType:
+          type: string
+          description: Type of payment method
+          enum:
+            - mobile-payment
+        paymentMethodProvider:
+          type: string
+          description: Payment provider
+          enum:
+            - mtn
+            - orange
+            - express-union
         created:
           type: string
           format: date-time
