@@ -15,7 +15,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: "beans,flyway,health,info,scheduledtasks"
+        include: "beans,flyway,health,info,scheduledtasks,mappings"
 
 spring:
   main:
@@ -62,18 +62,23 @@ wutsi:
   client-id: "wutsi-payment"
   application:
     name: wutsi-payment
+
   platform:
     payment:
       mtn:
         enabled: true
         environment: sandbox
-        callback-url: https://wutsi-payment-server-test.herokuapp.com/v1/mtn/callback
+        callback-url: https://wutsi-payment-server-test.herokuapp.com/mtn/callback
         collection:
           subscription-key: f54b576eb6514e8b8dda657402d2db4c  # account: h...@wutsi.com
         disbursement:
           subscription-key: ae3a40f49d0f4c87b44cf62da406dd26  # account: h...@wutsi.com
     security:
       type: jwt
+      public-endpoints:
+        - "GET /mtn/**"
+        - "POST /mtn/**"
+        - "PUT /mtn/**"
     cache:
       type: local
     stream:

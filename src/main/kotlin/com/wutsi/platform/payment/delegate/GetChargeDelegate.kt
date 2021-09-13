@@ -45,7 +45,9 @@ public class GetChargeDelegate(private val dao: ChargeRepository) {
                 status = charge.status.name,
                 paymentMethodType = charge.paymentMethodType.name,
                 paymentMethodProvider = charge.paymentMethodProvider.name,
-                created = charge.created
+                created = charge.created,
+                updated = charge.updated,
+                financialTransactionId = charge.financialTransactionId
             )
         )
     }

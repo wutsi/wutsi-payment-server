@@ -6,6 +6,8 @@ import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import com.wutsi.platform.account.WutsiAccountApi
 import com.wutsi.platform.account.dto.Account
@@ -14,6 +16,7 @@ import com.wutsi.platform.account.dto.GetPaymentMethodResponse
 import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.account.dto.Phone
 import com.wutsi.platform.core.error.ErrorResponse
+import com.wutsi.platform.core.stream.EventStream
 import com.wutsi.platform.payment.Gateway
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
@@ -24,6 +27,8 @@ import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dao.ChargeRepository
 import com.wutsi.platform.payment.dto.CreateChargeRequest
 import com.wutsi.platform.payment.dto.CreateChargeResponse
+import com.wutsi.platform.payment.event.ChargeEventPayload
+import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.model.CreatePaymentResponse
 import com.wutsi.platform.payment.service.GatewayProvider
 import com.wutsi.platform.payment.util.ErrorURN
@@ -64,6 +69,9 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
     @MockBean
     private lateinit var gatewayProvider: GatewayProvider
 
+    @MockBean
+    private lateinit var eventStream: EventStream
+
     private lateinit var user: Account
     private lateinit var customer: Account
     private lateinit var merchant: Account
@@ -100,7 +108,7 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
     }
 
     @Test
-    fun charge() {
+    fun `charge - PENDING`() {
         val request = createCreateChargeRequest()
         val response = rest.postForEntity(url, request, CreateChargeResponse::class.java)
 
@@ -121,50 +129,37 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         assertNull(charge.errorCode)
         assertNull(charge.supplierErrorCode)
         assertEquals(user.id, charge.userId)
+
+        verify(eventStream).enqueue(EventURN.CHARGE_PENDING.urn, ChargeEventPayload(charge.id))
     }
 
     @Test
-    fun `charge with inactive user`() {
-        customer = createAccount(CUSTOMER_ID, "SUSPENDED")
-        doReturn(GetAccountResponse(customer)).whenever(accountApi).getAccount(eq(CUSTOMER_ID))
+    fun `charge - SUCCESSFULL`() {
+        paymentResponse = createPaymentResponse(Status.SUCCESSFUL)
+        doReturn(paymentResponse).whenever(gateway).createPayment(any())
 
         val request = createCreateChargeRequest()
-        val ex = assertThrows<HttpClientErrorException> {
-            rest.postForEntity(url, request, CreateChargeResponse::class.java)
-        }
+        val response = rest.postForEntity(url, request, CreateChargeResponse::class.java)
 
-        assertEquals(404, ex.rawStatusCode)
+        assertEquals(200, response.statusCodeValue)
 
-        val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
-        assertEquals(ErrorURN.ACCOUNT_NOT_ACTIVE.urn, response.error.code)
-    }
+        assertEquals(paymentResponse.status.name, response.body.status)
 
-    @Test
-    fun `charge with inactive application`() {
-        application = createApplication(APPLICATION_ID, false)
-        doReturn(GetApplicationResponse(application)).whenever(securityApi).getApplication(eq(APPLICATION_ID))
+        val charge = dao.findById(response.body.id).get()
+        assertEquals(request.merchantId, charge.merchantId)
+        assertEquals(request.applicationId, charge.applicationId)
+        assertEquals(request.customerId, charge.customerId)
+        assertEquals(request.amount, charge.amount)
+        assertEquals(request.currency, charge.currency)
+        assertEquals(request.description, charge.description)
+        assertEquals(request.externalId, charge.externalId)
+        assertEquals(paymentResponse.transactionId, charge.gatewayTransactionId)
+        assertEquals(paymentResponse.status, charge.status)
+        assertNull(charge.errorCode)
+        assertNull(charge.supplierErrorCode)
+        assertEquals(user.id, charge.userId)
 
-        val request = createCreateChargeRequest()
-        val ex = assertThrows<HttpClientErrorException> {
-            rest.postForEntity(url, request, CreateChargeResponse::class.java)
-        }
-
-        assertEquals(404, ex.rawStatusCode)
-
-        val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
-        assertEquals(ErrorURN.APPLICATION_NOT_ACTIVE.urn, response.error.code)
-    }
-
-    @Test
-    fun `charge with a another user`() {
-        rest = createResTemplate(listOf("payment-charge"), 7777L)
-
-        val request = createCreateChargeRequest()
-        val ex = assertThrows<HttpClientErrorException> {
-            rest.postForEntity(url, request, CreateChargeResponse::class.java)
-        }
-
-        assertEquals(403, ex.rawStatusCode)
+        verify(eventStream).enqueue(EventURN.CHARGE_SUCCESSFUL.urn, ChargeEventPayload(charge.id))
     }
 
     @Test
@@ -203,6 +198,86 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(ex.error.code, charge.errorCode)
         assertEquals(ex.error.supplierErrorCode, charge.supplierErrorCode)
         assertEquals(user.id, charge.userId)
+
+        verify(eventStream, never()).enqueue(any(), any())
+    }
+
+    @Test
+    fun `inactive customer cannot create charges`() {
+        customer = createAccount(CUSTOMER_ID, "SUSPENDED")
+        doReturn(GetAccountResponse(customer)).whenever(accountApi).getAccount(eq(CUSTOMER_ID))
+
+        val request = createCreateChargeRequest()
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateChargeResponse::class.java)
+        }
+
+        assertEquals(404, ex.rawStatusCode)
+
+        val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.ACCOUNT_NOT_ACTIVE.urn, response.error.code)
+
+        verify(eventStream, never()).enqueue(any(), any())
+    }
+
+    @Test
+    fun `inactive application cannot create charges`() {
+        application = createApplication(APPLICATION_ID, false)
+        doReturn(GetApplicationResponse(application)).whenever(securityApi).getApplication(eq(APPLICATION_ID))
+
+        val request = createCreateChargeRequest()
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateChargeResponse::class.java)
+        }
+
+        assertEquals(404, ex.rawStatusCode)
+
+        val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.APPLICATION_NOT_ACTIVE.urn, response.error.code)
+
+        verify(eventStream, never()).enqueue(any(), any())
+    }
+
+    @Test
+    fun `user cannot create charges using another customer payment method`() {
+        rest = createResTemplate(listOf("payment-charge"), 7777L)
+
+        val request = createCreateChargeRequest()
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateChargeResponse::class.java)
+        }
+
+        assertEquals(403, ex.rawStatusCode)
+
+        verify(eventStream, never()).enqueue(any(), any())
+    }
+
+    @Test
+    fun `anonymous cannot create charges`() {
+        rest = RestTemplate()
+
+        val request = createCreateChargeRequest()
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateChargeResponse::class.java)
+        }
+
+        assertEquals(401, ex.rawStatusCode)
+
+        verify(eventStream, never()).enqueue(any(), any())
+    }
+
+    @Test
+    fun `user with invalid permission cannot create charges`() {
+        rest = createResTemplate(listOf("xxx"), customer.id)
+
+        val request = createCreateChargeRequest()
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateChargeResponse::class.java)
+        }
+
+        assertEquals(403, ex.rawStatusCode)
+
+        verify(eventStream, never()).enqueue(any(), any())
     }
 
     private fun createCreateChargeRequest(merchantId: Long = MERCHANT_ID, customerId: Long = CUSTOMER_ID) = CreateChargeRequest(
@@ -235,8 +310,8 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         active = active
     )
 
-    private fun createPaymentResponse() = CreatePaymentResponse(
+    private fun createPaymentResponse(status: Status = Status.PENDING) = CreatePaymentResponse(
         transactionId = UUID.randomUUID().toString(),
-        status = Status.PENDING
+        status = status
     )
 }

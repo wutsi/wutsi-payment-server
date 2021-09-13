@@ -34,11 +34,13 @@ data class ChargeEntity(
     val currency: String = "",
 
     @Enumerated
-    val status: Status = Status.UNKNOWN,
+    var status: Status = Status.UNKNOWN,
 
     @Enumerated
-    val errorCode: ErrorCode? = null,
-    val supplierErrorCode: String? = null,
-    val gatewayTransactionId: String = "",
-    val created: OffsetDateTime = OffsetDateTime.now()
+    var errorCode: ErrorCode? = null,
+    var supplierErrorCode: String? = null,
+    var gatewayTransactionId: String = "",
+    var financialTransactionId: String? = null,
+    val created: OffsetDateTime = OffsetDateTime.now(),
+    val updated: OffsetDateTime = OffsetDateTime.now()
 )

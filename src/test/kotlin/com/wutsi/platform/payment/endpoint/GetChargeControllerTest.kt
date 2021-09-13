@@ -54,6 +54,7 @@ public class GetChargeControllerTest : AbstractSecuredController() {
         assertEquals("XAF", charge.currency)
         assertEquals(Status.FAILED.name, charge.status)
         assertEquals("1111-0000", charge.gatewayTransactionId)
+        assertEquals("2222-0000", charge.financialTransactionId)
         assertEquals(ErrorCode.AUTHENTICATION_FAILED.name, charge.errorCode)
         assertEquals("FAILURE", charge.supplierErrorCode)
         assertEquals("Sample charge", charge.description)
@@ -70,5 +71,29 @@ public class GetChargeControllerTest : AbstractSecuredController() {
 
         val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
         assertEquals(ErrorURN.CHARGE_NOT_FOUND.urn, response.error.code)
+    }
+
+    @Test
+    fun `anonymous cannot gt charges`() {
+        rest = RestTemplate()
+
+        url = "http://localhost:$port/v1/charges/1111"
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.getForEntity(url, GetChargeResponse::class.java)
+        }
+
+        assertEquals(401, ex.rawStatusCode)
+    }
+
+    @Test
+    fun `user with invalid permission cannot create charges`() {
+        rest = createResTemplate(listOf("xxx"), 1)
+
+        url = "http://localhost:$port/v1/charges/1111"
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.getForEntity(url, GetChargeResponse::class.java)
+        }
+
+        assertEquals(403, ex.rawStatusCode)
     }
 }
