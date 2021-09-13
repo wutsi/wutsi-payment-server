@@ -11,7 +11,6 @@ spring:
     password: ${SPRING_DATABASE_PASSWORD}
 
 wutsi:
-  client-id: wutsi-payment
   platform:
     security:
       type: jwt

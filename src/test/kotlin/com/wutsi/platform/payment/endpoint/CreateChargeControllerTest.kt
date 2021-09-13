@@ -27,10 +27,10 @@ import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dao.ChargeRepository
 import com.wutsi.platform.payment.dto.CreateChargeRequest
 import com.wutsi.platform.payment.dto.CreateChargeResponse
-import com.wutsi.platform.payment.event.ChargeEventPayload
-import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.model.CreatePaymentResponse
 import com.wutsi.platform.payment.service.GatewayProvider
+import com.wutsi.platform.payment.service.event.ChargeEventPayload
+import com.wutsi.platform.payment.service.event.EventURN
 import com.wutsi.platform.payment.util.ErrorURN
 import com.wutsi.platform.security.dto.Application
 import com.wutsi.platform.security.dto.GetApplicationResponse

@@ -8,8 +8,8 @@ import com.wutsi.platform.payment.dao.ChargeRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.entity.TransactionType.CHARGE
-import com.wutsi.platform.payment.event.ChargeEventPayload
-import com.wutsi.platform.payment.event.EventURN
+import com.wutsi.platform.payment.service.event.ChargeEventPayload
+import com.wutsi.platform.payment.service.event.EventURN
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service

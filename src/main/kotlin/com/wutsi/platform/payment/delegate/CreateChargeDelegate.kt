@@ -16,8 +16,6 @@ import com.wutsi.platform.payment.dao.ChargeRepository
 import com.wutsi.platform.payment.dto.CreateChargeRequest
 import com.wutsi.platform.payment.dto.CreateChargeResponse
 import com.wutsi.platform.payment.entity.ChargeEntity
-import com.wutsi.platform.payment.event.ChargeEventPayload
-import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.exception.ChargeException
 import com.wutsi.platform.payment.model.CreatePaymentRequest
 import com.wutsi.platform.payment.model.CreatePaymentResponse
@@ -26,6 +24,8 @@ import com.wutsi.platform.payment.service.AccountService
 import com.wutsi.platform.payment.service.GatewayProvider
 import com.wutsi.platform.payment.service.SecurityManager
 import com.wutsi.platform.payment.service.SecurityService
+import com.wutsi.platform.payment.service.event.ChargeEventPayload
+import com.wutsi.platform.payment.service.event.EventURN
 import com.wutsi.platform.payment.util.ErrorURN
 import org.springframework.stereotype.Service
 import java.util.UUID

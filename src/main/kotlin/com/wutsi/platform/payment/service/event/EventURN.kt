@@ -1,4 +1,4 @@
-package com.wutsi.platform.payment.event
+package com.wutsi.platform.payment.service.event
 
 import com.wutsi.platform.core.util.URN
 
