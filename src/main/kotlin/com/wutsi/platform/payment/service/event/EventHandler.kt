@@ -18,7 +18,7 @@ class EventHandler(
 
     @EventListener
     fun onEvent(event: Event) {
-        LOGGER.info("onEvent(${event.id}, ...)")
+        LOGGER.info("onEvent(${event.type}, ...)")
 
         when (event.type) {
             EventURN.CHARGE_PENDING.urn -> service.onChargePending(asChargeEventPayload(event).chargeId)

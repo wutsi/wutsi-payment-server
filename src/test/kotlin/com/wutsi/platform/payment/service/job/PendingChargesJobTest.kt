@@ -33,8 +33,9 @@ internal class PendingChargesJobTest {
             payload.capture()
         )
 
-        assertEquals("100", payload.firstValue.chargeId)
-        assertEquals("101", payload.secondValue.chargeId)
-        assertEquals("102", payload.thirdValue.chargeId)
+        val chargeIds = payload.allValues.sortedBy { it.chargeId }.map { it.chargeId }
+        assertEquals("100", chargeIds[0])
+        assertEquals("101", chargeIds[1])
+        assertEquals("102", chargeIds[2])
     }
 }
