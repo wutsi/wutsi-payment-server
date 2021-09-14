@@ -19,6 +19,7 @@ import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.payment.model.GetPaymentResponse
 import com.wutsi.platform.payment.service.GatewayProvider
+import com.wutsi.platform.payment.service.TransactionService
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -27,6 +28,7 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.jdbc.Sql
 import java.util.UUID
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -121,14 +123,21 @@ internal class EventHandlerTest {
         handler.onEvent(event)
 
         val charge = chargeDao.findById(chargeId).get()
-        val tx = txDao.findById(chargeId).get()
-        assertEquals(TransactionType.CHARGE, tx.type)
-        assertEquals(10000.0, tx.amount)
-        assertEquals(100.0, tx.fees)
-        assertEquals(9900.0, tx.net)
-        assertEquals(charge.currency, tx.currency)
-        assertEquals(charge.customerId, tx.fromAccountId)
-        assertEquals(charge.merchantId, tx.toAccountId)
+        val txs = txDao.findByReferenceId(chargeId)
+
+        assertEquals(TransactionType.CHARGE, txs[0].type)
+        assertEquals(9900.0, txs[0].amount)
+        assertEquals(charge.currency, txs[0].currency)
+        assertEquals(charge.customerId, txs[0].fromAccountId)
+        assertEquals(charge.merchantId, txs[0].toAccountId)
+        assertEquals(charge.description, txs[0].description)
+
+        assertEquals(TransactionType.FEES, txs[1].type)
+        assertEquals(100.0, txs[1].amount)
+        assertEquals(charge.currency, txs[1].currency)
+        assertEquals(charge.customerId, txs[1].fromAccountId)
+        assertEquals(TransactionService.FEES_ACCOUNT_ID, txs[1].toAccountId)
+        assertNull(txs[1].description)
     }
 
     @Test

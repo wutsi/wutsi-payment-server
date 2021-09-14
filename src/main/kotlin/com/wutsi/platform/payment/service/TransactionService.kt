@@ -8,6 +8,7 @@ import com.wutsi.platform.payment.dao.ChargeRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.entity.TransactionType.CHARGE
+import com.wutsi.platform.payment.entity.TransactionType.FEES
 import com.wutsi.platform.payment.service.event.ChargeEventPayload
 import com.wutsi.platform.payment.service.event.EventURN
 import org.slf4j.LoggerFactory
@@ -25,6 +26,7 @@ class TransactionService(
     private val feesCalculator: FeesCalculator
 ) {
     companion object {
+        const val FEES_ACCOUNT_ID = -100L
         private val LOGGER = LoggerFactory.getLogger(TransactionService::class.java)
     }
 
@@ -35,19 +37,29 @@ class TransactionService(
         val charge = chargeDao.findById(id).get()
         try {
             val fees = feesCalculator.compute(charge)
+            val net = charge.amount - fees
 
-            txDao.save(
-                TransactionEntity(
-                    id = id,
-                    type = CHARGE,
-                    fromAccountId = charge.customerId,
-                    toAccountId = charge.merchantId,
-                    currency = charge.currency,
-                    created = OffsetDateTime.now(),
-                    description = charge.description,
-                    amount = charge.amount,
-                    fees = fees,
-                    net = charge.amount - fees
+            txDao.saveAll(
+                listOf(
+                    TransactionEntity(
+                        referenceId = id,
+                        type = CHARGE,
+                        fromAccountId = charge.customerId,
+                        toAccountId = charge.merchantId,
+                        created = OffsetDateTime.now(),
+                        description = charge.description,
+                        amount = net,
+                        currency = charge.currency
+                    ),
+                    TransactionEntity(
+                        referenceId = id,
+                        type = FEES,
+                        fromAccountId = charge.customerId,
+                        toAccountId = FEES_ACCOUNT_ID,
+                        created = OffsetDateTime.now(),
+                        amount = fees,
+                        currency = charge.currency
+                    )
                 )
             )
         } catch (ex: DataIntegrityViolationException) {

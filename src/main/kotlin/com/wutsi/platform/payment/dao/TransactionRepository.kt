@@ -5,4 +5,6 @@ import org.springframework.data.repository.CrudRepository
 import org.springframework.stereotype.Repository
 
 @Repository
-interface TransactionRepository : CrudRepository<TransactionEntity, String>
+interface TransactionRepository : CrudRepository<TransactionEntity, String> {
+    fun findByReferenceId(referenceId: String): List<TransactionEntity>
+}

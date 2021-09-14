@@ -54,7 +54,6 @@ spring:
       connection-timeout: 20000 #maximum number of milliseconds that a client will wait for a connection
       idle-timeout: 10000 #maximum idle time for connection
       minimum-idle: 8 #minimum number of idle connections maintained by HikariCP in a connection pool
-      minimum-pool-size: 8 #maximum pool size
       maximum-pool-size: 8 #maximum pool size
       max-lifetime: 1000 # maximum lifetime in milliseconds of a connection in the pool after it is closed.
 
@@ -62,12 +61,12 @@ wutsi:
   application:
     name: wutsi-payment
     fees:
-      rate: 0.01 # 1%
+      rate: 0.01    # 1%
     charges:
       job:
         process-pending:
           enabled: true
-          cron: "0 * * * * *"
+          cron: "0 */5 * * * *"
           max-duration-millis: 30000 # 30 seconds
 
   platform:

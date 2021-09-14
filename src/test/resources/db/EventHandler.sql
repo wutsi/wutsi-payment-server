@@ -8,6 +8,8 @@ INSERT INTO T_CHARGE(id, merchant_id, customer_id, user_id, application_id, paym
         ('201', 1, 11, 111, 1111, '1111-token', 1, 1, 'urn:order:1111', 10000, 'XAF', 1, '201-0000', null, '201-1111', 'Sample charge')
 ;
 
-INSERT INTO T_TRANSACTION(id, from_account_id, to_account_id, description, currency, amount, fees, net)
+INSERT INTO T_TRANSACTION(reference_id, from_account_id, to_account_id, description, currency, amount)
     VALUES
-        (201, 11, 1, 'yo', 'XAF', 10000, 100, 9900);
+        ('201', 11, 1, 'yo', 'XAF', 9900),
+        ('201', 11, 1, null, 'XAF', 100)
+;
