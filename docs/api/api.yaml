@@ -58,6 +58,29 @@ paths:
       security:
         - api_key: [ 'payment-charge' ]
 
+  /v1/balances:
+    get:
+      operationId: "get-balance"
+      description: Return the balance of a merchant
+      parameters:
+        - in: query
+          name: merchant-id
+          description: ID of the merchant
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetBalanceResponse'
+      tags:
+        - Payment
+      security:
+        - api_key: [ 'payment-read' ]
 
 components:
   securitySchemes:
@@ -123,6 +146,13 @@ components:
           type: object
           $ref: "#/components/schemas/Charge"
 
+    GetBalanceResponse:
+      type: object
+      properties:
+        balance:
+          type: object
+          $ref: "#/components/schemas/Balance"
+
     Charge:
       type: object
       properties:
@@ -164,6 +194,10 @@ components:
         gatewayTransactionId:
           type: string
           description: Transaction ID
+        financialTransactionId:
+          type: string
+          description: Financial Transaction ID
+          nullable: true
         currency:
           type: string
           description: 3 letter currency code
@@ -183,15 +217,34 @@ components:
           type: string
           description: Type of payment method
           enum:
-            - mobile-payment
+            - MOBILE_PAYMENT
         paymentMethodProvider:
           type: string
           description: Payment provider
           enum:
-            - mtn
-            - orange
-            - express-union
+            - MTN
+            - ORANGE
         created:
           type: string
           format: date-time
-          description: Date/Time of the transaction
+          description: Creation Date/Time
+        updated:
+          type: string
+          format: date-time
+          description: Last modification Date/Time
+
+    Balance:
+      type: object
+      properties:
+        merchantId:
+          type: integer
+          format: int64
+          description: ID of merchant
+        amount:
+          type: number
+          format: double
+          description: Amout to charge to the customer
+        currency:
+          type: string
+          description: 3 letter currency code
+          maxLength: 3

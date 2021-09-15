@@ -14,6 +14,7 @@ import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.core.Error
 import com.wutsi.platform.payment.core.ErrorCode.EXPIRED
 import com.wutsi.platform.payment.core.Status
+import com.wutsi.platform.payment.dao.BalanceRepository
 import com.wutsi.platform.payment.dao.ChargeRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.entity.TransactionType
@@ -26,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.jdbc.Sql
+import java.time.LocalDate
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -51,6 +53,9 @@ internal class EventHandlerTest {
     @Autowired
     lateinit var txDao: TransactionRepository
 
+    @Autowired
+    lateinit var balanceDao: BalanceRepository
+
     @BeforeEach
     fun setUp() {
         gateway = mock()
@@ -63,7 +68,7 @@ internal class EventHandlerTest {
         doReturn(paymentResponse).whenever(gateway).getPayment(any())
 
         val chargeId = "100"
-        val event = createEvent(EventURN.CHARGE_PENDING.urn, chargeId)
+        val event = createChargeEvent(EventURN.CHARGE_PENDING.urn, chargeId)
         handler.onEvent(event)
 
         val charge = chargeDao.findById(chargeId).get()
@@ -86,7 +91,7 @@ internal class EventHandlerTest {
         doThrow(ex).whenever(gateway).getPayment(any())
 
         val chargeId = "101"
-        val event = createEvent(EventURN.CHARGE_PENDING.urn, chargeId)
+        val event = createChargeEvent(EventURN.CHARGE_PENDING.urn, chargeId)
         handler.onEvent(event)
 
         val charge = chargeDao.findById(chargeId).get()
@@ -104,7 +109,7 @@ internal class EventHandlerTest {
         doReturn(paymentResponse).whenever(gateway).getPayment(any())
 
         val chargeId = "102"
-        val event = createEvent(EventURN.CHARGE_PENDING.urn, chargeId)
+        val event = createChargeEvent(EventURN.CHARGE_PENDING.urn, chargeId)
         handler.onEvent(event)
 
         val charge = chargeDao.findById(chargeId).get()
@@ -119,7 +124,7 @@ internal class EventHandlerTest {
         doReturn(paymentResponse).whenever(gateway).getPayment(any())
 
         val chargeId = "200"
-        val event = createEvent(EventURN.CHARGE_SUCCESSFUL.urn, chargeId)
+        val event = createChargeEvent(EventURN.CHARGE_SUCCESSFUL.urn, chargeId)
         handler.onEvent(event)
 
         val charge = chargeDao.findById(chargeId).get()
@@ -128,16 +133,16 @@ internal class EventHandlerTest {
         assertEquals(TransactionType.CHARGE, txs[0].type)
         assertEquals(9900.0, txs[0].amount)
         assertEquals(charge.currency, txs[0].currency)
-        assertEquals(charge.customerId, txs[0].fromAccountId)
-        assertEquals(charge.merchantId, txs[0].toAccountId)
+        assertEquals(charge.merchantId, txs[0].accountId)
         assertEquals(charge.description, txs[0].description)
+        assertEquals(charge.created, txs[0].created)
 
         assertEquals(TransactionType.FEES, txs[1].type)
         assertEquals(100.0, txs[1].amount)
         assertEquals(charge.currency, txs[1].currency)
-        assertEquals(charge.customerId, txs[1].fromAccountId)
-        assertEquals(TransactionService.FEES_ACCOUNT_ID, txs[1].toAccountId)
+        assertEquals(TransactionService.FEES_ACCOUNT_ID, txs[1].accountId)
         assertNull(txs[1].description)
+        assertEquals(charge.created, txs[0].created)
     }
 
     @Test
@@ -146,16 +151,49 @@ internal class EventHandlerTest {
         doReturn(paymentResponse).whenever(gateway).getPayment(any())
 
         val chargeId = "201"
-        val event = createEvent(EventURN.CHARGE_SUCCESSFUL.urn, chargeId)
+        val event = createChargeEvent(EventURN.CHARGE_SUCCESSFUL.urn, chargeId)
         handler.onEvent(event)
         // No error
     }
 
-    private fun createEvent(type: String, id: String) = Event(
+    @Test
+    fun `Update balance - CREATE`() {
+        val event = createAccountEvent(EventURN.BALANCE_UPDATE_REQUESTED.urn, 4L)
+        handler.onEvent(event)
+
+        val balance = balanceDao.findByAccountId(4L).get()
+        assertEquals(90.0, balance.amount)
+        assertEquals("XAF", balance.currency)
+        assertEquals(4L, balance.accountId)
+        assertEquals(LocalDate.now(), balance.synced)
+    }
+
+    @Test
+    fun `Update balance - SYNC`() {
+        val event = createAccountEvent(EventURN.BALANCE_UPDATE_REQUESTED.urn, 3L)
+        handler.onEvent(event)
+
+        val balance = balanceDao.findByAccountId(3L).get()
+        assertEquals(700.0, balance.amount)
+        assertEquals("XAF", balance.currency)
+        assertEquals(3L, balance.accountId)
+        assertEquals(LocalDate.now(), balance.synced)
+    }
+
+    private fun createChargeEvent(type: String, id: String) = Event(
         type = type,
         payload = """
             {
                 "chargeId": "$id"
+            }
+        """.trimIndent()
+    )
+
+    private fun createAccountEvent(type: String, id: Long) = Event(
+        type = type,
+        payload = """
+            {
+                "accountId": "$id"
             }
         """.trimIndent()
     )

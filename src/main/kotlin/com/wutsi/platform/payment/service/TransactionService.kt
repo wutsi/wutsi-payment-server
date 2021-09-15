@@ -14,7 +14,6 @@ import com.wutsi.platform.payment.service.event.EventURN
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
-import java.time.OffsetDateTime
 import javax.transaction.Transactional
 
 @Service
@@ -44,21 +43,19 @@ class TransactionService(
                     TransactionEntity(
                         referenceId = id,
                         type = CHARGE,
-                        fromAccountId = charge.customerId,
-                        toAccountId = charge.merchantId,
-                        created = OffsetDateTime.now(),
+                        accountId = charge.merchantId,
                         description = charge.description,
                         amount = net,
-                        currency = charge.currency
+                        currency = charge.currency,
+                        created = charge.created
                     ),
                     TransactionEntity(
                         referenceId = id,
                         type = FEES,
-                        fromAccountId = charge.customerId,
-                        toAccountId = FEES_ACCOUNT_ID,
-                        created = OffsetDateTime.now(),
+                        accountId = FEES_ACCOUNT_ID,
                         amount = fees,
-                        currency = charge.currency
+                        currency = charge.currency,
+                        created = charge.created
                     )
                 )
             )

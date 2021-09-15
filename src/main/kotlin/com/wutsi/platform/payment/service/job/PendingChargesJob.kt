@@ -14,14 +14,14 @@ import org.springframework.stereotype.Service
 class PendingChargesJob(
     private val chargeDao: ChargeRepository,
     private val eventStream: EventStream,
-    @Value("\${wutsi.application.charges.job.process-pending.enabled}") private val enabled: Boolean,
-    @Value("\${wutsi.application.charges.job.process-pending.max-duration-millis}") private val maxDurationMillis: Long
+    @Value("\${wutsi.application.jobs.process-pending-charges.enabled}") private val enabled: Boolean,
+    @Value("\${wutsi.application.jobs.process-pending-charges.max-duration-millis}") private val maxDurationMillis: Long
 ) {
     companion object {
         private val LOGGER = LoggerFactory.getLogger(PendingChargesJob::class.java)
     }
 
-    @Scheduled(cron = "\${wutsi.application.charges.job.process-pending.cron}")
+    @Scheduled(cron = "\${wutsi.application.jobs.process-pending-charges.cron}")
     fun run() {
 
         if (!enabled) {

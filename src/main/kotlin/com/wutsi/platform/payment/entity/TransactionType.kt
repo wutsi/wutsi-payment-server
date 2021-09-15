@@ -4,4 +4,5 @@ enum class TransactionType {
     UNKNOWN,
     CHARGE,
     FEES,
+    PAYOUT
 }

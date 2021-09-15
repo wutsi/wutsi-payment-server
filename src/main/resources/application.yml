@@ -62,12 +62,14 @@ wutsi:
     name: wutsi-payment
     fees:
       rate: 0.01    # 1%
-    charges:
-      job:
-        process-pending:
-          enabled: true
-          cron: "0 */5 * * * *"
-          max-duration-millis: 30000 # 30 seconds
+    jobs:
+      process-pending-charges:
+        enabled: true
+        cron: "0 */5 * * * *"
+        max-duration-millis: 30000 # 30 seconds
+      update-balances:
+        enabled: true
+        cron: "0 0 1 * * *"   # Everyday at 1AM
 
   platform:
     payment:
