@@ -11,6 +11,8 @@ import com.wutsi.platform.core.stream.Event
 import com.wutsi.platform.core.stream.EventStream
 import com.wutsi.platform.payment.Gateway
 import com.wutsi.platform.payment.PaymentException
+import com.wutsi.platform.payment.PaymentMethodProvider
+import com.wutsi.platform.payment.PaymentMethodProvider.MTN
 import com.wutsi.platform.payment.core.Error
 import com.wutsi.platform.payment.core.ErrorCode.EXPIRED
 import com.wutsi.platform.payment.core.Status
@@ -136,6 +138,7 @@ internal class EventHandlerTest {
         assertEquals(charge.merchantId, txs[0].accountId)
         assertEquals(charge.description, txs[0].description)
         assertEquals(charge.created, txs[0].created)
+        assertEquals(charge.paymentMethodProvider, txs[0].paymentMethodProvider)
 
         assertEquals(TransactionType.FEES, txs[1].type)
         assertEquals(100.0, txs[1].amount)
@@ -143,6 +146,7 @@ internal class EventHandlerTest {
         assertEquals(TransactionService.FEES_ACCOUNT_ID, txs[1].accountId)
         assertNull(txs[1].description)
         assertEquals(charge.created, txs[0].created)
+        assertEquals(charge.paymentMethodProvider, txs[1].paymentMethodProvider)
     }
 
     @Test
@@ -158,26 +162,28 @@ internal class EventHandlerTest {
 
     @Test
     fun `Update balance - CREATE`() {
-        val event = createAccountEvent(EventURN.BALANCE_UPDATE_REQUESTED.urn, 4L)
+        val event = createUpdateBalanceEvent(EventURN.BALANCE_UPDATE_REQUESTED.urn, 4L, MTN)
         handler.onEvent(event)
 
-        val balance = balanceDao.findByAccountId(4L).get()
+        val balance = balanceDao.findByAccountIdAndPaymentMethodProvider(4L, PaymentMethodProvider.MTN).get()
         assertEquals(90.0, balance.amount)
         assertEquals("XAF", balance.currency)
         assertEquals(4L, balance.accountId)
         assertEquals(LocalDate.now(), balance.synced)
+        assertEquals(MTN, balance.paymentMethodProvider)
     }
 
     @Test
     fun `Update balance - SYNC`() {
-        val event = createAccountEvent(EventURN.BALANCE_UPDATE_REQUESTED.urn, 3L)
+        val event = createUpdateBalanceEvent(EventURN.BALANCE_UPDATE_REQUESTED.urn, 3L, MTN)
         handler.onEvent(event)
 
-        val balance = balanceDao.findByAccountId(3L).get()
+        val balance = balanceDao.findByAccountIdAndPaymentMethodProvider(3L, PaymentMethodProvider.MTN).get()
         assertEquals(700.0, balance.amount)
         assertEquals("XAF", balance.currency)
         assertEquals(3L, balance.accountId)
         assertEquals(LocalDate.now(), balance.synced)
+        assertEquals(MTN, balance.paymentMethodProvider)
     }
 
     private fun createChargeEvent(type: String, id: String) = Event(
@@ -189,11 +195,12 @@ internal class EventHandlerTest {
         """.trimIndent()
     )
 
-    private fun createAccountEvent(type: String, id: Long) = Event(
+    private fun createUpdateBalanceEvent(type: String, id: Long, paymentMethodProvider: PaymentMethodProvider) = Event(
         type = type,
         payload = """
             {
-                "accountId": "$id"
+                "accountId": "$id",
+                "paymentMethodProvider": "${paymentMethodProvider.name}"
             }
         """.trimIndent()
     )

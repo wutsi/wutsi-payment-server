@@ -1,8 +1,9 @@
 package com.wutsi.platform.payment.service.job
 
 import com.wutsi.platform.core.stream.EventStream
-import com.wutsi.platform.payment.service.event.AccountEventPayload
+import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.service.event.EventURN
+import com.wutsi.platform.payment.service.event.UpdateBalanceEvent
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
@@ -28,7 +29,7 @@ class UpdateBalanceJob(
 
         LOGGER.info("Updating account balances")
         val sql = """
-            SELECT DISTINCT T.account_id
+            SELECT DISTINCT T.account_id, T.payment_method_provider
             FROM
                 T_TRANSACTION T LEFT JOIN T_BALANCE B ON T.account_id=B.account_id
             WHERE
@@ -36,11 +37,17 @@ class UpdateBalanceJob(
         """.trimIndent()
 
         val query = em.createNativeQuery(sql)
-        val result = query.resultList as List<Long>
+        val result = query.resultList
 
         LOGGER.info("${result.size} account(s) to update")
-        result.forEach {
-            eventStream.enqueue(EventURN.BALANCE_UPDATE_REQUESTED.urn, AccountEventPayload(it))
+        (result as List<Array<Any>>).forEach {
+            eventStream.enqueue(
+                EventURN.BALANCE_UPDATE_REQUESTED.urn,
+                UpdateBalanceEvent(
+                    accountId = (it[0] as Number).toLong(),
+                    paymentMethodProvider = PaymentMethodProvider.values()[(it[1] as Number).toInt()]
+                )
+            )
         }
     }
 }

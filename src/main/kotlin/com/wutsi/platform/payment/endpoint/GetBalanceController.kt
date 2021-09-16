@@ -27,6 +27,9 @@ public class GetBalanceController(
 ) {
     @GetMapping("/v1/balances")
     @PreAuthorize(value = "hasAuthority('payment-read')")
-    public fun invoke(@RequestParam(name = "account-id", required = true) @NotNull accountId: Long):
-        GetBalanceResponse = delegate.invoke(accountId)
+    public fun invoke(
+        @RequestParam(name = "account-id", required = true) @NotNull accountId: Long,
+        @RequestParam(name = "payment-method-provider", required = true) @NotNull paymentMethodProvider: String
+    ):
+        GetBalanceResponse = delegate.invoke(accountId, paymentMethodProvider)
 }

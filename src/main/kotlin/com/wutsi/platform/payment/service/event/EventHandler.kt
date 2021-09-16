@@ -25,7 +25,10 @@ class EventHandler(
         when (event.type) {
             EventURN.CHARGE_PENDING.urn -> transactions.onChargePending(asChargeEventPayload(event).chargeId)
             EventURN.CHARGE_SUCCESSFUL.urn -> transactions.onChargeSuccessful(asChargeEventPayload(event).chargeId)
-            EventURN.BALANCE_UPDATE_REQUESTED.urn -> balances.update(asAccountEventPayload(event).accountId)
+            EventURN.BALANCE_UPDATE_REQUESTED.urn -> {
+                val payload = asAccountEventPayload(event)
+                balances.update(payload.accountId, payload.paymentMethodProvider)
+            }
             else -> LOGGER.info("Ignoring event: ${event.type}")
         }
     }
@@ -33,6 +36,6 @@ class EventHandler(
     private fun asChargeEventPayload(event: Event): ChargeEventPayload =
         mapper.readValue(event.payload, ChargeEventPayload::class.java)
 
-    private fun asAccountEventPayload(event: Event): AccountEventPayload =
-        mapper.readValue(event.payload, AccountEventPayload::class.java)
+    private fun asAccountEventPayload(event: Event): UpdateBalanceEvent =
+        mapper.readValue(event.payload, UpdateBalanceEvent::class.java)
 }

@@ -1,5 +1,6 @@
 package com.wutsi.platform.payment.service
 
+import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.dao.BalanceRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.dto.Balance
@@ -17,15 +18,20 @@ public class BalanceService(
     private val dao: BalanceRepository,
     private val txDao: TransactionRepository
 ) {
-    fun getBalance(accountId: Long): Balance {
-        val balance = dao.findByAccountId(accountId)
+    fun getBalance(accountId: Long, paymentMethodProvider: PaymentMethodProvider): Balance {
+        val balance = dao.findByAccountIdAndPaymentMethodProvider(accountId, paymentMethodProvider)
         val transactions = if (balance.isEmpty)
-            txDao.findByAccountId(accountId)
+            txDao.findByAccountIdAndPaymentMethodProvider(accountId, paymentMethodProvider)
         else
-            txDao.findByAccountIdAndCreatedGreaterThanEqual(accountId, toOffsetDateTime(balance.get().synced))
+            txDao.findByAccountIdAndPaymentMethodProviderAndCreatedGreaterThanEqual(
+                accountId,
+                paymentMethodProvider,
+                toOffsetDateTime(balance.get().synced)
+            )
 
         return Balance(
             accountId = accountId,
+            paymentMethodProvider = paymentMethodProvider.name,
             currency = currency(balance, transactions),
             amount = amount(balance, transactions),
             synced = balance.map { it.synced }.orElse(LocalDate.now())
@@ -33,14 +39,19 @@ public class BalanceService(
     }
 
     @Transactional
-    fun update(merchantId: Long) {
-        val opt = dao.findByAccountId(merchantId)
+    fun update(accountId: Long, paymentMethodProvider: PaymentMethodProvider) {
+        val opt = dao.findByAccountIdAndPaymentMethodProvider(accountId, paymentMethodProvider)
         val date = LocalDate.now()
         if (opt.isEmpty) {
-            val transactions = txDao.findByAccountIdAndCreatedLessThan(merchantId, toOffsetDateTime(date))
+            val transactions = txDao.findByAccountIdAndPaymentMethodProviderAndCreatedLessThan(
+                accountId,
+                paymentMethodProvider,
+                toOffsetDateTime(date)
+            )
             dao.save(
                 BalanceEntity(
-                    accountId = merchantId,
+                    accountId = accountId,
+                    paymentMethodProvider = paymentMethodProvider,
                     amount = amount(opt, transactions),
                     currency = currency(opt, transactions),
                     synced = date
@@ -48,8 +59,9 @@ public class BalanceService(
             )
         } else {
             val balance = opt.get()
-            val transactions = txDao.findByAccountIdAndCreatedGreaterThanEqualAndCreatedLessThan(
-                merchantId,
+            val transactions = txDao.findByAccountIdAndPaymentMethodProviderAndCreatedGreaterThanEqualAndCreatedLessThan(
+                accountId,
+                paymentMethodProvider,
                 toOffsetDateTime(balance.synced),
                 toOffsetDateTime(date)
             )

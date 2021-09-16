@@ -47,7 +47,8 @@ class TransactionService(
                         description = charge.description,
                         amount = net,
                         currency = charge.currency,
-                        created = charge.created
+                        created = charge.created,
+                        paymentMethodProvider = charge.paymentMethodProvider
                     ),
                     TransactionEntity(
                         referenceId = id,
@@ -55,7 +56,8 @@ class TransactionService(
                         accountId = FEES_ACCOUNT_ID,
                         amount = fees,
                         currency = charge.currency,
-                        created = charge.created
+                        created = charge.created,
+                        paymentMethodProvider = charge.paymentMethodProvider
                     )
                 )
             )

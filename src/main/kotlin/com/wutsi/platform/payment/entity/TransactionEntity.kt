@@ -1,7 +1,10 @@
 package com.wutsi.platform.payment.entity
 
+import com.wutsi.platform.payment.PaymentMethodProvider
+import com.wutsi.platform.payment.PaymentMethodProvider.UNKNOWN
 import java.time.OffsetDateTime
 import javax.persistence.Entity
+import javax.persistence.Enumerated
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
 import javax.persistence.Id
@@ -19,5 +22,8 @@ data class TransactionEntity(
     val description: String? = null,
     val amount: Double = 0.0,
     val currency: String = "",
-    val created: OffsetDateTime = OffsetDateTime.now()
+    val created: OffsetDateTime = OffsetDateTime.now(),
+
+    @Enumerated
+    val paymentMethodProvider: PaymentMethodProvider = UNKNOWN
 )

@@ -2,6 +2,7 @@ package com.wutsi.platform.payment.endpoint
 
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.whenever
+import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.dto.GetBalanceResponse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -39,7 +40,7 @@ public class GetBalanceControllerTest : AbstractSecuredController() {
 
     @Test
     fun `get balance - with previous balance`() {
-        url = "http://localhost:$port/v1/balances?account-id=1"
+        url = "http://localhost:$port/v1/balances?account-id=1&payment-method-provider=MTN"
         val response = rest.getForEntity(url, GetBalanceResponse::class.java)
 
         assertEquals(200, response.statusCodeValue)
@@ -48,11 +49,12 @@ public class GetBalanceControllerTest : AbstractSecuredController() {
         assertEquals(1, response.body.balance.accountId)
         assertEquals(12700.0, response.body.balance.amount)
         assertEquals(LocalDate.of(2020, 2, 1), response.body.balance.synced)
+        assertEquals(PaymentMethodProvider.MTN.name, response.body.balance.paymentMethodProvider)
     }
 
     @Test
     fun `get balance - without previous balance`() {
-        url = "http://localhost:$port/v1/balances?account-id=2"
+        url = "http://localhost:$port/v1/balances?account-id=2&payment-method-provider=MTN"
         val response = rest.getForEntity(url, GetBalanceResponse::class.java)
 
         assertEquals(200, response.statusCodeValue)
@@ -61,5 +63,6 @@ public class GetBalanceControllerTest : AbstractSecuredController() {
         assertEquals(2, response.body.balance.accountId)
         assertEquals(9900.0, response.body.balance.amount)
         assertEquals(LocalDate.now(), response.body.balance.synced)
+        assertEquals(PaymentMethodProvider.MTN.name, response.body.balance.paymentMethodProvider)
     }
 }
