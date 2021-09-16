@@ -130,7 +130,7 @@ internal class EventHandlerTest {
         handler.onEvent(event)
 
         val charge = chargeDao.findById(chargeId).get()
-        val txs = txDao.findByReferenceId(chargeId)
+        val txs = txDao.findByReferenceId(chargeId).sortedBy { it.id }
 
         assertEquals(TransactionType.CHARGE, txs[0].type)
         assertEquals(9900.0, txs[0].amount)

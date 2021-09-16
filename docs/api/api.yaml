@@ -61,15 +61,24 @@ paths:
   /v1/balances:
     get:
       operationId: "get-balance"
-      description: Return the balance of a merchant
+      description: Return the balance of an account
       parameters:
         - in: query
-          name: merchant-id
-          description: ID of the merchant
+          name: account-id
+          description: ID of the account
           required: true
           schema:
             type: integer
             format: int64
+        - in: query
+          name: payment-method-provider
+          description: Payment Provider
+          required: true
+          schema:
+            type: string
+            enum:
+              - MTN
+              - ORANGE
       responses:
         200:
           description: Success
@@ -134,10 +143,11 @@ components:
         id:
           type: string
           format: uuid
-          description: ID of the transaction
+          description: ID of the charge created
         status:
           type: string
-          description: Transaction status
+          description: Status of the charge
+
 
     GetChargeResponse:
       type: object
@@ -146,12 +156,51 @@ components:
           type: object
           $ref: "#/components/schemas/Charge"
 
+
     GetBalanceResponse:
       type: object
       properties:
         balance:
           type: object
           $ref: "#/components/schemas/Balance"
+
+
+    CreatePayoutRequest:
+      type: object
+      properties:
+        accountId:
+          type: integer
+          format: int64
+          description: Account ID of that request the payout
+        paymentMethodProvider:
+          type: string
+          description: Payment provider
+          enum:
+            - MTN
+            - ORANGE
+        description:
+          type: string
+          description: Description of the transaction
+
+    CreatePayoutResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID of the payout
+        status:
+          type: string
+          description: Status of the payout
+
+
+    GetPayoutResponse:
+      type: object
+      properties:
+        payout:
+          type: object
+          $ref: "#/components/schemas/Payout"
+
 
     Charge:
       type: object
@@ -236,10 +285,55 @@ components:
     Balance:
       type: object
       properties:
-        merchantId:
+        accountId:
           type: integer
           format: int64
-          description: ID of merchant
+          description: ID of account
+        paymentMethodProvider:
+          type: string
+          description: Payment provider
+          enum:
+            - MTN
+            - ORANGE
+        amount:
+          type: number
+          format: double
+          description: Amout to charge to the customer
+        currency:
+          type: string
+          description: 3 letter currency code
+        synced:
+          type: string
+          format: date
+          description: Last synchornization date
+
+
+    Payout:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID of the transaction
+        userId:
+          type: integer
+          format: int64
+          description: ID of the user who performed the transactions
+          nullable: true
+        accountId:
+          type: integer
+          format: int64
+          description: ID of the account from where the payout will be done
+        description:
+          type: string
+          description: Description of the transaction
+        gatewayTransactionId:
+          type: string
+          description: Transaction ID
+        financialTransactionId:
+          type: string
+          description: Financial Transaction ID
+          nullable: true
         amount:
           type: number
           format: double
@@ -248,3 +342,28 @@ components:
           type: string
           description: 3 letter currency code
           maxLength: 3
+        status:
+          type: string
+          description: Status of the payout
+        errorCode:
+          type: string
+          description: Error code
+          nullable: true
+        supplierErrorCode:
+          type: string
+          description: Error Details
+          nullable: true
+        paymentMethodProvider:
+          type: string
+          description: Payment provider
+          enum:
+            - MTN
+            - ORANGE
+        created:
+          type: string
+          format: date-time
+          description: Creation Date/Time
+        updated:
+          type: string
+          format: date-time
+          description: Last modification Date/Time
