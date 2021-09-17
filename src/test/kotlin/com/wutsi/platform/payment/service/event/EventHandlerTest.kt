@@ -7,18 +7,24 @@ import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import com.wutsi.platform.account.WutsiAccountApi
+import com.wutsi.platform.account.dto.GetPaymentMethodResponse
+import com.wutsi.platform.account.dto.PaymentMethod
+import com.wutsi.platform.account.dto.Phone
 import com.wutsi.platform.core.stream.Event
 import com.wutsi.platform.core.stream.EventStream
 import com.wutsi.platform.payment.Gateway
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.PaymentMethodProvider.MTN
+import com.wutsi.platform.payment.PaymentMethodType.MOBILE_PAYMENT
 import com.wutsi.platform.payment.core.Error
 import com.wutsi.platform.payment.core.ErrorCode.EXPIRED
 import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dao.BalanceRepository
 import com.wutsi.platform.payment.dao.ChargeRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
+import com.wutsi.platform.payment.endpoint.CreateChargeControllerTest
 import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.payment.model.GetPaymentResponse
 import com.wutsi.platform.payment.service.GatewayProvider
@@ -44,7 +50,12 @@ internal class EventHandlerTest {
     @MockBean
     private lateinit var eventStream: EventStream
 
-    lateinit var gateway: Gateway
+    @MockBean
+    private lateinit var accountApi: WutsiAccountApi
+
+    private lateinit var gateway: Gateway
+
+    private lateinit var paymentMethod: PaymentMethod
 
     @Autowired
     lateinit var handler: EventHandler
@@ -62,6 +73,9 @@ internal class EventHandlerTest {
     fun setUp() {
         gateway = mock()
         doReturn(gateway).whenever(gatewayProvider).get(any())
+
+        paymentMethod = createMethodPayment(CreateChargeControllerTest.PAYMENT_TOKEN, "+23799505677")
+        doReturn(GetPaymentMethodResponse(paymentMethod)).whenever(accountApi).getPaymentMethod(any(), any())
     }
 
     @Test
@@ -133,7 +147,7 @@ internal class EventHandlerTest {
         val txs = txDao.findByReferenceId(chargeId).sortedBy { it.id }
 
         assertEquals(TransactionType.CHARGE, txs[0].type)
-        assertEquals(9900.0, txs[0].amount)
+        assertEquals(9800.0, txs[0].amount)
         assertEquals(charge.currency, txs[0].currency)
         assertEquals(charge.merchantId, txs[0].accountId)
         assertEquals(charge.description, txs[0].description)
@@ -141,7 +155,7 @@ internal class EventHandlerTest {
         assertEquals(charge.paymentMethodProvider, txs[0].paymentMethodProvider)
 
         assertEquals(TransactionType.FEES, txs[1].type)
-        assertEquals(100.0, txs[1].amount)
+        assertEquals(200.0, txs[1].amount)
         assertEquals(charge.currency, txs[1].currency)
         assertEquals(TransactionService.FEES_ACCOUNT_ID, txs[1].accountId)
         assertNull(txs[1].description)
@@ -208,5 +222,20 @@ internal class EventHandlerTest {
     private fun createGetPaymentResponse(status: Status) = GetPaymentResponse(
         status = status,
         financialTransactionId = UUID.randomUUID().toString()
+    )
+
+    private fun createMethodPayment(
+        token: String,
+        phoneNumber: String = "",
+        country: String = "CM",
+        paymentMethodProvider: PaymentMethodProvider = MTN
+    ) = PaymentMethod(
+        token = token,
+        phone = Phone(
+            number = phoneNumber,
+            country = country
+        ),
+        type = MOBILE_PAYMENT.name,
+        provider = paymentMethodProvider.name
     )
 }

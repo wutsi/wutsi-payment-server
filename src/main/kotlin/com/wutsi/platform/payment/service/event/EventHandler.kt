@@ -36,6 +36,6 @@ class EventHandler(
     private fun asChargeEventPayload(event: Event): ChargeEventPayload =
         mapper.readValue(event.payload, ChargeEventPayload::class.java)
 
-    private fun asAccountEventPayload(event: Event): UpdateBalanceEvent =
-        mapper.readValue(event.payload, UpdateBalanceEvent::class.java)
+    private fun asAccountEventPayload(event: Event): UpdateBalanceRequestedEvent =
+        mapper.readValue(event.payload, UpdateBalanceRequestedEvent::class.java)
 }

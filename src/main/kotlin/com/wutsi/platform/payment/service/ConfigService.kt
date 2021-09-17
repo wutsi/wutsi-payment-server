@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service
 class ConfigService(
     private val dao: ConfigRepository
 ) {
-    fun findConfig(provider: PaymentMethodProvider, country: String?): ConfigEntity {
+    fun getConfig(provider: PaymentMethodProvider, country: String?): ConfigEntity {
         if (country == null)
             throw ConflictException(
                 error = Error(
@@ -37,6 +37,6 @@ class ConfigService(
 
     fun checkSupport(paymentMethod: PaymentMethod) {
         val provider = PaymentMethodProvider.valueOf(paymentMethod.provider)
-        findConfig(provider, paymentMethod.phone!!.country)
+        getConfig(provider, paymentMethod.phone!!.country)
     }
 }

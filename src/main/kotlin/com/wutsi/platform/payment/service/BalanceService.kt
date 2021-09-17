@@ -38,6 +38,9 @@ public class BalanceService(
         )
     }
 
+    fun getBalanceToPayout(): List<BalanceEntity> =
+        dao.findByAmountGreaterThan(0.0)
+
     @Transactional
     fun update(accountId: Long, paymentMethodProvider: PaymentMethodProvider) {
         val opt = dao.findByAccountIdAndPaymentMethodProvider(accountId, paymentMethodProvider)

@@ -8,7 +8,6 @@ import java.util.Optional
 
 @Repository
 interface BalanceRepository : CrudRepository<BalanceEntity, Long> {
-    @Deprecated("Should return list")
-    fun findByAccountId(merchantId: Long): Optional<BalanceEntity>
     fun findByAccountIdAndPaymentMethodProvider(merchantId: Long, paymentMethodProvider: PaymentMethodProvider): Optional<BalanceEntity>
+    fun findByAmountGreaterThan(amount: Double): List<BalanceEntity>
 }

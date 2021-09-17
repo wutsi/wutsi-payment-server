@@ -7,7 +7,7 @@ import com.nhaarman.mockitokotlin2.verify
 import com.wutsi.platform.core.stream.EventStream
 import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.service.event.EventURN
-import com.wutsi.platform.payment.service.event.UpdateBalanceEvent
+import com.wutsi.platform.payment.service.event.UpdateBalanceRequestedEvent
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -28,7 +28,7 @@ internal class UpdateBalanceJobTest {
     fun run() {
         job.run()
 
-        val payload = argumentCaptor<UpdateBalanceEvent>()
+        val payload = argumentCaptor<UpdateBalanceRequestedEvent>()
         verify(eventStram, times(3)).enqueue(eq(EventURN.BALANCE_UPDATE_REQUESTED.urn), payload.capture())
 
         val data = payload.allValues.sortedBy { it.accountId }

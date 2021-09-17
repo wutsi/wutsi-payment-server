@@ -1,3 +1,8 @@
+INSERT INTO T_CONFIG(id, payment_method_provider, country, fees_percent, fees_value, payout_min_value, payout_max_value)
+    VALUES
+        (1, 1, 'CM', 0.01, 100, 1000, 1000000)
+;
+
 INSERT INTO T_CHARGE(id, merchant_id, customer_id, user_id, application_id, payment_method_token, payment_method_provider, payment_method_type, external_id, amount, currency, status, gateway_transaction_id, error_code, supplier_error_code, description)
     VALUES
         ('100', 1, 11, 111, 1111, '1111-token', 1, 1, 'urn:order:1111', 10000, 'XAF', 2, '100-0000', null, null, 'Sample charge'),

@@ -11,7 +11,7 @@ class FeesCalculator(
 ) {
     fun compute(charge: ChargeEntity): Double {
         val paymentMethod = accountService.findPaymentMethod(charge.customerId, charge.paymentMethodToken)
-        val config = configService.findConfig(charge.paymentMethodProvider, paymentMethod.phone?.country)
+        val config = configService.getConfig(charge.paymentMethodProvider, paymentMethod.phone?.country)
         val fees = charge.amount * config.feesPercent + config.feesValue
         return min(fees, charge.amount)
     }

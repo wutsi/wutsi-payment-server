@@ -68,6 +68,9 @@ wutsi:
       update-balances:
         enabled: true
         cron: "0 0 1 * * *"   # Everyday at 1AM
+      payouts:
+        enabled: true
+        cron: "0 0 2 * * *"   # Everyday at 2AM
 
   platform:
     payment:
