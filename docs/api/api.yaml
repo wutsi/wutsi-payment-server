@@ -58,6 +58,52 @@ paths:
       security:
         - api_key: [ 'payment-charge' ]
 
+  /v1/payouts:
+    post:
+      operationId: "create-payout"
+      description: Payout a merchant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePayoutRequest'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatePayoutResponse'
+      tags:
+        - Payment
+      security:
+        - api_key: [ 'payment-payout' ]
+
+  /v1/payouts/{id}:
+    get:
+      operationId: "get-payout"
+      description: Return a payout information
+      parameters:
+        - in: path
+          name: id
+          description: ID of the payout
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetPayoutResponse'
+      tags:
+        - Payment
+      security:
+        - api_key: [ 'payment-payout' ]
+
   /v1/balances:
     get:
       operationId: "get-balance"
@@ -181,6 +227,9 @@ components:
         description:
           type: string
           description: Description of the transaction
+      required:
+        - paymentMethodToken
+        - description
 
     CreatePayoutResponse:
       type: object
@@ -250,7 +299,6 @@ components:
         currency:
           type: string
           description: 3 letter currency code
-          maxLength: 3
         status:
           type: string
           description: Transaction status
@@ -306,7 +354,6 @@ components:
           type: string
           format: date
           description: Last synchornization date
-
 
     Payout:
       type: object

@@ -60,8 +60,6 @@ spring:
 wutsi:
   application:
     name: wutsi-payment
-    fees:
-      rate: 0.01    # 1%
     jobs:
       process-pending-charges:
         enabled: true

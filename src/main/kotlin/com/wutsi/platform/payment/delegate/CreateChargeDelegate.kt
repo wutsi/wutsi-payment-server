@@ -21,6 +21,7 @@ import com.wutsi.platform.payment.model.CreatePaymentRequest
 import com.wutsi.platform.payment.model.CreatePaymentResponse
 import com.wutsi.platform.payment.model.Party
 import com.wutsi.platform.payment.service.AccountService
+import com.wutsi.platform.payment.service.ConfigService
 import com.wutsi.platform.payment.service.GatewayProvider
 import com.wutsi.platform.payment.service.SecurityManager
 import com.wutsi.platform.payment.service.SecurityService
@@ -38,6 +39,7 @@ class CreateChargeDelegate(
     private val securityService: SecurityService,
     private val gatewayProvider: GatewayProvider,
     private val securityManager: SecurityManager,
+    private val configService: ConfigService,
     private val eventStream: EventStream
 ) {
     @Transactional(
@@ -47,8 +49,11 @@ class CreateChargeDelegate(
         val customer = accountService.findAccount(request.customerId, "customerId", PARAMETER_TYPE_PAYLOAD)
         securityManager.checkOwnership(customer)
 
-        // Create the charge
+        // payment method
         val paymentMethod = accountService.findPaymentMethod(request.customerId, request.paymentMethodToken)
+        configService.checkSupport(paymentMethod)
+
+        // Create the charge
         val charge = createCharge(request, customer, paymentMethod)
 
         try {

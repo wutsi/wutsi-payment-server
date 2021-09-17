@@ -41,6 +41,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.web.server.LocalServerPort
+import org.springframework.test.context.jdbc.Sql
 import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.RestTemplate
 import java.util.UUID
@@ -49,6 +50,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Sql(value = ["/db/clean.sql", "/db/CreateChargeController.sql"])
 public class CreateChargeControllerTest : AbstractSecuredController() {
     companion object {
         const val CUSTOMER_ID = 1L
@@ -239,6 +241,24 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
     }
 
     @Test
+    fun `payment-method not supported`() {
+        paymentMethod = createMethodPayment(PAYMENT_TOKEN, "+23799505677", paymentMethodProvider = PaymentMethodProvider.ORANGE)
+        doReturn(GetPaymentMethodResponse(paymentMethod)).whenever(accountApi).getPaymentMethod(CUSTOMER_ID, PAYMENT_TOKEN)
+
+        val request = createCreateChargeRequest()
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateChargeResponse::class.java)
+        }
+
+        assertEquals(409, ex.rawStatusCode)
+
+        val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.PAYMENT_METHOD_NOT_SUPPORTED.urn, response.error.code)
+
+        verify(eventStream, never()).enqueue(any(), any())
+    }
+
+    @Test
     fun `user cannot create charges using another customer payment method`() {
         rest = createResTemplate(listOf("payment-charge"), 7777L)
 
@@ -296,13 +316,19 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         status = status
     )
 
-    private fun createMethodPayment(token: String, phoneNumber: String = "") = PaymentMethod(
+    private fun createMethodPayment(
+        token: String,
+        phoneNumber: String = "",
+        country: String = "CM",
+        paymentMethodProvider: PaymentMethodProvider = PaymentMethodProvider.MTN
+    ) = PaymentMethod(
         token = token,
         phone = Phone(
-            number = phoneNumber
+            number = phoneNumber,
+            country = country
         ),
         type = PaymentMethodType.MOBILE_PAYMENT.name,
-        provider = PaymentMethodProvider.MTN.name
+        provider = paymentMethodProvider.name
     )
 
     private fun createApplication(id: Long, active: Boolean = true) = Application(
