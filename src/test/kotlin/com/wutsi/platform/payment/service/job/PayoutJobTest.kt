@@ -5,8 +5,8 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.wutsi.platform.core.stream.EventStream
-import com.wutsi.platform.payment.service.event.ChargeEventPayload
 import com.wutsi.platform.payment.service.event.EventURN
+import com.wutsi.platform.payment.service.event.PayoutRequestedEvent
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -15,10 +15,10 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.jdbc.Sql
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Sql(value = ["/db/clean.sql", "/db/PendingChargesJob.sql"])
-internal class PendingChargesJobTest {
+@Sql(value = ["/db/clean.sql", "/db/PayoutJob.sql"])
+internal class PayoutJobTest {
     @Autowired
-    lateinit var job: PendingChargesJob
+    lateinit var job: PayoutJob
 
     @MockBean
     lateinit var eventStream: EventStream
@@ -27,16 +27,15 @@ internal class PendingChargesJobTest {
     fun run() {
         job.run()
 
-        val payload = argumentCaptor<ChargeEventPayload>()
-        verify(eventStream, times(3)).enqueue(
-            eq(EventURN.CHARGE_PENDING.urn),
+        val payload = argumentCaptor<PayoutRequestedEvent>()
+        verify(eventStream, times(2)).enqueue(
+            eq(EventURN.PAYOUT_REQUESTED.urn),
             payload.capture()
         )
 
-        val chargeIds = payload.allValues.sortedBy { it.chargeId }.map { it.chargeId }
-        assertEquals(3, chargeIds.size)
-        assertEquals("100", chargeIds[0])
-        assertEquals("101", chargeIds[1])
-        assertEquals("102", chargeIds[2])
+        val accountIds = payload.allValues.sortedBy { it.accountId }.map { it.accountId }
+        assertEquals(2, accountIds.size)
+        assertEquals(1, accountIds[0])
+        assertEquals(2, accountIds[1])
     }
 }
