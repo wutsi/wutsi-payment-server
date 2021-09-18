@@ -108,7 +108,7 @@ class CreateChargeDelegate(
                 currency = request.currency,
                 amount = request.amount,
                 status = UNKNOWN,
-                userId = securityManager.currentUserId()
+                userId = securityManager.currentUserId()!!
             )
         )
     }
@@ -119,6 +119,8 @@ class CreateChargeDelegate(
         charge.supplierErrorCode = ex.error.supplierErrorCode
         charge.gatewayTransactionId = ex.error.transactionId
         dao.save(charge)
+
+        eventStream.enqueue(EventURN.CHARGE_FAILED.urn, ChargeEventPayload(charge.id))
 
         throw ChargeException(
             error = com.wutsi.platform.core.error.Error(

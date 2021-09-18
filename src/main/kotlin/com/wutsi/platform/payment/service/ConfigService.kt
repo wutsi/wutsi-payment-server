@@ -18,7 +18,11 @@ class ConfigService(
         if (country == null)
             throw ConflictException(
                 error = Error(
-                    code = ErrorURN.PAYMENT_METHOD_NOT_SUPPORTED.urn
+                    code = ErrorURN.PAYMENT_METHOD_NOT_SUPPORTED.urn,
+                    data = mapOf<String, Any>(
+                        "provider" to provider.name,
+                        "country" to (country ?: "")
+                    )
                 )
             )
 
@@ -37,6 +41,6 @@ class ConfigService(
 
     fun checkSupport(paymentMethod: PaymentMethod) {
         val provider = PaymentMethodProvider.valueOf(paymentMethod.provider)
-        getConfig(provider, paymentMethod.phone!!.country)
+        getConfig(provider, paymentMethod.phone?.country)
     }
 }

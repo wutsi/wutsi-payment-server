@@ -201,7 +201,7 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(ex.error.supplierErrorCode, charge.supplierErrorCode)
         assertEquals(user.id, charge.userId)
 
-        verify(eventStream, never()).enqueue(any(), any())
+        verify(eventStream).enqueue(EventURN.CHARGE_FAILED.urn, ChargeEventPayload(charge.id))
     }
 
     @Test

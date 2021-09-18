@@ -21,10 +21,8 @@ import com.wutsi.platform.payment.PaymentMethodType.MOBILE_PAYMENT
 import com.wutsi.platform.payment.core.Error
 import com.wutsi.platform.payment.core.ErrorCode.EXPIRED
 import com.wutsi.platform.payment.core.Status
-import com.wutsi.platform.payment.dao.BalanceRepository
 import com.wutsi.platform.payment.dao.ChargeRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
-import com.wutsi.platform.payment.endpoint.CreateChargeControllerTest
 import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.payment.model.GetPaymentResponse
 import com.wutsi.platform.payment.service.GatewayProvider
@@ -35,15 +33,18 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.jdbc.Sql
-import java.time.LocalDate
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Sql(value = ["/db/clean.sql", "/db/EventHandler.sql"])
-internal class EventHandlerTest {
+@Sql(value = ["/db/clean.sql", "/db/EventHandlerCharge.sql"])
+internal class EventHandlerChargeTest {
+    companion object {
+        const val PAYMENT_TOKEN = "xxx-000"
+    }
+
     @MockBean
     lateinit var gatewayProvider: GatewayProvider
 
@@ -66,20 +67,17 @@ internal class EventHandlerTest {
     @Autowired
     lateinit var txDao: TransactionRepository
 
-    @Autowired
-    lateinit var balanceDao: BalanceRepository
-
     @BeforeEach
     fun setUp() {
         gateway = mock()
         doReturn(gateway).whenever(gatewayProvider).get(any())
 
-        paymentMethod = createMethodPayment(CreateChargeControllerTest.PAYMENT_TOKEN, "+23799505677")
+        paymentMethod = createMethodPayment(PAYMENT_TOKEN, "+23799505677")
         doReturn(GetPaymentMethodResponse(paymentMethod)).whenever(accountApi).getPaymentMethod(any(), any())
     }
 
     @Test
-    fun `PENDING event on SUCCESSFUL charge`() {
+    fun `PENDING Charge - PENDING event receives SUCCESSFUL status - Charge status is changed to SUCESSFUL`() {
         val paymentResponse = createGetPaymentResponse(Status.SUCCESSFUL)
         doReturn(paymentResponse).whenever(gateway).getPayment(any())
 
@@ -96,7 +94,7 @@ internal class EventHandlerTest {
     }
 
     @Test
-    fun `PENDING event on FAILED charge`() {
+    fun `PENDING Charge - PENDING event receives EXPIRED status - Charge status is changed to FAILED`() {
         val ex = PaymentException(
             error = Error(
                 code = EXPIRED,
@@ -120,7 +118,7 @@ internal class EventHandlerTest {
     }
 
     @Test
-    fun `PENDING event on PENDING charge`() {
+    fun `PENDING Charge - PENDING event receives PENDING status - No Change`() {
         val paymentResponse = createGetPaymentResponse(Status.PENDING)
         doReturn(paymentResponse).whenever(gateway).getPayment(any())
 
@@ -135,10 +133,7 @@ internal class EventHandlerTest {
     }
 
     @Test
-    fun `SUCCESSFUL event on PENDING charge`() {
-        val paymentResponse = createGetPaymentResponse(Status.PENDING)
-        doReturn(paymentResponse).whenever(gateway).getPayment(any())
-
+    fun `SUCESSFUL Charge - SUCESSFUL event - Transactions are created`() {
         val chargeId = "200"
         val event = createChargeEvent(EventURN.CHARGE_SUCCESSFUL.urn, chargeId)
         handler.onEvent(event)
@@ -164,40 +159,11 @@ internal class EventHandlerTest {
     }
 
     @Test
-    fun `SUCCESSFUL event on charge having already a TX`() {
-        val paymentResponse = createGetPaymentResponse(Status.PENDING)
-        doReturn(paymentResponse).whenever(gateway).getPayment(any())
-
+    fun `SUCESSFUL Charge - SUCESSFUL event having already transactions created - No Change`() {
         val chargeId = "201"
         val event = createChargeEvent(EventURN.CHARGE_SUCCESSFUL.urn, chargeId)
         handler.onEvent(event)
         // No error
-    }
-
-    @Test
-    fun `Update balance - CREATE`() {
-        val event = createUpdateBalanceEvent(EventURN.BALANCE_UPDATE_REQUESTED.urn, 4L, MTN)
-        handler.onEvent(event)
-
-        val balance = balanceDao.findByAccountIdAndPaymentMethodProvider(4L, PaymentMethodProvider.MTN).get()
-        assertEquals(90.0, balance.amount)
-        assertEquals("XAF", balance.currency)
-        assertEquals(4L, balance.accountId)
-        assertEquals(LocalDate.now(), balance.synced)
-        assertEquals(MTN, balance.paymentMethodProvider)
-    }
-
-    @Test
-    fun `Update balance - SYNC`() {
-        val event = createUpdateBalanceEvent(EventURN.BALANCE_UPDATE_REQUESTED.urn, 3L, MTN)
-        handler.onEvent(event)
-
-        val balance = balanceDao.findByAccountIdAndPaymentMethodProvider(3L, PaymentMethodProvider.MTN).get()
-        assertEquals(700.0, balance.amount)
-        assertEquals("XAF", balance.currency)
-        assertEquals(3L, balance.accountId)
-        assertEquals(LocalDate.now(), balance.synced)
-        assertEquals(MTN, balance.paymentMethodProvider)
     }
 
     private fun createChargeEvent(type: String, id: String) = Event(
@@ -205,16 +171,6 @@ internal class EventHandlerTest {
         payload = """
             {
                 "chargeId": "$id"
-            }
-        """.trimIndent()
-    )
-
-    private fun createUpdateBalanceEvent(type: String, id: Long, paymentMethodProvider: PaymentMethodProvider) = Event(
-        type = type,
-        payload = """
-            {
-                "accountId": "$id",
-                "paymentMethodProvider": "${paymentMethodProvider.name}"
             }
         """.trimIndent()
     )

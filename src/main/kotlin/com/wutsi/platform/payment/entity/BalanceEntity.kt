@@ -21,5 +21,6 @@ data class BalanceEntity(
     var synced: LocalDate = LocalDate.now(),
     var amount: Double = 0.0,
     val currency: String = "",
+    var payoutId: String = "",
     val created: OffsetDateTime = OffsetDateTime.now()
 )

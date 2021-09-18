@@ -2,8 +2,8 @@ package com.wutsi.platform.payment.service.job
 
 import com.wutsi.platform.core.stream.EventStream
 import com.wutsi.platform.payment.PaymentMethodProvider
+import com.wutsi.platform.payment.service.event.BalanceEventPayload
 import com.wutsi.platform.payment.service.event.EventURN
-import com.wutsi.platform.payment.service.event.UpdateBalanceRequestedEvent
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
@@ -43,7 +43,7 @@ class UpdateBalanceJob(
         (result as List<Array<Any>>).forEach {
             eventStream.enqueue(
                 EventURN.BALANCE_UPDATE_REQUESTED.urn,
-                UpdateBalanceRequestedEvent(
+                BalanceEventPayload(
                     accountId = (it[0] as Number).toLong(),
                     paymentMethodProvider = PaymentMethodProvider.values()[(it[1] as Number).toInt()]
                 )

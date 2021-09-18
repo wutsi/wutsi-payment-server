@@ -1,11 +1,11 @@
 package com.wutsi.platform.payment.service
 
 import com.wutsi.platform.account.dto.Account
+import com.wutsi.platform.core.security.SubjectType
 import com.wutsi.platform.core.security.WutsiPrincipal
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Service
-import java.security.Principal
 
 @Service
 class SecurityManager {
@@ -14,11 +14,11 @@ class SecurityManager {
             throw AccessDeniedException("User not the owner of payment method")
     }
 
-    fun currentUserId(): Long {
-        val principal = SecurityContextHolder.getContext().authentication.principal as Principal
-        return if (principal is WutsiPrincipal)
+    fun currentUserId(): Long? {
+        val principal = SecurityContextHolder.getContext().authentication?.principal
+        return if (principal is WutsiPrincipal && principal.type == SubjectType.USER)
             principal.id.toLong()
         else
-            -1
+            null
     }
 }

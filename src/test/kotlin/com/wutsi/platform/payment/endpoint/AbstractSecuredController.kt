@@ -4,9 +4,10 @@ import com.auth0.jwt.interfaces.RSAKeyProvider
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.whenever
+import com.wutsi.platform.core.security.SubjectType
+import com.wutsi.platform.core.security.SubjectType.USER
 import com.wutsi.platform.core.security.spring.SpringAuthorizationRequestInterceptor
 import com.wutsi.platform.core.security.spring.jwt.JWTBuilder
-import com.wutsi.platform.core.security.spring.jwt.JWTSubjectType
 import com.wutsi.platform.core.test.TestRSAKeyProvider
 import com.wutsi.platform.core.test.TestTokenProvider
 import com.wutsi.platform.core.test.TestTracingContext
@@ -44,7 +45,7 @@ abstract class AbstractSecuredController {
     protected fun createResTemplate(
         scope: List<String> = emptyList(),
         subjectId: Long = -1,
-        subjectType: JWTSubjectType = JWTSubjectType.JWT_SUBJECT_TYPE_USER,
+        subjectType: SubjectType = USER,
         admin: Boolean = false
     ): RestTemplate {
         val rest = RestTemplate()

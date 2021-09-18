@@ -16,7 +16,7 @@ INSERT INTO T_TRANSACTION(reference_id, type, account_id, payment_method_provide
 ;
 
 
-INSERT INTO T_BALANCE(account_id, payment_method_provider, synced, amount, currency, created)
+INSERT INTO T_BALANCE(account_id, payment_method_provider, synced, amount, currency, created, payout_id)
     VALUES
-        (1, 1, '2020-02-01', 10000, 'XAF', '2020-02-02')
+        (1, 1, '2020-02-01', 10000, 'XAF', '2020-02-02', '11111')
 ;

@@ -1,22 +1,27 @@
 package com.wutsi.platform.payment.service
 
+import com.wutsi.platform.core.stream.EventStream
 import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.dao.BalanceRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.dto.Balance
 import com.wutsi.platform.payment.entity.BalanceEntity
 import com.wutsi.platform.payment.entity.TransactionEntity
+import com.wutsi.platform.payment.service.event.BalanceEventPayload
+import com.wutsi.platform.payment.service.event.EventURN
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.util.Optional
+import java.util.UUID
 import javax.transaction.Transactional
 
 @Service
 public class BalanceService(
     private val dao: BalanceRepository,
-    private val txDao: TransactionRepository
+    private val txDao: TransactionRepository,
+    private val eventStream: EventStream
 ) {
     fun getBalance(accountId: Long, paymentMethodProvider: PaymentMethodProvider): Balance {
         val balance = dao.findByAccountIdAndPaymentMethodProvider(accountId, paymentMethodProvider)
@@ -57,7 +62,8 @@ public class BalanceService(
                     paymentMethodProvider = paymentMethodProvider,
                     amount = amount(opt, transactions),
                     currency = currency(opt, transactions),
-                    synced = date
+                    synced = date,
+                    payoutId = UUID.randomUUID().toString()
                 )
             )
         } else {
@@ -70,8 +76,11 @@ public class BalanceService(
             )
             balance.amount = amount(opt, transactions)
             balance.synced = date
+            balance.payoutId = UUID.randomUUID().toString()
             dao.save(balance)
         }
+
+        eventStream.enqueue(EventURN.BALANCE_UPDATED.urn, BalanceEventPayload(accountId, paymentMethodProvider))
     }
 
     private fun toOffsetDateTime(date: LocalDate): OffsetDateTime =
