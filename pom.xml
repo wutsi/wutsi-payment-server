@@ -26,7 +26,7 @@
 
     <javax-validation.version>2.0.1.Final</javax-validation.version>
     <junit.version>5.7.2</junit.version>
-    <kotlin.version>1.5.30</kotlin.version>
+    <kotlin.version>1.5.31</kotlin.version>
     <kotlin-mockito.version>2.2.0</kotlin-mockito.version>
     <klint.version>0.42.1</klint.version>
     <maven-antrun-plugin.version>3.0.0</maven-antrun-plugin.version>
