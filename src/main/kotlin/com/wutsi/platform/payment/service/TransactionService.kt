@@ -13,6 +13,7 @@ import com.wutsi.platform.payment.entity.TransactionType.FEES
 import com.wutsi.platform.payment.entity.TransactionType.PAYOUT
 import com.wutsi.platform.payment.service.event.ChargeEventPayload
 import com.wutsi.platform.payment.service.event.EventURN
+import com.wutsi.platform.payment.service.event.PayoutEventPayload
 import org.slf4j.LoggerFactory
 import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
@@ -94,21 +95,23 @@ class TransactionService(
     }
 
     @Transactional
-    fun onPayoutSuccessful(id: String) {
-        val payout = payoutDao.findById(id).get()
+    fun onPayoutSuccessful(payoutId: String) {
+        val payout = payoutDao.findById(payoutId).get()
         try {
             txDao.save(
                 TransactionEntity(
-                    referenceId = id,
+                    referenceId = payoutId,
                     type = PAYOUT,
                     accountId = payout.accountId,
                     description = payout.description,
-                    amount = payout.amount,
+                    amount = -payout.amount,
                     currency = payout.currency,
                     created = payout.created,
                     paymentMethodProvider = payout.paymentMethodProvider
                 )
             )
+
+            eventStream.publish(EventURN.PAYOUT_SUCCESSFUL.urn, PayoutEventPayload(payoutId))
         } catch (ex: DataIntegrityViolationException) {
             LOGGER.warn("This transaction was already recoded", ex)
         }

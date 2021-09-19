@@ -29,6 +29,8 @@ import com.wutsi.platform.payment.core.Error
 import com.wutsi.platform.payment.core.ErrorCode.NOT_ENOUGH_FUNDS
 import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dao.PayoutRepository
+import com.wutsi.platform.payment.dao.TransactionRepository
+import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.payment.model.CreateTransferResponse
 import com.wutsi.platform.payment.model.GetTransferResponse
 import com.wutsi.platform.payment.service.GatewayProvider
@@ -54,6 +56,9 @@ internal class EventHandlerPayoutTest {
 
     @MockBean
     private lateinit var accountApi: WutsiAccountApi
+
+    @Autowired
+    private lateinit var txDao: TransactionRepository
 
     private lateinit var account: Account
 
@@ -87,7 +92,7 @@ internal class EventHandlerPayoutTest {
     }
 
     @Test
-    fun `Payout SUCESSFULL`() {
+    fun `BALANCE_UPDATED - Transfer SUCESSFULL`() {
         val paymentResponse = createCreateTransferResponse(Status.SUCCESSFUL)
         doReturn(paymentResponse).whenever(gateway).createTransfer(any())
 
@@ -113,7 +118,7 @@ internal class EventHandlerPayoutTest {
     }
 
     @Test
-    fun `Payout PENDING`() {
+    fun `BALANCE_UPDATED - Transfer PENDING`() {
         val paymentResponse = createCreateTransferResponse(Status.PENDING)
         doReturn(paymentResponse).whenever(gateway).createTransfer(any())
 
@@ -139,7 +144,7 @@ internal class EventHandlerPayoutTest {
     }
 
     @Test
-    fun `Payout FAILED`() {
+    fun `BALANCE_UPDATED - Transfer FAILED`() {
         val ex = PaymentException(
             error = Error(
                 code = NOT_ENOUGH_FUNDS,
@@ -171,8 +176,8 @@ internal class EventHandlerPayoutTest {
     }
 
     @Test
-    fun `Payout below threshold`() {
-        val accountId = 200L
+    fun `BALANCE_UPDATED - Transfer below threshold`() {
+        val accountId = 120L
         val event = createBalanceEvent(EventURN.BALANCE_UPDATED.urn, accountId)
         handler.onEvent(event)
 
@@ -183,11 +188,11 @@ internal class EventHandlerPayoutTest {
     }
 
     @Test
-    fun `Payout above threshold`() {
+    fun `BALANCE_UPDATED - Transfer above threshold`() {
         val paymentResponse = createCreateTransferResponse(Status.SUCCESSFUL)
         doReturn(paymentResponse).whenever(gateway).createTransfer(any())
 
-        val accountId = 201L
+        val accountId = 121L
         val event = createBalanceEvent(EventURN.BALANCE_UPDATED.urn, accountId)
         handler.onEvent(event)
 
@@ -199,11 +204,11 @@ internal class EventHandlerPayoutTest {
     }
 
     @Test
-    fun `Payout with unsupported payment method`() {
+    fun `BALANCE_UPDATED - Transfer unsupported payment method`() {
         paymentMethod = createMethodPayment("3409430943", "+23799505677", paymentMethodProvider = ORANGE)
         doReturn(GetPaymentMethodResponse(paymentMethod)).whenever(accountApi).getPaymentMethod(any(), any())
 
-        val accountId = 300L
+        val accountId = 130L
         val event = createBalanceEvent(EventURN.BALANCE_UPDATED.urn, accountId, ORANGE)
         handler.onEvent(event)
 
@@ -214,7 +219,7 @@ internal class EventHandlerPayoutTest {
     }
 
     @Test
-    fun `Sync - SUCCESSFUL`() {
+    fun `PENDING Payout - PAYOUT_PENDING - GetTransfer SUCCESSFUL`() {
         val paymentResponse = createGetTransferResponse(Status.SUCCESSFUL)
         doReturn(paymentResponse).whenever(gateway).getTransfer(any())
 
@@ -233,7 +238,7 @@ internal class EventHandlerPayoutTest {
     }
 
     @Test
-    fun `Sync - PENDING`() {
+    fun `PENDING Payout - PAYOUT_PENDING - GetTransfer PENDING`() {
         val paymentResponse = createGetTransferResponse(Status.PENDING)
         doReturn(paymentResponse).whenever(gateway).getTransfer(any())
 
@@ -248,7 +253,7 @@ internal class EventHandlerPayoutTest {
     }
 
     @Test
-    fun `Sync - FAILURE`() {
+    fun `PENDING Payout - PAYOUT_PENDING - GetTransfer FAILURE`() {
         val ex = PaymentException(
             error = Error(
                 code = NOT_ENOUGH_FUNDS,
@@ -270,7 +275,45 @@ internal class EventHandlerPayoutTest {
     }
 
     @Test
-    fun `Payout Failure`() {
+    fun `SUCCESSFUL Payout - PAYOUT_SUCCESSFUL - GetTransfer SUCCESSFUL`() {
+        val payoutId = "200"
+        val event = createPayoutEvent(EventURN.PAYOUT_SUCCESSFUL.urn, payoutId)
+        handler.onEvent(event)
+
+        val payout = payoutDao.findById(payoutId).get()
+        val txs = txDao.findByReferenceId(payoutId)
+        assertEquals(1, txs.size)
+        assertEquals(TransactionType.PAYOUT, txs[0].type)
+        assertEquals(-payout.amount, txs[0].amount)
+        assertEquals(payout.currency, txs[0].currency)
+        assertEquals(payout.accountId, txs[0].accountId)
+        assertEquals(payout.created, txs[0].created)
+        assertEquals(payout.paymentMethodProvider, txs[0].paymentMethodProvider)
+
+        verify(eventStream).publish(EventURN.PAYOUT_SUCCESSFUL.urn, PayoutEventPayload(payoutId))
+    }
+
+    @Test
+    fun `PENDING Payout - PAYOUT_SUCCESSFUL - GetTransfer SUCCESSFUL`() {
+        val payoutId = "201"
+        val event = createPayoutEvent(EventURN.PAYOUT_SUCCESSFUL.urn, payoutId)
+        handler.onEvent(event)
+
+        val payout = payoutDao.findById(payoutId).get()
+        val txs = txDao.findByReferenceId(payoutId)
+        assertEquals(1, txs.size)
+        assertEquals(TransactionType.PAYOUT, txs[0].type)
+        assertEquals(-payout.amount, txs[0].amount)
+        assertEquals(payout.currency, txs[0].currency)
+        assertEquals(payout.accountId, txs[0].accountId)
+        assertEquals(payout.created, txs[0].created)
+        assertEquals(payout.paymentMethodProvider, txs[0].paymentMethodProvider)
+
+        verify(eventStream).publish(EventURN.PAYOUT_SUCCESSFUL.urn, PayoutEventPayload(payoutId))
+    }
+
+    @Test
+    fun `Payout - PAYOUT_FAILED`() {
         val payoutId = "777"
         val event = createPayoutEvent(EventURN.PAYOUT_FAILED.urn, payoutId)
         handler.onEvent(event)
