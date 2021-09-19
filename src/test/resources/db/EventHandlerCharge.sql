@@ -11,6 +11,7 @@ INSERT INTO T_CHARGE(id, merchant_id, customer_id, user_id, application_id, paym
 
         ('200', 1, 11, 111, 1111, '1111-token', 1, 1, 'urn:order:1111', 10000, 'XAF', 1, '200-0000', null, '200-1111', 'Sample charge'),
         ('201', 1, 11, 111, 1111, '1111-token', 1, 1, 'urn:order:1111', 10000, 'XAF', 1, '201-0000', null, '201-1111', 'Sample charge')
+
 ;
 
 INSERT INTO T_TRANSACTION(reference_id, account_id, payment_method_provider, description, currency, amount, created)

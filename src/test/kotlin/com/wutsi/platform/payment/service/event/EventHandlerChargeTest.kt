@@ -77,7 +77,7 @@ internal class EventHandlerChargeTest {
     }
 
     @Test
-    fun `PENDING Charge - PENDING event receives SUCCESSFUL status - Charge status is changed to SUCESSFUL`() {
+    fun `PENDING Charge - CHARGE_PENDING - GetPayment SUCCESSFUL`() {
         val paymentResponse = createGetPaymentResponse(Status.SUCCESSFUL)
         doReturn(paymentResponse).whenever(gateway).getPayment(any())
 
@@ -94,7 +94,7 @@ internal class EventHandlerChargeTest {
     }
 
     @Test
-    fun `PENDING Charge - PENDING event receives EXPIRED status - Charge status is changed to FAILED`() {
+    fun `PENDING Charge - CHARGE_PENDING - GetPayment FAILED`() {
         val ex = PaymentException(
             error = Error(
                 code = EXPIRED,
@@ -114,11 +114,11 @@ internal class EventHandlerChargeTest {
         assertEquals(ex.error.supplierErrorCode, charge.supplierErrorCode)
         assertTrue(charge.updated.isAfter(charge.created))
 
-        verify(eventStream, never()).enqueue(any(), any())
+        verify(eventStream).enqueue(EventURN.CHARGE_FAILED.urn, ChargeEventPayload(chargeId))
     }
 
     @Test
-    fun `PENDING Charge - PENDING event receives PENDING status - No Change`() {
+    fun `PENDING Charge - CHARGE_PENDING - GetPayment PENDING`() {
         val paymentResponse = createGetPaymentResponse(Status.PENDING)
         doReturn(paymentResponse).whenever(gateway).getPayment(any())
 
@@ -133,7 +133,7 @@ internal class EventHandlerChargeTest {
     }
 
     @Test
-    fun `SUCESSFUL Charge - SUCESSFUL event - Transactions are created`() {
+    fun `SUCESSFUL Charge - CHARGE_SUCCESSFUL`() {
         val chargeId = "200"
         val event = createChargeEvent(EventURN.CHARGE_SUCCESSFUL.urn, chargeId)
         handler.onEvent(event)
@@ -156,14 +156,25 @@ internal class EventHandlerChargeTest {
         assertNull(txs[1].description)
         assertEquals(charge.created, txs[0].created)
         assertEquals(charge.paymentMethodProvider, txs[1].paymentMethodProvider)
+
+        verify(eventStream).publish(EventURN.CHARGE_SUCCESSFUL.urn, ChargeEventPayload(chargeId))
     }
 
     @Test
-    fun `SUCESSFUL Charge - SUCESSFUL event having already transactions created - No Change`() {
+    fun `SUCESSFUL Charge - CHARGE_SUCCESSFUL - Duplicate Transaction`() {
         val chargeId = "201"
         val event = createChargeEvent(EventURN.CHARGE_SUCCESSFUL.urn, chargeId)
         handler.onEvent(event)
         // No error
+    }
+
+    @Test
+    fun `FAILED Charge - CHARGE_FAILED`() {
+        val chargeId = "7777"
+        val event = createChargeEvent(EventURN.CHARGE_FAILED.urn, chargeId)
+        handler.onEvent(event)
+
+        verify(eventStream).publish(EventURN.CHARGE_FAILED.urn, ChargeEventPayload(chargeId))
     }
 
     private fun createChargeEvent(type: String, id: String) = Event(

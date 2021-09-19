@@ -313,7 +313,7 @@ internal class EventHandlerPayoutTest {
     }
 
     @Test
-    fun `Payout - PAYOUT_FAILED`() {
+    fun `FAILED Payout - PAYOUT_FAILED`() {
         val payoutId = "777"
         val event = createPayoutEvent(EventURN.PAYOUT_FAILED.urn, payoutId)
         handler.onEvent(event)

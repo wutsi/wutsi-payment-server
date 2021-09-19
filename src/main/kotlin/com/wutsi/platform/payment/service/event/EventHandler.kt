@@ -3,8 +3,10 @@ package com.wutsi.platform.payment.service.event
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.wutsi.platform.core.stream.Event
 import com.wutsi.platform.core.stream.EventStream
+import com.wutsi.platform.payment.exception.ChargeException
 import com.wutsi.platform.payment.exception.PayoutException
 import com.wutsi.platform.payment.service.BalanceService
+import com.wutsi.platform.payment.service.ChargeService
 import com.wutsi.platform.payment.service.PayoutService
 import com.wutsi.platform.payment.service.TransactionService
 import org.slf4j.LoggerFactory
@@ -16,6 +18,7 @@ class EventHandler(
     private val transactions: TransactionService,
     private val balances: BalanceService,
     private val payouts: PayoutService,
+    private val charges: ChargeService,
     private val mapper: ObjectMapper,
     private val eventStream: EventStream
 ) {
@@ -32,6 +35,8 @@ class EventHandler(
 
             EventURN.CHARGE_SUCCESSFUL.urn -> recordChargeTransaction(event)
 
+            EventURN.CHARGE_FAILED.urn -> notifyChargeFailure(event)
+
             EventURN.BALANCE_UPDATE_REQUESTED.urn -> updateBalance(event)
 
             EventURN.BALANCE_UPDATED.urn -> balanceUpdated(event)
@@ -47,17 +52,31 @@ class EventHandler(
     }
 
     private fun chargePending(event: Event) {
-        transactions.onChargePending(asChargeEventPayload(event).chargeId)
+        try {
+            val payload = asChargeEventPayload(event)
+            LOGGER.info("Charge - Synchronizing. chargeId=${payload.chargeId}")
+            charges.sync(payload.chargeId)
+        } catch (ex: ChargeException) {
+            LOGGER.warn("Charge error", ex)
+        }
     }
 
     private fun recordChargeTransaction(event: Event) {
-        transactions.onChargeSuccessful(asChargeEventPayload(event).chargeId)
+        val payload = asChargeEventPayload(event)
+        LOGGER.info("Charge - Recording Transaction. payoutId=${payload.chargeId}")
+        transactions.onChargeSuccessful(payload.chargeId)
     }
 
     private fun updateBalance(event: Event) {
         val payload = asBalanceEventPayload(event)
         LOGGER.info("Balance - Updating. accountId=${payload.accountId} paymentMethodProvider=${payload.paymentMethodProvider}")
         balances.update(payload.accountId, payload.paymentMethodProvider)
+    }
+
+    private fun notifyChargeFailure(event: Event) {
+        val payload = asChargeEventPayload(event)
+        LOGGER.info("Charge - FAILURE. payoutId=${payload.chargeId}")
+        eventStream.publish(event.type, payload)
     }
 
     private fun balanceUpdated(event: Event) {
@@ -76,13 +95,13 @@ class EventHandler(
         try {
             payouts.sync(payload.payoutId)
         } catch (ex: PayoutException) {
-            LOGGER.warn("Payout syncronization error", ex)
+            LOGGER.warn("Payout synchronization error", ex)
         }
     }
 
     private fun recordPayoutTransaction(event: Event) {
         val payload = asPayoutEventPayload(event)
-        LOGGER.info("Payout - SUCCESSFUL, Recording Transaction. payoutId=${payload.payoutId}")
+        LOGGER.info("Payout - Recording Transaction. payoutId=${payload.payoutId}")
         transactions.onPayoutSuccessful(payload.payoutId)
     }
 
@@ -97,9 +116,6 @@ class EventHandler(
 
     private fun asBalanceEventPayload(event: Event): BalanceEventPayload =
         mapper.readValue(event.payload, BalanceEventPayload::class.java)
-
-    private fun asPayoutRequestedEventPayload(event: Event): PayoutRequestedEventPayload =
-        mapper.readValue(event.payload, PayoutRequestedEventPayload::class.java)
 
     private fun asPayoutEventPayload(event: Event): PayoutEventPayload =
         mapper.readValue(event.payload, PayoutEventPayload::class.java)

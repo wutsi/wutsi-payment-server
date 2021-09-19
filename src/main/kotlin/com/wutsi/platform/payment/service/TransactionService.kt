@@ -1,9 +1,6 @@
 package com.wutsi.platform.payment.service
 
 import com.wutsi.platform.core.stream.EventStream
-import com.wutsi.platform.payment.PaymentException
-import com.wutsi.platform.payment.core.Status
-import com.wutsi.platform.payment.core.Status.PENDING
 import com.wutsi.platform.payment.dao.ChargeRepository
 import com.wutsi.platform.payment.dao.PayoutRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
@@ -25,7 +22,6 @@ class TransactionService(
     private val payoutDao: PayoutRepository,
     private val txDao: TransactionRepository,
     private val eventStream: EventStream,
-    private val gatewayProvider: GatewayProvider,
     private val feesCalculator: FeesCalculator
 ) {
     companion object {
@@ -34,8 +30,8 @@ class TransactionService(
     }
 
     @Transactional
-    fun onChargeSuccessful(id: String) {
-        val charge = chargeDao.findById(id).get()
+    fun onChargeSuccessful(chargeId: String) {
+        val charge = chargeDao.findById(chargeId).get()
         try {
             val fees = feesCalculator.compute(charge)
             val net = charge.amount - fees
@@ -43,7 +39,7 @@ class TransactionService(
             txDao.saveAll(
                 listOf(
                     TransactionEntity(
-                        referenceId = id,
+                        referenceId = chargeId,
                         type = CHARGE,
                         accountId = charge.merchantId,
                         description = charge.description,
@@ -53,7 +49,7 @@ class TransactionService(
                         paymentMethodProvider = charge.paymentMethodProvider
                     ),
                     TransactionEntity(
-                        referenceId = id,
+                        referenceId = chargeId,
                         type = FEES,
                         accountId = FEES_ACCOUNT_ID,
                         amount = fees,
@@ -63,34 +59,10 @@ class TransactionService(
                     )
                 )
             )
+
+            eventStream.publish(EventURN.CHARGE_SUCCESSFUL.urn, ChargeEventPayload(chargeId))
         } catch (ex: DataIntegrityViolationException) {
             LOGGER.warn("This transaction was already recoded", ex)
-        }
-    }
-
-    @Transactional
-    fun onChargePending(id: String) {
-        val charge = chargeDao.findById(id).get()
-        val gateway = gatewayProvider.get(charge.paymentMethodProvider)
-        try {
-            val response = gateway.getPayment(charge.gatewayTransactionId)
-            if (response.status == Status.SUCCESSFUL) {
-                LOGGER.info("The charge is now SUCCESSFUL")
-                charge.status = response.status
-                charge.financialTransactionId = response.financialTransactionId
-                chargeDao.save(charge)
-
-                eventStream.enqueue(EventURN.CHARGE_SUCCESSFUL.urn, ChargeEventPayload(id))
-            } else if (response.status == PENDING) {
-                LOGGER.info("The charge is still PENDING")
-            }
-        } catch (ex: PaymentException) {
-            LOGGER.info("The charge is now FAILED. error=${ex.error}")
-
-            charge.status = Status.FAILED
-            charge.errorCode = ex.error.code
-            charge.supplierErrorCode = ex.error.supplierErrorCode
-            chargeDao.save(charge)
         }
     }
 
