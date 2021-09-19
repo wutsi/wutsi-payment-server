@@ -64,7 +64,9 @@ wutsi:
       process-pending-charges:
         enabled: true
         cron: "0 */5 * * * *"
-        max-duration-millis: 30000 # 30 seconds
+      process-pending-payouts:
+        enabled: true
+        cron: "0 */30 * * * *"
       update-balances:
         enabled: true
         cron: "0 0 1 * * *"   # Everyday at 1AM

@@ -14,8 +14,7 @@ import org.springframework.stereotype.Service
 class PendingChargesJob(
     private val chargeDao: ChargeRepository,
     private val eventStream: EventStream,
-    @Value("\${wutsi.application.jobs.process-pending-charges.enabled}") private val enabled: Boolean,
-    @Value("\${wutsi.application.jobs.process-pending-charges.max-duration-millis}") private val maxDurationMillis: Long
+    @Value("\${wutsi.application.jobs.process-pending-charges.enabled}") private val enabled: Boolean
 ) {
     companion object {
         private val LOGGER = LoggerFactory.getLogger(PendingChargesJob::class.java)
@@ -23,24 +22,14 @@ class PendingChargesJob(
 
     @Scheduled(cron = "\${wutsi.application.jobs.process-pending-charges.cron}")
     fun run() {
-
         if (!enabled) {
             LOGGER.info("The job is disabled")
             return
         }
 
-        LOGGER.info("Processing PENDING charges")
-        var count = 0L
-        val started = System.currentTimeMillis()
         val charges = chargeDao.findByStatus(PENDING)
-
+        LOGGER.info("${charges.size} Charge(s) to process")
         charges.forEach {
-            if (System.currentTimeMillis() - started >= maxDurationMillis) {
-                LOGGER.info("Timeout. $count charge(s) processed")
-                return@forEach
-            }
-
-            count++
             eventStream.enqueue(EventURN.CHARGE_PENDING.urn, ChargeEventPayload(it.id))
         }
     }
