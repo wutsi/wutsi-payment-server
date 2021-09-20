@@ -31,7 +31,7 @@ public class GetChargeControllerTest : AbstractSecuredController() {
     override fun setUp() {
         super.setUp()
 
-        rest = createResTemplate(listOf("payment-charge"), 1)
+        rest = createResTemplate(listOf("payment-read"), 1)
     }
 
     @Test

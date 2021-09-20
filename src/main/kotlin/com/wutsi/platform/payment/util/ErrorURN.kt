@@ -4,7 +4,11 @@ import com.wutsi.platform.core.util.URN
 
 enum class ErrorURN(val urn: String) {
     ACCOUNT_NOT_ACTIVE(URN.of("error", "payment", "account-not-active").value),
+
     APPLICATION_NOT_ACTIVE(URN.of("error", "payment", "application-not-active").value),
+
+    BALANCE_NOT_FOUND(URN.of("error", "payment", "balance-not-found").value),
+
     CHARGE_NOT_FOUND(URN.of("error", "payment", "charge-not-found").value),
     PAYMENT_METHOD_NOT_SUPPORTED(URN.of("error", "payment", "payment-method-not-supported").value),
 

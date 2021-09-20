@@ -27,7 +27,7 @@ public class GetPayoutController(
     private val `delegate`: GetPayoutDelegate
 ) {
     @GetMapping("/v1/payouts/{id}")
-    @PreAuthorize(value = "hasAuthority('payment-payout')")
+    @PreAuthorize(value = "hasAuthority('payment-read')")
     public fun invoke(@PathVariable(name = "id") @NotBlank id: String): GetPayoutResponse =
         delegate.invoke(id)
 }

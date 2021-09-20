@@ -39,8 +39,6 @@ class EventHandler(
 
             EventURN.BALANCE_UPDATE_REQUESTED.urn -> updateBalance(event)
 
-            EventURN.BALANCE_UPDATED.urn -> balanceUpdated(event)
-
             EventURN.PAYOUT_SUCCESSFUL.urn -> recordPayoutTransaction(event)
 
             EventURN.PAYOUT_PENDING.urn -> syncPayout(event)
@@ -77,16 +75,6 @@ class EventHandler(
         val payload = asChargeEventPayload(event)
         LOGGER.info("Charge - FAILURE. payoutId=${payload.chargeId}")
         eventStream.publish(event.type, payload)
-    }
-
-    private fun balanceUpdated(event: Event) {
-        val payload = asBalanceEventPayload(event)
-        try {
-            LOGGER.info("Payout - Processing . accountId=${payload.accountId} paymentMethodProvider=${payload.paymentMethodProvider}")
-            payouts.payout(payload.accountId, payload.paymentMethodProvider)
-        } catch (ex: PayoutException) {
-            LOGGER.warn("Payout error", ex)
-        }
     }
 
     private fun syncPayout(event: Event) {

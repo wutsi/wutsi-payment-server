@@ -7,8 +7,6 @@ import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.dto.Balance
 import com.wutsi.platform.payment.entity.BalanceEntity
 import com.wutsi.platform.payment.entity.TransactionEntity
-import com.wutsi.platform.payment.service.event.BalanceEventPayload
-import com.wutsi.platform.payment.service.event.EventURN
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 import java.time.OffsetDateTime
@@ -79,8 +77,6 @@ public class BalanceService(
             balance.payoutId = UUID.randomUUID().toString()
             dao.save(balance)
         }
-
-        eventStream.enqueue(EventURN.BALANCE_UPDATED.urn, BalanceEventPayload(accountId, paymentMethodProvider))
     }
 
     private fun toOffsetDateTime(date: LocalDate): OffsetDateTime =

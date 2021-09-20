@@ -1,8 +1,8 @@
 package com.wutsi.platform.payment.endpoint
 
-import com.wutsi.platform.payment.`delegate`.CreateChargeDelegate
-import com.wutsi.platform.payment.dto.CreateChargeRequest
-import com.wutsi.platform.payment.dto.CreateChargeResponse
+import com.wutsi.platform.payment.`delegate`.CreatePayoutDelegate
+import com.wutsi.platform.payment.dto.CreatePayoutRequest
+import com.wutsi.platform.payment.dto.CreatePayoutResponse
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.`annotation`.CrossOrigin
 import org.springframework.web.bind.`annotation`.PostMapping
@@ -23,11 +23,11 @@ import javax.validation.Valid
         org.springframework.web.bind.annotation.RequestMethod.PUT
     ]
 )
-public class CreateChargeController(
-    private val `delegate`: CreateChargeDelegate
+public class CreatePayoutController(
+    private val `delegate`: CreatePayoutDelegate
 ) {
-    @PostMapping("/v1/charges")
+    @PostMapping("/v1/payouts")
     @PreAuthorize(value = "hasAuthority('payment-manage')")
-    public fun invoke(@Valid @RequestBody request: CreateChargeRequest): CreateChargeResponse =
+    public fun invoke(@Valid @RequestBody request: CreatePayoutRequest): CreatePayoutResponse =
         delegate.invoke(request)
 }

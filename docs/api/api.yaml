@@ -30,9 +30,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/CreateChargeResponse'
       tags:
-        - Payment
+        - Charges
       security:
-        - api_key: [ 'payment-charge' ]
+        - api_key: [ 'payment-manage' ]
 
   /v1/charges/{id}:
     get:
@@ -54,14 +54,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/GetChargeResponse'
       tags:
-        - Payment
+        - Charges
       security:
-        - api_key: [ 'payment-charge' ]
+        - api_key: [ 'payment-read' ]
 
   /v1/payouts:
     post:
       operationId: "create-payout"
-      description: Payout a merchant
+      description: Charge a Payout
       requestBody:
         required: true
         content:
@@ -76,9 +76,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/CreatePayoutResponse'
       tags:
-        - Payment
+        - Charges
       security:
-        - api_key: [ 'payment-payout' ]
+        - api_key: [ 'payment-manage' ]
 
   /v1/payouts/{id}:
     get:
@@ -100,9 +100,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/GetPayoutResponse'
       tags:
-        - Payment
+        - Payout
       security:
-        - api_key: [ 'payment-payout' ]
+        - api_key: [ 'payment-read' ]
 
   /v1/balances:
     get:
@@ -133,7 +133,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/GetBalanceResponse'
       tags:
-        - Payment
+        - Balance
       security:
         - api_key: [ 'payment-read' ]
 
@@ -217,19 +217,15 @@ components:
         accountId:
           type: integer
           format: int64
-          description: Account ID of that request the payout
+          description: Account ID
         paymentMethodProvider:
+          description: Payment Provider
           type: string
-          description: Payment provider
           enum:
             - MTN
             - ORANGE
-        description:
-          type: string
-          description: Description of the transaction
       required:
         - paymentMethodToken
-        - description
 
     CreatePayoutResponse:
       type: object
@@ -237,11 +233,10 @@ components:
         id:
           type: string
           format: uuid
-          description: ID of the payout
+          description: ID of the payout created
         status:
           type: string
           description: Status of the payout
-
 
     GetPayoutResponse:
       type: object
@@ -302,6 +297,10 @@ components:
         status:
           type: string
           description: Transaction status
+          enum:
+            - PENDING
+            - SUCESSFUL
+            - FAILED
         errorCode:
           type: string
           description: Error code
@@ -396,6 +395,10 @@ components:
           type: string
           description: Error code
           nullable: true
+          enum:
+            - PENDING
+            - SUCESSFUL
+            - FAILED
         supplierErrorCode:
           type: string
           description: Error Details

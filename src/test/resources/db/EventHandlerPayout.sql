@@ -23,12 +23,12 @@ INSERT INTO T_BALANCE(account_id, payment_method_provider, synced, amount, curre
         (400, 1, '2020-02-01', 400, 'XAF', '400')
 ;
 
-INSERT INTO T_PAYOUT(id, account_id, payment_method_token, amount, currency, status, gateway_transaction_id, financial_transaction_id, error_code, supplier_error_code)
+INSERT INTO T_PAYOUT(id, user_id, account_id, payment_method_token, amount, currency, status, gateway_transaction_id, financial_transaction_id, error_code, supplier_error_code)
     VALUES
-        ('200', 1, 'xxxx', 77777, 'XAF', 1, '200', '200-xxx', null, null),
-        ('201', 1, 'xxxx', 66666, 'XAF', 1, '201', '201-xxx', null, null),
+        ('200', 100, 1, 'xxxx', 77777, 'XAF', 1, '200', '200-xxx', null, null),
+        ('201', 100, 1, 'xxxx', 66666, 'XAF', 1, '201', '201-xxx', null, null),
 
-        ('400', 1, 'xxxx', 400, 'XAF', 2, '400', null, null, null),
-        ('401', 1, 'xxxx', 400, 'XAF', 2, '401', null, null, null),
-        ('402', 1, 'xxxx', 400, 'XAF', 2, '402', null, null, null)
+        ('400', 100, 1, 'xxxx', 400, 'XAF', 2, '400', null, null, null),
+        ('401', 100, 1, 'xxxx', 400, 'XAF', 2, '401', null, null, null),
+        ('402', 100, 1, 'xxxx', 400, 'XAF', 2, '402', null, null, null)
 ;

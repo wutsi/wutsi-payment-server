@@ -21,7 +21,6 @@ import com.wutsi.platform.payment.Gateway
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.PaymentMethodProvider.MTN
-import com.wutsi.platform.payment.PaymentMethodProvider.ORANGE
 import com.wutsi.platform.payment.PaymentMethodType
 import com.wutsi.platform.payment.PaymentMethodType.MOBILE_PAYMENT
 import com.wutsi.platform.payment.PaymentMethodType.UNKNOWN
@@ -43,7 +42,6 @@ import org.springframework.test.context.jdbc.Sql
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(value = ["/db/clean.sql", "/db/EventHandlerPayout.sql"])
@@ -92,133 +90,6 @@ internal class EventHandlerPayoutTest {
     }
 
     @Test
-    fun `BALANCE_UPDATED - Transfer SUCESSFULL`() {
-        val paymentResponse = createCreateTransferResponse(Status.SUCCESSFUL)
-        doReturn(paymentResponse).whenever(gateway).createTransfer(any())
-
-        val accountId = 100L
-        val event = createBalanceEvent(EventURN.BALANCE_UPDATED.urn, accountId)
-        handler.onEvent(event)
-
-        val payout = payoutDao.findById(accountId.toString()).get()
-        assertEquals(Status.SUCCESSFUL, payout.status)
-        assertEquals(accountId, payout.accountId)
-        assertEquals(1000.0, payout.amount)
-        assertEquals("XAF", payout.currency)
-        assertNull(payout.description)
-        assertEquals(paymentMethod.type, payout.paymentMethodType.name)
-        assertEquals(paymentMethod.provider, payout.paymentMethodProvider.name)
-        assertEquals(paymentResponse.financialTransactionId, payout.financialTransactionId)
-        assertEquals(paymentResponse.transactionId, payout.gatewayTransactionId)
-        assertNull(payout.errorCode)
-        assertNull(payout.supplierErrorCode)
-        assertNull(payout.userId)
-
-        verify(eventStream).enqueue(EventURN.PAYOUT_SUCCESSFUL.urn, PayoutEventPayload(accountId.toString()))
-    }
-
-    @Test
-    fun `BALANCE_UPDATED - Transfer PENDING`() {
-        val paymentResponse = createCreateTransferResponse(Status.PENDING)
-        doReturn(paymentResponse).whenever(gateway).createTransfer(any())
-
-        val accountId = 101L
-        val event = createBalanceEvent(EventURN.BALANCE_UPDATED.urn, accountId)
-        handler.onEvent(event)
-
-        val payout = payoutDao.findById(accountId.toString()).get()
-        assertEquals(Status.PENDING, payout.status)
-        assertEquals(accountId, payout.accountId)
-        assertEquals(10000.0, payout.amount)
-        assertEquals("XAF", payout.currency)
-        assertNull(payout.description)
-        assertEquals(paymentMethod.type, payout.paymentMethodType.name)
-        assertEquals(paymentMethod.provider, payout.paymentMethodProvider.name)
-        assertNull(payout.financialTransactionId)
-        assertEquals(paymentResponse.transactionId, payout.gatewayTransactionId)
-        assertNull(payout.errorCode)
-        assertNull(payout.supplierErrorCode)
-        assertNull(payout.userId)
-
-        verify(eventStream).enqueue(EventURN.PAYOUT_PENDING.urn, PayoutEventPayload(accountId.toString()))
-    }
-
-    @Test
-    fun `BALANCE_UPDATED - Transfer FAILED`() {
-        val ex = PaymentException(
-            error = Error(
-                code = NOT_ENOUGH_FUNDS,
-                transactionId = "540950495",
-                supplierErrorCode = "xxxx"
-            )
-        )
-        doThrow(ex).whenever(gateway).createTransfer(any())
-
-        val accountId = 102L
-        val event = createBalanceEvent(EventURN.BALANCE_UPDATED.urn, accountId)
-        handler.onEvent(event)
-
-        val payout = payoutDao.findById(accountId.toString()).get()
-        assertEquals(Status.FAILED, payout.status)
-        assertEquals(accountId, payout.accountId)
-        assertEquals(10000.0, payout.amount)
-        assertEquals("XAF", payout.currency)
-        assertNull(payout.description)
-        assertEquals(paymentMethod.type, payout.paymentMethodType.name)
-        assertEquals(paymentMethod.provider, payout.paymentMethodProvider.name)
-        assertNull(payout.financialTransactionId)
-        assertEquals(ex.error.transactionId, payout.gatewayTransactionId)
-        assertEquals(ex.error.code, payout.errorCode)
-        assertEquals(ex.error.supplierErrorCode, payout.supplierErrorCode)
-        assertNull(payout.userId)
-
-        verify(eventStream).enqueue(EventURN.PAYOUT_FAILED.urn, PayoutEventPayload(accountId.toString()))
-    }
-
-    @Test
-    fun `BALANCE_UPDATED - Transfer below threshold`() {
-        val accountId = 120L
-        val event = createBalanceEvent(EventURN.BALANCE_UPDATED.urn, accountId)
-        handler.onEvent(event)
-
-        val payout = payoutDao.findById(accountId.toString())
-        assertTrue(payout.isEmpty)
-
-        verify(eventStream, never()).enqueue(any(), any())
-    }
-
-    @Test
-    fun `BALANCE_UPDATED - Transfer above threshold`() {
-        val paymentResponse = createCreateTransferResponse(Status.SUCCESSFUL)
-        doReturn(paymentResponse).whenever(gateway).createTransfer(any())
-
-        val accountId = 121L
-        val event = createBalanceEvent(EventURN.BALANCE_UPDATED.urn, accountId)
-        handler.onEvent(event)
-
-        val payout = payoutDao.findById(accountId.toString()).get()
-        assertEquals(1000000.0, payout.amount)
-        assertEquals("XAF", payout.currency)
-
-        verify(eventStream).enqueue(EventURN.PAYOUT_SUCCESSFUL.urn, PayoutEventPayload(accountId.toString()))
-    }
-
-    @Test
-    fun `BALANCE_UPDATED - Transfer unsupported payment method`() {
-        paymentMethod = createMethodPayment("3409430943", "+23799505677", paymentMethodProvider = ORANGE)
-        doReturn(GetPaymentMethodResponse(paymentMethod)).whenever(accountApi).getPaymentMethod(any(), any())
-
-        val accountId = 130L
-        val event = createBalanceEvent(EventURN.BALANCE_UPDATED.urn, accountId, ORANGE)
-        handler.onEvent(event)
-
-        val payout = payoutDao.findById(accountId.toString())
-        assertTrue(payout.isEmpty)
-
-        verify(eventStream, never()).enqueue(any(), any())
-    }
-
-    @Test
     fun `PENDING Payout - PAYOUT_PENDING - GetTransfer SUCCESSFUL`() {
         val paymentResponse = createGetTransferResponse(Status.SUCCESSFUL)
         doReturn(paymentResponse).whenever(gateway).getTransfer(any())
@@ -232,7 +103,7 @@ internal class EventHandlerPayoutTest {
         assertEquals(paymentResponse.financialTransactionId, payout.financialTransactionId)
         assertNull(payout.errorCode)
         assertNull(payout.supplierErrorCode)
-        assertNull(payout.userId)
+        assertEquals(100, payout.userId)
 
         verify(eventStream).enqueue(EventURN.PAYOUT_SUCCESSFUL.urn, PayoutEventPayload(payoutId))
     }

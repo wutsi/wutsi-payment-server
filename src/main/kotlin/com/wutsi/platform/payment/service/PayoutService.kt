@@ -4,6 +4,7 @@ import com.wutsi.platform.account.dto.Account
 import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.core.error.Error
 import com.wutsi.platform.core.error.Parameter
+import com.wutsi.platform.core.error.exception.BadRequestException
 import com.wutsi.platform.core.error.exception.NotFoundException
 import com.wutsi.platform.core.error.exception.WutsiException
 import com.wutsi.platform.core.stream.EventStream
@@ -47,23 +48,36 @@ public class PayoutService(
     )
     fun payout(accountId: Long, paymentMethodProvider: PaymentMethodProvider): PayoutEntity {
         val account = getAccount(accountId)
+        securityManager.checkOwnership(account)
+
         val paymentMethod = getPaymentMethodForPayout(accountId, paymentMethodProvider)
         val config = getConfig(paymentMethodProvider, paymentMethod.phone?.country)
 
         // Balance
-        val balance = balanceDao.findByAccountIdAndPaymentMethodProvider(accountId, paymentMethodProvider).get()
+        val balance = balanceDao.findByAccountIdAndPaymentMethodProvider(accountId, paymentMethodProvider)
+            .orElseThrow {
+                throw NotFoundException(
+                    error = Error(
+                        code = ErrorURN.BALANCE_NOT_FOUND.urn
+                    )
+                )
+            }
+
         if (balance.amount < config.payoutMinValue)
-            throw PayoutException(
+            throw BadRequestException(
                 error = Error(
                     code = ErrorURN.PAYOUT_AMOUNT_BELOW_THRESHOLD.urn,
                     data = mapOf(
-                        "accountId" to accountId,
-                        "paymentMethodProvider" to paymentMethodProvider
+                        "balance" to balance.amount,
+                        "payoutThreshold" to config.payoutMinValue
                     )
                 )
             )
 
-        // Create the payout
+        // Create the Payout
+        val opt = dao.findById(balance.payoutId)
+        if (opt.isPresent)
+            return opt.get()
         val payout = createPayout(balance, config, account, paymentMethod)
 
         // Perform the transaction
@@ -149,7 +163,8 @@ public class PayoutService(
                 currency = balance.currency,
                 amount = min(balance.amount, config.payoutMaxValue),
                 status = PENDING,
-                userId = securityManager.currentUserId()
+                userId = securityManager.currentUserId()!!,
+                paymentMethodToken = paymentMethod.token
             )
         )
 
@@ -217,8 +232,7 @@ public class PayoutService(
                 code = ErrorURN.TRANSACTION_FAILED.urn,
                 downstreamCode = payout.errorCode?.name,
                 data = mapOf(
-                    "payoutId" to payout.id,
-                    "accountId" to payout.accountId
+                    "payoutId" to payout.id
                 )
             )
         )

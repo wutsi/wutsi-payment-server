@@ -9,25 +9,29 @@ import com.wutsi.platform.account.WutsiAccountApi
 import com.wutsi.platform.account.dto.Account
 import com.wutsi.platform.account.dto.GetAccountResponse
 import com.wutsi.platform.account.dto.GetPaymentMethodResponse
+import com.wutsi.platform.account.dto.ListPaymentMethodResponse
 import com.wutsi.platform.account.dto.PaymentMethod
+import com.wutsi.platform.account.dto.PaymentMethodSummary
 import com.wutsi.platform.account.dto.Phone
 import com.wutsi.platform.payment.Gateway
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
+import com.wutsi.platform.payment.PaymentMethodProvider.MTN
 import com.wutsi.platform.payment.PaymentMethodType
+import com.wutsi.platform.payment.PaymentMethodType.MOBILE_PAYMENT
 import com.wutsi.platform.payment.core.Error
 import com.wutsi.platform.payment.core.ErrorCode.EXPIRED
 import com.wutsi.platform.payment.core.Status
-import com.wutsi.platform.payment.dao.ChargeRepository
+import com.wutsi.platform.payment.core.Status.PENDING
+import com.wutsi.platform.payment.core.Status.SUCCESSFUL
+import com.wutsi.platform.payment.dao.PayoutRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
-import com.wutsi.platform.payment.dto.CreateChargeRequest
 import com.wutsi.platform.payment.dto.CreateChargeResponse
+import com.wutsi.platform.payment.dto.CreatePayoutRequest
 import com.wutsi.platform.payment.entity.TransactionType
-import com.wutsi.platform.payment.model.CreatePaymentResponse
-import com.wutsi.platform.payment.model.GetPaymentResponse
+import com.wutsi.platform.payment.model.CreateTransferResponse
+import com.wutsi.platform.payment.model.GetTransferResponse
 import com.wutsi.platform.payment.service.GatewayProvider
-import com.wutsi.platform.security.dto.Application
-import com.wutsi.platform.security.dto.GetApplicationResponse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -42,16 +46,15 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class CreateChargeControllerE2ETest : AbstractSecuredController() {
-    companion object {
-        const val CUSTOMER_ID = 1L
-        const val MERCHANT_ID = 33L
-        const val APPLICATION_ID = 777L
-        const val PAYMENT_TOKEN = "xxx-000"
-    }
-
+public class CreatePayoutControllerE2ETest : AbstractSecuredController() {
     @LocalServerPort
     public val port: Int = 0
+
+    @Autowired
+    private lateinit var dao: PayoutRepository
+
+    @Autowired
+    private lateinit var txDao: TransactionRepository
 
     @MockBean
     private lateinit var accountApi: WutsiAccountApi
@@ -59,13 +62,12 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
     @MockBean
     private lateinit var gatewayProvider: GatewayProvider
 
-    @Autowired
-    private lateinit var chargeDao: ChargeRepository
-
-    @Autowired
-    private lateinit var txDao: TransactionRepository
-
+    private lateinit var user: Account
+    private lateinit var account: Account
+    private lateinit var paymentMethod: PaymentMethod
     private lateinit var gateway: Gateway
+    private lateinit var transferResponse: CreateTransferResponse
+    private lateinit var getTransferResponse: GetTransferResponse
 
     private lateinit var url: String
     private lateinit var rest: RestTemplate
@@ -74,49 +76,50 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
     override fun setUp() {
         super.setUp()
 
-        val account = createAccount(CUSTOMER_ID)
-        val application = createApplication(APPLICATION_ID)
-        val paymentMethod = createMethodPayment(PAYMENT_TOKEN, "+23799505677")
+        account = createAccount(100)
+        user = account
+        paymentMethod = createMethodPayment("xxxx", "+23799505677")
+        val paymentMethodSummary = createMethodPaymentSummary(paymentMethod.token)
         gateway = mock()
+        transferResponse = createTransferResponse(PENDING)
+        getTransferResponse = createGetTransferResponse(SUCCESSFUL)
 
         doReturn(GetAccountResponse(account)).whenever(accountApi).getAccount(any())
         doReturn(GetPaymentMethodResponse(paymentMethod)).whenever(accountApi).getPaymentMethod(any(), any())
-        doReturn(GetApplicationResponse(application)).whenever(securityApi).getApplication(any())
+        doReturn(ListPaymentMethodResponse(listOf(paymentMethodSummary))).whenever(accountApi).listPaymentMethods(any())
 
         doReturn(gateway).whenever(gatewayProvider).get(any())
-        val createPaymentResponse = createCreatePaymentResponse()
-        val getPaymentResponse = createGetPaymentResponse()
-        doReturn(createPaymentResponse).whenever(gateway).createPayment(any())
-        doReturn(getPaymentResponse).whenever(gateway).getPayment(any())
+        doReturn(transferResponse).whenever(gateway).createTransfer(any())
+        doReturn(getTransferResponse).whenever(gateway).getTransfer(any())
 
-        rest = createResTemplate(listOf("payment-manage", "payment-read"), CUSTOMER_ID)
-        url = "http://localhost:$port/v1/charges"
+        rest = createResTemplate(listOf("payment-manage"), account.id)
+        url = "http://localhost:$port/v1/payouts"
     }
 
     @Test
-    @Sql(value = ["/db/clean.sql", "/db/CreateChargeControllerE2E.sql"])
+    @Sql(value = ["/db/clean.sql", "/db/CreatePayoutControllerE2E.sql"])
     fun success() {
-        val request = createCreateChargeRequest()
+        val request = createCreatePayoutRequest(100)
         rest.postForEntity(url, request, CreateChargeResponse::class.java)
 
         Thread.sleep(30000)
 
-        val charges = chargeDao.findAll().toList()
-        assertEquals(1, charges.size)
-        assertEquals(Status.SUCCESSFUL, charges[0].status)
-        assertEquals(request.amount, charges[0].amount)
-        assertEquals(request.currency, charges[0].currency)
-        assertNull(charges[0].errorCode)
+        val payouts = dao.findAll().toList()
+        assertEquals(1, payouts.size)
+        assertEquals(Status.SUCCESSFUL, payouts[0].status)
+        assertEquals(70000.0, payouts[0].amount)
+        assertEquals("XAF", payouts[0].currency)
+        assertNull(payouts[0].errorCode)
 
         val txs = txDao.findAll().toList()
         assertEquals(1, txs.size)
-        assertEquals(TransactionType.CHARGE, txs[0].type)
-        assertEquals(request.amount, txs[0].amount)
-        assertEquals(request.currency, txs[0].currency)
+        assertEquals(TransactionType.PAYOUT, txs[0].type)
+        assertEquals(-70000.0, txs[0].amount)
+        assertEquals("XAF", txs[0].currency)
     }
 
     @Test
-    @Sql(value = ["/db/clean.sql", "/db/CreateChargeControllerE2E.sql"])
+    @Sql(value = ["/db/clean.sql", "/db/CreatePayoutControllerE2E.sql"])
     fun failure() {
         val ex = PaymentException(
             error = Error(
@@ -125,35 +128,29 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
                 transactionId = "xxxx"
             )
         )
-        doThrow(ex).whenever(gateway).getPayment(any())
+        doThrow(ex).whenever(gateway).getTransfer(any())
 
-        val request = createCreateChargeRequest()
+        val request = createCreatePayoutRequest(100)
         rest.postForEntity(url, request, CreateChargeResponse::class.java)
 
         Thread.sleep(30000)
 
-        val charges = chargeDao.findAll().toList()
-        assertEquals(1, charges.size)
-        assertEquals(Status.FAILED, charges[0].status)
-        assertEquals(request.amount, charges[0].amount)
-        assertEquals(request.currency, charges[0].currency)
-        assertEquals(Status.FAILED, charges[0].status)
-        assertEquals(ex.error.code, charges[0].errorCode)
-        assertEquals(ex.error.supplierErrorCode, charges[0].supplierErrorCode)
+        val payouts = dao.findAll().toList()
+        assertEquals(1, payouts.size)
+        assertEquals(Status.FAILED, payouts[0].status)
+        assertEquals(70000.0, payouts[0].amount)
+        assertEquals("XAF", payouts[0].currency)
+        assertEquals(Status.FAILED, payouts[0].status)
+        assertEquals(ex.error.code, payouts[0].errorCode)
+        assertEquals(ex.error.supplierErrorCode, payouts[0].supplierErrorCode)
 
         val txs = txDao.findAll().toList()
         assertTrue(txs.isEmpty())
     }
 
-    private fun createCreateChargeRequest(merchantId: Long = MERCHANT_ID, customerId: Long = CUSTOMER_ID) = CreateChargeRequest(
-        merchantId = merchantId,
-        customerId = customerId,
-        amount = 100.0,
-        currency = "XAF",
-        externalId = "urn:order:123",
-        description = "This is a nice description",
-        paymentMethodToken = "xxxx-xxxxx",
-        applicationId = 1L
+    private fun createCreatePayoutRequest(accountId: Long, paymentMethodProvider: PaymentMethodProvider = MTN) = CreatePayoutRequest(
+        accountId = accountId,
+        paymentMethodProvider = paymentMethodProvider.name
     )
 
     private fun createAccount(id: Long, status: String = "ACTIVE") = Account(
@@ -172,21 +169,26 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
             number = phoneNumber,
             country = country
         ),
-        type = PaymentMethodType.MOBILE_PAYMENT.name,
+        type = MOBILE_PAYMENT.name,
         provider = paymentMethodProvider.name
     )
 
-    private fun createApplication(id: Long, active: Boolean = true) = Application(
-        id = id,
-        active = active
-    )
-
-    private fun createCreatePaymentResponse(status: Status = Status.PENDING) = CreatePaymentResponse(
+    private fun createTransferResponse(status: Status = PENDING) = CreateTransferResponse(
         transactionId = UUID.randomUUID().toString(),
         status = status
     )
 
-    private fun createGetPaymentResponse(status: Status = Status.SUCCESSFUL) = GetPaymentResponse(
+    private fun createGetTransferResponse(status: Status = PENDING) = GetTransferResponse(
         status = status
+    )
+
+    private fun createMethodPaymentSummary(
+        token: String,
+        type: PaymentMethodType = MOBILE_PAYMENT,
+        paymentMethodProvider: PaymentMethodProvider = MTN
+    ) = PaymentMethodSummary(
+        token = token,
+        type = type.name,
+        provider = paymentMethodProvider.name
     )
 }

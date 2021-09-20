@@ -27,7 +27,7 @@ public class GetChargeController(
     private val `delegate`: GetChargeDelegate
 ) {
     @GetMapping("/v1/charges/{id}")
-    @PreAuthorize(value = "hasAuthority('payment-charge')")
+    @PreAuthorize(value = "hasAuthority('payment-read')")
     public fun invoke(@PathVariable(name = "id") @NotBlank id: String): GetChargeResponse =
         delegate.invoke(id)
 }

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service
 class SecurityManager {
     fun checkOwnership(account: Account) {
         if (account.id != currentUserId())
-            throw AccessDeniedException("User not the owner of payment method")
+            throw AccessDeniedException("User not owner")
     }
 
     fun currentUserId(): Long? {

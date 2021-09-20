@@ -4,7 +4,6 @@ import com.wutsi.platform.core.util.URN
 
 enum class EventURN(val urn: String) {
     BALANCE_UPDATE_REQUESTED(URN.of("event", "payment", "balance-update-requested").value),
-    BALANCE_UPDATED(URN.of("event", "payment", "balance-updated").value),
 
     CHARGE_SUCCESSFUL(URN.of("event", "payment", "charge-successful").value),
     CHARGE_PENDING(URN.of("event", "payment", "charge-pending").value),

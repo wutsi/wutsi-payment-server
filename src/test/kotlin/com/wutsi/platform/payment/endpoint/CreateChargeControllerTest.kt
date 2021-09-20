@@ -105,7 +105,7 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         doReturn(gateway).whenever(gatewayProvider).get(any())
         doReturn(paymentResponse).whenever(gateway).createPayment(any())
 
-        rest = createResTemplate(listOf("payment-charge"), customer.id)
+        rest = createResTemplate(listOf("payment-manage"), customer.id)
         url = "http://localhost:$port/v1/charges"
     }
 

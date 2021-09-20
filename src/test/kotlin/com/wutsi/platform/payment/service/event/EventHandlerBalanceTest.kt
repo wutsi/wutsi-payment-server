@@ -3,7 +3,6 @@ package com.wutsi.platform.payment.service.event
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import com.wutsi.platform.account.WutsiAccountApi
 import com.wutsi.platform.account.dto.GetPaymentMethodResponse
@@ -74,8 +73,6 @@ internal class EventHandlerBalanceTest {
         assertEquals(LocalDate.now(), balance.synced)
         assertEquals(MTN, balance.paymentMethodProvider)
         assertNotNull(balance.accountId)
-
-        verify(eventStream).enqueue(EventURN.BALANCE_UPDATED.urn, BalanceEventPayload(balance.accountId, balance.paymentMethodProvider))
     }
 
     @Test
@@ -90,8 +87,6 @@ internal class EventHandlerBalanceTest {
         assertEquals(LocalDate.now(), balance.synced)
         assertEquals(MTN, balance.paymentMethodProvider)
         assertNotNull(balance.accountId)
-
-        verify(eventStream).enqueue(EventURN.BALANCE_UPDATED.urn, BalanceEventPayload(balance.accountId, balance.paymentMethodProvider))
     }
 
     private fun createBalanceEvent(type: String, accountId: Long, paymentMethodProvider: PaymentMethodProvider) = Event(

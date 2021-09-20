@@ -17,7 +17,7 @@ data class PayoutEntity(
     @Id
     val id: String = "",
     val accountId: Long = -1,
-    val userId: Long? = null,
+    val userId: Long = -1,
     val paymentMethodToken: String = "",
 
     @Enumerated
