@@ -1,6 +1,6 @@
 package com.wutsi.platform.payment.service
 
-import com.wutsi.platform.core.stream.EventStream
+import com.wutsi.platform.core.logging.KVLogger
 import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.dao.BalanceRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
@@ -19,7 +19,7 @@ import javax.transaction.Transactional
 public class BalanceService(
     private val dao: BalanceRepository,
     private val txDao: TransactionRepository,
-    private val eventStream: EventStream
+    private val logger: KVLogger
 ) {
     fun getBalance(accountId: Long, paymentMethodProvider: PaymentMethodProvider): Balance {
         val balance = dao.findByAccountIdAndPaymentMethodProvider(accountId, paymentMethodProvider)
@@ -32,6 +32,14 @@ public class BalanceService(
                 toOffsetDateTime(balance.get().synced)
             )
 
+        logger.add("account_id", accountId)
+        logger.add("transaction_count", transactions.size)
+        if (balance.isPresent) {
+            logger.add("balance_synced", balance.get().synced)
+            logger.add("balance_base", balance.get().amount)
+            logger.add("balance_currency", balance.get().currency)
+            logger.add("balance_provider", balance.get().paymentMethodProvider)
+        }
         return Balance(
             accountId = accountId,
             paymentMethodProvider = paymentMethodProvider.name,
