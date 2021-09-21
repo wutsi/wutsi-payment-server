@@ -148,14 +148,10 @@ components:
     CreateChargeRequest:
       type: object
       properties:
-        merchantId:
+        accountId:
           type: integer
           format: int64
           description: Account ID of the merchant who charges the customer
-        customerId:
-          type: integer
-          format: int64
-          description: Account ID of the customer who get charged
         applicationId:
           type: integer
           format: int64
@@ -214,10 +210,6 @@ components:
     CreatePayoutRequest:
       type: object
       properties:
-        accountId:
-          type: integer
-          format: int64
-          description: Account ID
         paymentMethodProvider:
           description: Payment Provider
           type: string

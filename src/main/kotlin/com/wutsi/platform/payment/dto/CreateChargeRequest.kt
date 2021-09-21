@@ -3,6 +3,9 @@ package com.wutsi.platform.payment.dto
 import javax.validation.constraints.Min
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Size
+import kotlin.Double
+import kotlin.Long
+import kotlin.String
 
 public data class CreateChargeRequest(
     public val accountId: Long = 0,
