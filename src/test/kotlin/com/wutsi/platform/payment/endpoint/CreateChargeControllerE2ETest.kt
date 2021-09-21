@@ -28,7 +28,6 @@ import com.wutsi.platform.payment.model.GetPaymentResponse
 import com.wutsi.platform.payment.service.GatewayProvider
 import com.wutsi.platform.security.dto.Application
 import com.wutsi.platform.security.dto.GetApplicationResponse
-import jdk.nashorn.internal.ir.annotations.Ignore
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -38,6 +37,7 @@ import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.web.client.RestTemplate
 import java.util.UUID
+import kotlin.test.Ignore
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
