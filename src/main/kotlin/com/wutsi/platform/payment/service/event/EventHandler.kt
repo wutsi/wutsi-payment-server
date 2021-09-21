@@ -61,7 +61,7 @@ class EventHandler(
 
     private fun recordChargeTransaction(event: Event) {
         val payload = asChargeEventPayload(event)
-        LOGGER.info("Charge - Recording Transaction. payoutId=${payload.chargeId}")
+        LOGGER.info("Charge - Recording Transaction. chargeId=${payload.chargeId}")
         transactions.onChargeSuccessful(payload.chargeId)
     }
 
