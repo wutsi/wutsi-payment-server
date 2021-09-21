@@ -13,6 +13,8 @@ import com.wutsi.platform.account.dto.ListPaymentMethodResponse
 import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.account.dto.PaymentMethodSummary
 import com.wutsi.platform.account.dto.Phone
+import com.wutsi.platform.core.stream.EventStream
+import com.wutsi.platform.core.stream.local.LocalEventStream
 import com.wutsi.platform.payment.Gateway
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
@@ -56,6 +58,9 @@ public class CreatePayoutControllerE2ETest : AbstractSecuredController() {
     @Autowired
     private lateinit var txDao: TransactionRepository
 
+    @Autowired
+    private lateinit var eventStream: EventStream
+
     @MockBean
     private lateinit var accountApi: WutsiAccountApi
 
@@ -94,6 +99,9 @@ public class CreatePayoutControllerE2ETest : AbstractSecuredController() {
 
         rest = createResTemplate(listOf("payment-manage"), account.id)
         url = "http://localhost:$port/v1/payouts"
+
+        (eventStream as LocalEventStream).input.deleteRecursively()
+        (eventStream as LocalEventStream).output.deleteRecursively()
     }
 
     @Test

@@ -11,6 +11,8 @@ import com.wutsi.platform.account.dto.GetAccountResponse
 import com.wutsi.platform.account.dto.GetPaymentMethodResponse
 import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.account.dto.Phone
+import com.wutsi.platform.core.stream.EventStream
+import com.wutsi.platform.core.stream.local.LocalEventStream
 import com.wutsi.platform.payment.Gateway
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
@@ -65,6 +67,9 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
     @Autowired
     private lateinit var txDao: TransactionRepository
 
+    @Autowired
+    private lateinit var eventStream: EventStream
+
     private lateinit var gateway: Gateway
 
     private lateinit var url: String
@@ -74,12 +79,14 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
     override fun setUp() {
         super.setUp()
 
-        val account = createAccount(CUSTOMER_ID)
+        val customer = createAccount(CUSTOMER_ID)
+        val merchant = createAccount(MERCHANT_ID)
         val application = createApplication(APPLICATION_ID)
         val paymentMethod = createMethodPayment(PAYMENT_TOKEN, "+23799505677")
         gateway = mock()
 
-        doReturn(GetAccountResponse(account)).whenever(accountApi).getAccount(any())
+        doReturn(GetAccountResponse(customer)).whenever(accountApi).getAccount(CUSTOMER_ID)
+        doReturn(GetAccountResponse(merchant)).whenever(accountApi).getAccount(MERCHANT_ID)
         doReturn(GetPaymentMethodResponse(paymentMethod)).whenever(accountApi).getPaymentMethod(any(), any())
         doReturn(GetApplicationResponse(application)).whenever(securityApi).getApplication(any())
 
@@ -91,6 +98,9 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
 
         rest = createResTemplate(listOf("payment-manage", "payment-read"), CUSTOMER_ID)
         url = "http://localhost:$port/v1/charges"
+
+        (eventStream as LocalEventStream).input.deleteRecursively()
+        (eventStream as LocalEventStream).output.deleteRecursively()
     }
 
     @Test
@@ -109,10 +119,16 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
         assertNull(charges[0].errorCode)
 
         val txs = txDao.findAll().toList()
-        assertEquals(1, txs.size)
+        assertEquals(2, txs.size)
         assertEquals(TransactionType.CHARGE, txs[0].type)
-        assertEquals(request.amount, txs[0].amount)
+        assertEquals(request.merchantId, txs[0].accountId)
+        assertEquals(9800.0, txs[0].amount)
         assertEquals(request.currency, txs[0].currency)
+
+        assertEquals(TransactionType.FEES, txs[1].type)
+        assertEquals(-100, txs[1].accountId)
+        assertEquals(200.0, txs[1].amount)
+        assertEquals(request.currency, txs[1].currency)
     }
 
     @Test
@@ -148,7 +164,7 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
     private fun createCreateChargeRequest(merchantId: Long = MERCHANT_ID, customerId: Long = CUSTOMER_ID) = CreateChargeRequest(
         merchantId = merchantId,
         customerId = customerId,
-        amount = 100.0,
+        amount = 10000.0,
         currency = "XAF",
         externalId = "urn:order:123",
         description = "This is a nice description",
