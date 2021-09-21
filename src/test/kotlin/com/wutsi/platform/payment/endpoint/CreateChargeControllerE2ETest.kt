@@ -75,14 +75,10 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
     override fun setUp() {
         super.setUp()
 
-        val customer = createAccount(CUSTOMER_ID)
-        val merchant = createAccount(MERCHANT_ID)
         val application = createApplication(APPLICATION_ID)
         val paymentMethod = createMethodPayment(PAYMENT_TOKEN, "+23799505677")
         gateway = mock()
 
-        doReturn(GetAccountResponse(customer)).whenever(accountApi).getAccount(CUSTOMER_ID)
-        doReturn(GetAccountResponse(merchant)).whenever(accountApi).getAccount(MERCHANT_ID)
         doReturn(GetPaymentMethodResponse(paymentMethod)).whenever(accountApi).getPaymentMethod(any(), any())
         doReturn(GetApplicationResponse(application)).whenever(securityApi).getApplication(any())
 
@@ -92,7 +88,6 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
         doReturn(createPaymentResponse).whenever(gateway).createPayment(any())
         doReturn(getPaymentResponse).whenever(gateway).getPayment(any())
 
-        rest = createResTemplate(listOf("payment-manage", "payment-read"), CUSTOMER_ID)
         url = "http://localhost:$port/v1/charges"
     }
 
@@ -115,7 +110,7 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
         val txs = txDao.findAll().toList()
         assertEquals(2, txs.size)
         assertEquals(TransactionType.CHARGE, txs[0].type)
-        assertEquals(request.merchantId, txs[0].accountId)
+        assertEquals(request.accountId, txs[0].accountId)
         assertEquals(9800.0, txs[0].amount)
         assertEquals(request.currency, txs[0].currency)
 
@@ -156,16 +151,28 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
         assertTrue(txs.isEmpty())
     }
 
-    private fun createCreateChargeRequest(merchantId: Long = MERCHANT_ID, customerId: Long = CUSTOMER_ID) = CreateChargeRequest(
-        merchantId = merchantId,
-        customerId = customerId,
-        amount = 10000.0,
-        currency = "XAF",
-        externalId = "urn:order:123",
-        description = "This is a nice description",
-        paymentMethodToken = "xxxx-xxxxx",
-        applicationId = 1L
-    )
+    private fun createCreateChargeRequest(
+        merchantId: Long = MERCHANT_ID,
+        customerId: Long = CUSTOMER_ID,
+        scopes: List<String> = listOf("payment-scope")
+    ): CreateChargeRequest {
+        val merchant = createAccount(merchantId)
+        val customer = createAccount(customerId)
+        doReturn(GetAccountResponse(merchant)).whenever(accountApi).getAccount(merchantId)
+        doReturn(GetAccountResponse(customer)).whenever(accountApi).getAccount(customerId)
+
+        rest = createResTemplate(scopes, customerId)
+
+        return CreateChargeRequest(
+            accountId = merchantId,
+            amount = 10000.0,
+            currency = "XAF",
+            externalId = "urn:order:123",
+            description = "This is a nice description",
+            paymentMethodToken = "xxxx-xxxxx",
+            applicationId = 1L
+        )
+    }
 
     private fun createAccount(id: Long, status: String = "ACTIVE") = Account(
         id = id,

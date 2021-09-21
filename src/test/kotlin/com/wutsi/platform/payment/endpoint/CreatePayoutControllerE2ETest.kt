@@ -63,7 +63,6 @@ public class CreatePayoutControllerE2ETest : AbstractSecuredController() {
     @MockBean
     private lateinit var gatewayProvider: GatewayProvider
 
-    private lateinit var user: Account
     private lateinit var account: Account
     private lateinit var paymentMethod: PaymentMethod
     private lateinit var gateway: Gateway
@@ -78,14 +77,12 @@ public class CreatePayoutControllerE2ETest : AbstractSecuredController() {
         super.setUp()
 
         account = createAccount(100)
-        user = account
         paymentMethod = createMethodPayment("xxxx", "+23799505677")
         val paymentMethodSummary = createMethodPaymentSummary(paymentMethod.token)
         gateway = mock()
         transferResponse = createTransferResponse(PENDING)
         getTransferResponse = createGetTransferResponse(SUCCESSFUL)
 
-        doReturn(GetAccountResponse(account)).whenever(accountApi).getAccount(any())
         doReturn(GetPaymentMethodResponse(paymentMethod)).whenever(accountApi).getPaymentMethod(any(), any())
         doReturn(ListPaymentMethodResponse(listOf(paymentMethodSummary))).whenever(accountApi).listPaymentMethods(any())
 
@@ -151,10 +148,17 @@ public class CreatePayoutControllerE2ETest : AbstractSecuredController() {
         assertTrue(txs.isEmpty())
     }
 
-    private fun createCreatePayoutRequest(accountId: Long, paymentMethodProvider: PaymentMethodProvider = MTN) = CreatePayoutRequest(
-        accountId = accountId,
-        paymentMethodProvider = paymentMethodProvider.name
-    )
+    private fun createCreatePayoutRequest(
+        accountId: Long,
+        paymentMethodProvider: PaymentMethodProvider = MTN,
+        scopes: List<String> = listOf("payment-manage")
+    ): CreatePayoutRequest {
+        val account = createAccount(accountId)
+        doReturn(GetAccountResponse(account)).whenever(accountApi).getAccount(accountId)
+
+        rest = createResTemplate(scopes, account.id)
+        return CreatePayoutRequest(paymentMethodProvider.name)
+    }
 
     private fun createAccount(id: Long, status: String = "ACTIVE") = Account(
         id = id,

@@ -70,8 +70,6 @@ public class CreatePayoutControllerTest : AbstractSecuredController() {
     @MockBean
     private lateinit var eventStream: EventStream
 
-    private lateinit var user: Account
-    private lateinit var account: Account
     private lateinit var paymentMethod: PaymentMethod
     private lateinit var gateway: Gateway
     private lateinit var transferResponse: CreateTransferResponse
@@ -83,35 +81,32 @@ public class CreatePayoutControllerTest : AbstractSecuredController() {
     override fun setUp() {
         super.setUp()
 
-        account = createAccount(100)
-        user = account
         paymentMethod = createMethodPayment("xxxx", "+23799505677")
         val paymentMethodSummary = createMethodPaymentSummary(paymentMethod.token)
         gateway = mock()
         transferResponse = createTransferResponse(PENDING)
 
-        doReturn(GetAccountResponse(account)).whenever(accountApi).getAccount(any())
         doReturn(GetPaymentMethodResponse(paymentMethod)).whenever(accountApi).getPaymentMethod(any(), any())
         doReturn(ListPaymentMethodResponse(listOf(paymentMethodSummary))).whenever(accountApi).listPaymentMethods(any())
 
         doReturn(gateway).whenever(gatewayProvider).get(any())
         doReturn(transferResponse).whenever(gateway).createTransfer(any())
 
-        rest = createResTemplate(listOf("payment-manage"), user.id)
         url = "http://localhost:$port/v1/payouts"
     }
 
     @Test
     fun `create PENDING payout`() {
-        val request = createCreatePayoutRequest(100)
+        val accountId = 100L
+        val request = createCreatePayoutRequest(accountId)
         val response = rest.postForEntity(url, request, CreatePayoutResponse::class.java)
 
         assertEquals(200, response.statusCodeValue)
         assertEquals(transferResponse.status.name, response.body.status)
 
         val payout = dao.findById(response.body.id).get()
-        assertEquals(request.accountId, payout.accountId)
-        assertEquals(user.id, payout.userId)
+        assertEquals(accountId, payout.accountId)
+        assertEquals(accountId, payout.userId)
         assertEquals(70000.0, payout.amount)
         assertEquals("XAF", payout.currency)
         assertEquals(transferResponse.transactionId, payout.gatewayTransactionId)
@@ -131,15 +126,16 @@ public class CreatePayoutControllerTest : AbstractSecuredController() {
         transferResponse = createTransferResponse(SUCCESSFUL)
         doReturn(transferResponse).whenever(gateway).createTransfer(any())
 
-        val request = createCreatePayoutRequest(101)
+        val accountId = 101L
+        val request = createCreatePayoutRequest(accountId)
         val response = rest.postForEntity(url, request, CreatePayoutResponse::class.java)
 
         assertEquals(200, response.statusCodeValue)
         assertEquals(transferResponse.status.name, response.body.status)
 
         val payout = dao.findById(response.body.id).get()
-        assertEquals(request.accountId, payout.accountId)
-        assertEquals(user.id, payout.userId)
+        assertEquals(accountId, payout.accountId)
+        assertEquals(accountId, payout.userId)
         assertEquals(1000.0, payout.amount)
         assertEquals("XAF", payout.currency)
         assertEquals(transferResponse.transactionId, payout.gatewayTransactionId)
@@ -156,15 +152,16 @@ public class CreatePayoutControllerTest : AbstractSecuredController() {
 
     @Test
     fun `create Payout above threshold`() {
-        val request = createCreatePayoutRequest(102)
+        val accountId = 102L
+        val request = createCreatePayoutRequest(accountId)
         val response = rest.postForEntity(url, request, CreatePayoutResponse::class.java)
 
         assertEquals(200, response.statusCodeValue)
         assertEquals(transferResponse.status.name, response.body.status)
 
         val payout = dao.findById(response.body.id).get()
-        assertEquals(request.accountId, payout.accountId)
-        assertEquals(user.id, payout.userId)
+        assertEquals(accountId, payout.accountId)
+        assertEquals(accountId, payout.userId)
         assertEquals(1000000.0, payout.amount)
         assertEquals("XAF", payout.currency)
         assertEquals(transferResponse.transactionId, payout.gatewayTransactionId)
@@ -179,7 +176,8 @@ public class CreatePayoutControllerTest : AbstractSecuredController() {
 
     @Test
     fun `create Payout below threshold`() {
-        val request = createCreatePayoutRequest(200)
+        val accountId = 200L
+        val request = createCreatePayoutRequest(accountId)
         val ex = assertThrows<HttpClientErrorException> {
             rest.postForEntity(url, request, CreatePayoutResponse::class.java)
         }
@@ -193,7 +191,8 @@ public class CreatePayoutControllerTest : AbstractSecuredController() {
 
     @Test
     fun `create Payout without balance`() {
-        val request = createCreatePayoutRequest(200, PaymentMethodProvider.ORANGE)
+        val accountId = 200L
+        val request = createCreatePayoutRequest(accountId, PaymentMethodProvider.ORANGE)
         val ex = assertThrows<HttpClientErrorException> {
             rest.postForEntity(url, request, CreatePayoutResponse::class.java)
         }
@@ -216,7 +215,8 @@ public class CreatePayoutControllerTest : AbstractSecuredController() {
         )
         doThrow(exception).whenever(gateway).createTransfer(any())
 
-        val request = createCreatePayoutRequest(201)
+        val accountId = 201L
+        val request = createCreatePayoutRequest(accountId)
         val ex = assertThrows<HttpClientErrorException> {
             rest.postForEntity(url, request, CreatePayoutResponse::class.java)
         }
@@ -227,8 +227,8 @@ public class CreatePayoutControllerTest : AbstractSecuredController() {
 
         val id = response.error.data?.get("payoutId")?.toString()
         val payout = dao.findById(id).get()
-        assertEquals(request.accountId, payout.accountId)
-        assertEquals(user.id, payout.userId)
+        assertEquals(accountId, payout.accountId)
+        assertEquals(accountId, payout.userId)
         assertEquals(10000.0, payout.amount)
         assertEquals("XAF", payout.currency)
         assertEquals(exception.error.transactionId, payout.gatewayTransactionId)
@@ -243,25 +243,10 @@ public class CreatePayoutControllerTest : AbstractSecuredController() {
     }
 
     @Test
-    fun `create Payout on another user account`() {
-        val user = createAccount(777)
-        rest = createResTemplate(listOf("payment-manage"), user.id)
-
-        val request = createCreatePayoutRequest(300)
-        val ex = assertThrows<HttpClientErrorException> {
-            rest.postForEntity(url, request, CreatePayoutResponse::class.java)
-        }
-
-        assertEquals(403, ex.rawStatusCode)
-
-        verify(eventStream, never()).enqueue(any(), any())
-    }
-
-    @Test
     fun `create Payout without valid scope`() {
-        rest = createResTemplate(listOf("xxx"), user.id)
+        val accountId = 400L
+        val request = createCreatePayoutRequest(accountId, scopes = listOf("xxx"))
 
-        val request = createCreatePayoutRequest(400)
         val ex = assertThrows<HttpClientErrorException> {
             rest.postForEntity(url, request, CreatePayoutResponse::class.java)
         }
@@ -273,12 +258,8 @@ public class CreatePayoutControllerTest : AbstractSecuredController() {
 
     @Test
     fun `create Payout twice`() {
-        account = createAccount(400)
-        doReturn(GetAccountResponse(account)).whenever(accountApi).getAccount(400)
-
-        rest = createResTemplate(listOf("payment-manage"), account.id)
-
-        val request = createCreatePayoutRequest(400)
+        val accountId = 400L
+        val request = createCreatePayoutRequest(accountId)
         val response = rest.postForEntity(url, request, CreatePayoutResponse::class.java)
 
         assertEquals(200, response.statusCodeValue)
@@ -286,8 +267,8 @@ public class CreatePayoutControllerTest : AbstractSecuredController() {
         assertEquals(SUCCESSFUL.name, response.body.status)
 
         val payout = dao.findById(response.body.id).get()
-        assertEquals(400L, payout.accountId)
-        assertEquals(400L, payout.userId)
+        assertEquals(accountId, payout.accountId)
+        assertEquals(accountId, payout.userId)
         assertEquals(400.0, payout.amount)
         assertEquals("XAF", payout.currency)
         assertEquals("400-gw", payout.gatewayTransactionId)
@@ -302,10 +283,49 @@ public class CreatePayoutControllerTest : AbstractSecuredController() {
         verify(eventStream, never()).enqueue(any(), any())
     }
 
-    private fun createCreatePayoutRequest(accountId: Long, paymentMethodProvider: PaymentMethodProvider = MTN) = CreatePayoutRequest(
-        accountId = accountId,
-        paymentMethodProvider = paymentMethodProvider.name
-    )
+    @Test
+    fun `inactive account cannot create a Payout`() {
+        val accountId = 400L
+        val request = createCreatePayoutRequest(accountId, accountStatus = "SUSPENDED")
+
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreatePayoutResponse::class.java)
+        }
+
+        assertEquals(409, ex.rawStatusCode)
+
+        val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.ACCOUNT_NOT_ACTIVE.urn, response.error.code)
+
+        verify(eventStream, never()).enqueue(any(), any())
+    }
+
+    @Test
+    fun `anonymous cannot create a Payout`() {
+        val accountId = 400L
+        val request = createCreatePayoutRequest(accountId, scopes = listOf("xxx"))
+
+        val ex = assertThrows<HttpClientErrorException> {
+            RestTemplate().postForEntity(url, request, CreatePayoutResponse::class.java)
+        }
+
+        assertEquals(401, ex.rawStatusCode)
+
+        verify(eventStream, never()).enqueue(any(), any())
+    }
+
+    private fun createCreatePayoutRequest(
+        accountId: Long,
+        paymentMethodProvider: PaymentMethodProvider = MTN,
+        scopes: List<String> = listOf("payment-manage"),
+        accountStatus: String = "ACTIVE"
+    ): CreatePayoutRequest {
+        val account = createAccount(accountId, accountStatus)
+        doReturn(GetAccountResponse(account)).whenever(accountApi).getAccount(accountId)
+
+        rest = createResTemplate(scopes, account.id)
+        return CreatePayoutRequest(paymentMethodProvider.name)
+    }
 
     private fun createAccount(id: Long, status: String = "ACTIVE") = Account(
         id = id,

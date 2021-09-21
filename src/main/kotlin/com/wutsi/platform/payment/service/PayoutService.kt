@@ -17,6 +17,7 @@ import com.wutsi.platform.payment.core.Status.PENDING
 import com.wutsi.platform.payment.core.Status.SUCCESSFUL
 import com.wutsi.platform.payment.dao.BalanceRepository
 import com.wutsi.platform.payment.dao.PayoutRepository
+import com.wutsi.platform.payment.dto.CreatePayoutRequest
 import com.wutsi.platform.payment.entity.BalanceEntity
 import com.wutsi.platform.payment.entity.ConfigEntity
 import com.wutsi.platform.payment.entity.PayoutEntity
@@ -46,9 +47,10 @@ public class PayoutService(
     @Transactional(
         dontRollbackOn = [PayoutException::class]
     )
-    fun payout(accountId: Long, paymentMethodProvider: PaymentMethodProvider): PayoutEntity {
+    fun payout(request: CreatePayoutRequest): PayoutEntity {
+        val accountId = securityManager.currentUserId()!!
+        val paymentMethodProvider = PaymentMethodProvider.valueOf(request.paymentMethodProvider)
         val account = getAccount(accountId)
-        securityManager.checkOwnership(account)
 
         val paymentMethod = getPaymentMethodForPayout(accountId, paymentMethodProvider)
         val config = getConfig(paymentMethodProvider, paymentMethod.phone?.country)

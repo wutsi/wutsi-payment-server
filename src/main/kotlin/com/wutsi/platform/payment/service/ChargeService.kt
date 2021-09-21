@@ -4,8 +4,10 @@ import com.wutsi.platform.account.dto.Account
 import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.core.error.Error
 import com.wutsi.platform.core.error.Parameter
+import com.wutsi.platform.core.error.ParameterType
 import com.wutsi.platform.core.error.ParameterType.PARAMETER_TYPE_PAYLOAD
 import com.wutsi.platform.core.error.exception.NotFoundException
+import com.wutsi.platform.core.error.exception.WutsiException
 import com.wutsi.platform.core.stream.EventStream
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
@@ -45,12 +47,9 @@ class ChargeService(
         dontRollbackOn = [ChargeException::class]
     )
     fun charge(request: CreateChargeRequest): ChargeEntity {
-        val customer = accountService.findAccount(request.customerId, "customerId", PARAMETER_TYPE_PAYLOAD)
-        securityManager.checkOwnership(customer)
-
-        // payment method
-        val paymentMethod = accountService.findPaymentMethod(request.customerId, request.paymentMethodToken)
-        configService.checkSupport(paymentMethod)
+        val customerId = securityManager.currentUserId()!!
+        val customer = getAccount(customerId)
+        val paymentMethod = getPaymentMethod(customer.id, request.paymentMethodToken)
 
         // Create the charge
         val charge = createCharge(request, customer, paymentMethod)
@@ -98,6 +97,30 @@ class ChargeService(
         }
     }
 
+    private fun getAccount(accountId: Long, parameterName: String? = null, parameterType: ParameterType? = null): Account =
+        try {
+            accountService.findAccount(accountId, parameterName, parameterType)
+        } catch (ex: WutsiException) {
+            throw ChargeException(
+                error = ex.error,
+                ex
+            )
+        }
+
+    private fun getPaymentMethod(accountId: Long, paymentMethodToken: String): PaymentMethod {
+        try {
+            val paymentMethod = accountService.findPaymentMethod(accountId, paymentMethodToken)
+            configService.checkSupport(paymentMethod)
+
+            return paymentMethod
+        } catch (ex: WutsiException) {
+            throw ChargeException(
+                error = ex.error,
+                ex
+            )
+        }
+    }
+
     private fun createPayment(request: CreateChargeRequest, customer: Account, paymentMethod: PaymentMethod): CreatePaymentResponse {
         val gateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
         return gateway.createPayment(
@@ -119,7 +142,7 @@ class ChargeService(
 
     private fun createCharge(request: CreateChargeRequest, customer: Account, paymentMethod: PaymentMethod): ChargeEntity {
         val application = securityService.findApplication(request.applicationId, "applicationId", PARAMETER_TYPE_PAYLOAD)
-        val merchant = accountService.findAccount(request.merchantId, "merchantId", PARAMETER_TYPE_PAYLOAD)
+        val merchant = getAccount(request.accountId, "accountId", PARAMETER_TYPE_PAYLOAD)
 
         // Create the charge
         return dao.save(
@@ -151,7 +174,7 @@ class ChargeService(
         eventStream.enqueue(EventURN.CHARGE_FAILED.urn, ChargeEventPayload(charge.id))
 
         throw ChargeException(
-            error = com.wutsi.platform.core.error.Error(
+            error = Error(
                 code = ErrorURN.TRANSACTION_FAILED.urn,
                 downstreamCode = charge.errorCode?.name,
                 data = mapOf(
