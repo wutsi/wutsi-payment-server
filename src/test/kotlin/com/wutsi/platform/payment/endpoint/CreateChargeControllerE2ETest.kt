@@ -2,8 +2,6 @@ package com.wutsi.platform.payment.endpoint
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doReturn
-import com.nhaarman.mockitokotlin2.doThrow
-import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import com.wutsi.platform.account.WutsiAccountApi
 import com.wutsi.platform.account.dto.Account
@@ -11,34 +9,29 @@ import com.wutsi.platform.account.dto.GetAccountResponse
 import com.wutsi.platform.account.dto.GetPaymentMethodResponse
 import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.account.dto.Phone
-import com.wutsi.platform.payment.Gateway
-import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.PaymentMethodType
-import com.wutsi.platform.payment.core.Error
-import com.wutsi.platform.payment.core.ErrorCode.EXPIRED
 import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dao.ChargeRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.dto.CreateChargeRequest
 import com.wutsi.platform.payment.dto.CreateChargeResponse
 import com.wutsi.platform.payment.entity.TransactionType
-import com.wutsi.platform.payment.model.CreatePaymentResponse
-import com.wutsi.platform.payment.model.GetPaymentResponse
-import com.wutsi.platform.payment.service.GatewayProvider
 import com.wutsi.platform.security.dto.Application
 import com.wutsi.platform.security.dto.GetApplicationResponse
+import jdk.nashorn.internal.ir.annotations.Ignore
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.test.context.jdbc.Sql
+import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.RestTemplate
-import java.util.UUID
-import kotlin.test.Ignore
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -57,16 +50,11 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
     @MockBean
     private lateinit var accountApi: WutsiAccountApi
 
-    @MockBean
-    private lateinit var gatewayProvider: GatewayProvider
-
     @Autowired
     private lateinit var chargeDao: ChargeRepository
 
     @Autowired
     private lateinit var txDao: TransactionRepository
-
-    private lateinit var gateway: Gateway
 
     private lateinit var url: String
     private lateinit var rest: RestTemplate
@@ -75,18 +63,7 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
     override fun setUp() {
         super.setUp()
 
-        val application = createApplication(APPLICATION_ID)
-        val paymentMethod = createMethodPayment(PAYMENT_TOKEN, "+23799505677")
-        gateway = mock()
-
-        doReturn(GetPaymentMethodResponse(paymentMethod)).whenever(accountApi).getPaymentMethod(any(), any())
-        doReturn(GetApplicationResponse(application)).whenever(securityApi).getApplication(any())
-
-        doReturn(gateway).whenever(gatewayProvider).get(any())
-        val createPaymentResponse = createCreatePaymentResponse()
-        val getPaymentResponse = createGetPaymentResponse()
-        doReturn(createPaymentResponse).whenever(gateway).createPayment(any())
-        doReturn(getPaymentResponse).whenever(gateway).getPayment(any())
+        createApplication(APPLICATION_ID)
 
         url = "http://localhost:$port/v1/charges"
     }
@@ -95,6 +72,8 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
     @Test
     @Sql(value = ["/db/clean.sql", "/db/CreateChargeControllerE2E.sql"])
     fun success() {
+        createPaymentMethod(PAYMENT_TOKEN, "+23799505677")
+
         val request = createCreateChargeRequest()
         rest.postForEntity(url, request, CreateChargeResponse::class.java)
 
@@ -124,28 +103,42 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
     @Test
     @Sql(value = ["/db/clean.sql", "/db/CreateChargeControllerE2E.sql"])
     fun failure() {
-        val ex = PaymentException(
-            error = Error(
-                code = EXPIRED,
-                supplierErrorCode = "TIMEOUT",
-                transactionId = "xxxx"
-            )
-        )
-        doThrow(ex).whenever(gateway).getPayment(any())
+        createPaymentMethod(PAYMENT_TOKEN, "46733123452")
 
         val request = createCreateChargeRequest()
-        rest.postForEntity(url, request, CreateChargeResponse::class.java)
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateChargeResponse::class.java)
+        }
 
-        Thread.sleep(30000)
+        assertEquals(409, ex.rawStatusCode)
 
         val charges = chargeDao.findAll().toList()
         assertEquals(1, charges.size)
         assertEquals(Status.FAILED, charges[0].status)
         assertEquals(request.amount, charges[0].amount)
         assertEquals(request.currency, charges[0].currency)
-        assertEquals(Status.FAILED, charges[0].status)
-        assertEquals(ex.error.code, charges[0].errorCode)
-        assertEquals(ex.error.supplierErrorCode, charges[0].supplierErrorCode)
+        assertNotNull(charges[0].errorCode)
+        assertNotNull(charges[0].supplierErrorCode)
+
+        val txs = txDao.findAll().toList()
+        assertTrue(txs.isEmpty())
+    }
+
+    @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateChargeControllerE2E.sql"])
+    fun pending() {
+        createPaymentMethod(PAYMENT_TOKEN, "46733123454")
+
+        val request = createCreateChargeRequest()
+        rest.postForEntity(url, request, CreateChargeResponse::class.java)
+
+        val charges = chargeDao.findAll().toList()
+        assertEquals(1, charges.size)
+        assertEquals(Status.PENDING, charges[0].status)
+        assertEquals(request.amount, charges[0].amount)
+        assertEquals(request.currency, charges[0].currency)
+        assertNull(charges[0].errorCode)
+        assertNull(charges[0].supplierErrorCode)
 
         val txs = txDao.findAll().toList()
         assertTrue(txs.isEmpty())
@@ -154,7 +147,7 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
     private fun createCreateChargeRequest(
         merchantId: Long = MERCHANT_ID,
         customerId: Long = CUSTOMER_ID,
-        scopes: List<String> = listOf("payment-scope")
+        scopes: List<String> = listOf("payment-manage")
     ): CreateChargeRequest {
         val merchant = createAccount(merchantId)
         val customer = createAccount(customerId)
@@ -167,7 +160,7 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
             accountId = merchantId,
             amount = 10000.0,
             currency = "XAF",
-            externalId = "urn:order:123",
+            externalId = "123344",
             description = "This is a nice description",
             paymentMethodToken = "xxxx-xxxxx",
             applicationId = 1L
@@ -179,32 +172,33 @@ public class CreateChargeControllerE2ETest : AbstractSecuredController() {
         status = status
     )
 
-    private fun createMethodPayment(
+    private fun createPaymentMethod(
         token: String,
-        phoneNumber: String = "",
+        phoneNumber: String,
         country: String = "CM",
         paymentMethodProvider: PaymentMethodProvider = PaymentMethodProvider.MTN
-    ) = PaymentMethod(
-        token = token,
-        phone = Phone(
-            number = phoneNumber,
-            country = country
-        ),
-        type = PaymentMethodType.MOBILE_PAYMENT.name,
-        provider = paymentMethodProvider.name
-    )
+    ): PaymentMethod {
+        val paymentMethod = PaymentMethod(
+            token = token,
+            phone = Phone(
+                number = phoneNumber,
+                country = country
+            ),
+            type = PaymentMethodType.MOBILE_PAYMENT.name,
+            provider = paymentMethodProvider.name
+        )
 
-    private fun createApplication(id: Long, active: Boolean = true) = Application(
-        id = id,
-        active = active
-    )
+        doReturn(GetPaymentMethodResponse(paymentMethod)).whenever(accountApi).getPaymentMethod(any(), any())
 
-    private fun createCreatePaymentResponse(status: Status = Status.PENDING) = CreatePaymentResponse(
-        transactionId = UUID.randomUUID().toString(),
-        status = status
-    )
+        return paymentMethod
+    }
 
-    private fun createGetPaymentResponse(status: Status = Status.SUCCESSFUL) = GetPaymentResponse(
-        status = status
-    )
+    private fun createApplication(id: Long, active: Boolean = true): Application {
+        val application = Application(
+            id = id,
+            active = active
+        )
+        doReturn(GetApplicationResponse(application)).whenever(securityApi).getApplication(any())
+        return application
+    }
 }

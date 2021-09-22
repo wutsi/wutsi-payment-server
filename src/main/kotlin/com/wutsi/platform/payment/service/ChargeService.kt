@@ -127,7 +127,7 @@ class ChargeService(
             request = CreatePaymentRequest(
                 payer = Party(
                     fullName = customer.displayName ?: "",
-                    phoneNumber = customer.phone?.number ?: "",
+                    phoneNumber = paymentMethod.phone!!.number,
                 ),
                 amount = Money(
                     value = request.amount,
