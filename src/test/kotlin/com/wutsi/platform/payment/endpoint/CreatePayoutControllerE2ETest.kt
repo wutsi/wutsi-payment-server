@@ -21,7 +21,6 @@ import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.dto.CreateChargeResponse
 import com.wutsi.platform.payment.dto.CreatePayoutRequest
 import com.wutsi.platform.payment.entity.TransactionType
-import jdk.nashorn.internal.ir.annotations.Ignore
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -66,7 +65,6 @@ public class CreatePayoutControllerE2ETest : AbstractSecuredController() {
         url = "http://localhost:$port/v1/payouts"
     }
 
-    @Ignore
     @Test
     @Sql(value = ["/db/clean.sql", "/db/CreatePayoutControllerE2E.sql"])
     fun success() {
@@ -84,14 +82,12 @@ public class CreatePayoutControllerE2ETest : AbstractSecuredController() {
         assertEquals("XAF", payouts[0].currency)
         assertNull(payouts[0].errorCode)
 
-        val txs = txDao.findAll().toList()
-        assertEquals(1, txs.size)
-        assertEquals(TransactionType.PAYOUT, txs[0].type)
-        assertEquals(-70000.0, txs[0].amount)
-        assertEquals("XAF", txs[0].currency)
+        val tx = txDao.findById(payouts[0].id).get()
+        assertEquals(TransactionType.PAYOUT, tx.type)
+        assertEquals(-70000.0, tx.amount)
+        assertEquals("XAF", tx.currency)
     }
 
-    @Ignore
     @Test
     @Sql(value = ["/db/clean.sql", "/db/CreatePayoutControllerE2E.sql"])
     fun failure() {
