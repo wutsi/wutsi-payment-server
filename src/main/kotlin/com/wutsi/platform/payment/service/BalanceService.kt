@@ -45,6 +45,7 @@ public class BalanceService(
             paymentMethodProvider = paymentMethodProvider.name,
             currency = currency(balance, transactions),
             amount = amount(balance, transactions),
+            amountForPayout = balance.map { it.amount }.orElse(0.0),
             synced = balance.map { it.synced }.orElse(LocalDate.now())
         )
     }

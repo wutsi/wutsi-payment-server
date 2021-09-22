@@ -48,6 +48,7 @@ public class GetBalanceControllerTest : AbstractSecuredController() {
         assertEquals("XAF", response.body.balance.currency)
         assertEquals(1, response.body.balance.accountId)
         assertEquals(12700.0, response.body.balance.amount)
+        assertEquals(10000.0, response.body.balance.amountForPayout)
         assertEquals(LocalDate.of(2020, 2, 1), response.body.balance.synced)
         assertEquals(PaymentMethodProvider.MTN.name, response.body.balance.paymentMethodProvider)
     }
@@ -62,6 +63,7 @@ public class GetBalanceControllerTest : AbstractSecuredController() {
         assertEquals("XAF", response.body.balance.currency)
         assertEquals(2, response.body.balance.accountId)
         assertEquals(9900.0, response.body.balance.amount)
+        assertEquals(0.0, response.body.balance.amountForPayout)
         assertEquals(LocalDate.now(), response.body.balance.synced)
         assertEquals(PaymentMethodProvider.MTN.name, response.body.balance.paymentMethodProvider)
     }
