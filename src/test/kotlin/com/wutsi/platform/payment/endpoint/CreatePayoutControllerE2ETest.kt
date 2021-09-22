@@ -82,10 +82,11 @@ public class CreatePayoutControllerE2ETest : AbstractSecuredController() {
         assertEquals("XAF", payouts[0].currency)
         assertNull(payouts[0].errorCode)
 
-        val tx = txDao.findById(payouts[0].id).get()
-        assertEquals(TransactionType.PAYOUT, tx.type)
-        assertEquals(-70000.0, tx.amount)
-        assertEquals("XAF", tx.currency)
+        val txs = txDao.findByReferenceId(payouts[0].id)
+        assertEquals(1, txs.size)
+        assertEquals(TransactionType.PAYOUT, txs[0].type)
+        assertEquals(-70000.0, txs[0].amount)
+        assertEquals("XAF", txs[0].currency)
     }
 
     @Test
