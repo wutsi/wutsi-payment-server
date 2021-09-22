@@ -62,7 +62,7 @@ class TransactionService(
 
             eventStream.publish(EventURN.CHARGE_SUCCESSFUL.urn, ChargeEventPayload(chargeId))
         } catch (ex: DataIntegrityViolationException) {
-            LOGGER.warn("This transaction was already recoded", ex)
+            LOGGER.warn("This transaction was already recorded", ex)
         }
     }
 
@@ -85,7 +85,7 @@ class TransactionService(
 
             eventStream.publish(EventURN.PAYOUT_SUCCESSFUL.urn, PayoutEventPayload(payoutId))
         } catch (ex: DataIntegrityViolationException) {
-            LOGGER.warn("This transaction was already recoded", ex)
+            LOGGER.warn("This transaction was already recorded", ex)
         }
     }
 }
