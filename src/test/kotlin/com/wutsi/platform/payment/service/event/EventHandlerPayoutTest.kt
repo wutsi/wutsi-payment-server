@@ -5,6 +5,7 @@ import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import com.wutsi.platform.account.WutsiAccountApi
@@ -30,7 +31,6 @@ import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dao.PayoutRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.entity.TransactionType
-import com.wutsi.platform.payment.model.CreateTransferResponse
 import com.wutsi.platform.payment.model.GetTransferResponse
 import com.wutsi.platform.payment.service.GatewayProvider
 import org.junit.jupiter.api.BeforeEach
@@ -184,6 +184,21 @@ internal class EventHandlerPayoutTest {
     }
 
     @Test
+    fun `PENDING Payout - PAYOUT_SUCCESSFUL twice`() {
+        val payoutId = "201"
+        val event = createPayoutEvent(EventURN.PAYOUT_SUCCESSFUL.urn, payoutId)
+        handler.onEvent(event)
+        handler.onEvent(event)
+
+        val payout = payoutDao.findById(payoutId).get()
+        val txs = txDao.findByReferenceId(payoutId)
+        assertEquals(1, txs.size)
+        assertEquals(TransactionType.PAYOUT, txs[0].type)
+
+        verify(eventStream, times(1)).publish(EventURN.PAYOUT_SUCCESSFUL.urn, PayoutEventPayload(payoutId))
+    }
+
+    @Test
     fun `FAILED Payout - PAYOUT_FAILED`() {
         val payoutId = "777"
         val event = createPayoutEvent(EventURN.PAYOUT_FAILED.urn, payoutId)
@@ -192,16 +207,6 @@ internal class EventHandlerPayoutTest {
         verify(eventStream).publish(EventURN.PAYOUT_FAILED.urn, PayoutEventPayload(payoutId))
     }
 
-    private fun createBalanceEvent(type: String, id: Long, paymentMethodProvider: PaymentMethodProvider = MTN) = Event(
-        type = type,
-        payload = """
-            {
-                "accountId": "$id",
-                "paymentMethodProvider": "${paymentMethodProvider.name}"
-            }
-        """.trimIndent()
-    )
-
     private fun createPayoutEvent(type: String, payoutId: String) = Event(
         type = type,
         payload = """
@@ -209,11 +214,6 @@ internal class EventHandlerPayoutTest {
                 "payoutId": "$payoutId"
             }
         """.trimIndent()
-    )
-
-    private fun createCreateTransferResponse(status: Status) = CreateTransferResponse(
-        status = status,
-        financialTransactionId = UUID.randomUUID().toString()
     )
 
     private fun createGetTransferResponse(status: Status) = GetTransferResponse(

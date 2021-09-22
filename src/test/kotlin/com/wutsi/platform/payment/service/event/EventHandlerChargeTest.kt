@@ -5,6 +5,7 @@ import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.never
+import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import com.wutsi.platform.account.WutsiAccountApi
@@ -141,6 +142,7 @@ internal class EventHandlerChargeTest {
         val charge = chargeDao.findById(chargeId).get()
         val txs = txDao.findByReferenceId(chargeId).sortedBy { it.id }
 
+        assertEquals(2, txs.size)
         assertEquals(TransactionType.CHARGE, txs[0].type)
         assertEquals(9800.0, txs[0].amount)
         assertEquals(charge.currency, txs[0].currency)
@@ -161,11 +163,18 @@ internal class EventHandlerChargeTest {
     }
 
     @Test
-    fun `SUCESSFUL Charge - CHARGE_SUCCESSFUL - Duplicate Transaction`() {
+    fun `PENDING Payout - CHARGE_SUCCESSFUL twice`() {
         val chargeId = "201"
         val event = createChargeEvent(EventURN.CHARGE_SUCCESSFUL.urn, chargeId)
         handler.onEvent(event)
-        // No error
+        handler.onEvent(event)
+
+        val txs = txDao.findByReferenceId(chargeId).sortedBy { it.id }
+        assertEquals(2, txs.size)
+        assertEquals(TransactionType.CHARGE, txs[0].type)
+        assertEquals(TransactionType.FEES, txs[1].type)
+
+        verify(eventStream, times(1)).publish(EventURN.CHARGE_SUCCESSFUL.urn, ChargeEventPayload(chargeId))
     }
 
     @Test

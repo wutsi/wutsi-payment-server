@@ -13,21 +13,21 @@ INSERT INTO T_CHARGE(id, merchant_id, customer_id, user_id, application_id, paym
         ('201', 1, 11, 111, 1111, '1111-token', 1, 1, 'urn:order:1111', 10000, 'XAF', 1, '201-0000', null, '201-1111', 'Sample charge')
 ;
 
-INSERT INTO T_TRANSACTION(reference_id, account_id, payment_method_provider, description, currency, amount, created)
+INSERT INTO T_TRANSACTION(reference_id, type, account_id, payment_method_provider, description, currency, amount, created)
     VALUES
-        ('201', 1, 1, 'yo', 'XAF', 9900, now()),
-        ('201', 1, 1, null, 'XAF', 100, now()),
+        ('201', 1, 1, 1, 'yo', 'XAF', 9900, now()),
+        ('201', 2, 1, 1, null, 'XAF', 100, now()),
 
-        ('301', 3, 1, null, 'XAF', 100, '2020-02-01'),
-        ('302', 3, 1, null, 'XAF', -200, '2020-02-02'),
-        ('303', 3, 1, null, 'XAF', 300, '2020-02-03'),
-        ('304', 3, 1, null, 'XAF', 400, '2020-02-04'),
-        ('305', 3, 1, null, 'XAF', 1000, '2020-01-30'),
-        ('306', 3, 1, null, 'XAF', 2000, now()),
+        ('301', 1, 3, 1, null, 'XAF', 100, '2020-02-01'),
+        ('302', 3, 3, 1, null, 'XAF', -200, '2020-02-02'),
+        ('303', 1, 3, 1, null, 'XAF', 300, '2020-02-03'),
+        ('304', 1, 3, 1, null, 'XAF', 400, '2020-02-04'),
+        ('305', 1, 3, 1, null, 'XAF', 1000, '2020-01-30'),
+        ('306', 1, 3, 1, null, 'XAF', 2000, now()),
 
-        ('401', 4, 1, null, 'XAF', 40, '2021-01-01'),
-        ('402', 4, 1, null, 'XAF', 50, '2021-01-02'),
-        ('403', 4, 1, null, 'XAF', 100, now())
+        ('401', 1, 4, 1, null, 'XAF', 40, '2021-01-01'),
+        ('402', 1, 4, 1, null, 'XAF', 50, '2021-01-02'),
+        ('403', 1, 4, 1, null, 'XAF', 100, now())
 ;
 
 INSERT INTO T_BALANCE(account_id, payment_method_provider, synced, amount, currency, payout_id)

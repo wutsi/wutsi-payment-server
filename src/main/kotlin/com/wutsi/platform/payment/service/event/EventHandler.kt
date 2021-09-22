@@ -11,6 +11,7 @@ import com.wutsi.platform.payment.service.PayoutService
 import com.wutsi.platform.payment.service.TransactionService
 import org.slf4j.LoggerFactory
 import org.springframework.context.event.EventListener
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 
 @Service
@@ -61,8 +62,14 @@ class EventHandler(
 
     private fun recordChargeTransaction(event: Event) {
         val payload = asChargeEventPayload(event)
-        LOGGER.info("Charge - Recording Transaction. chargeId=${payload.chargeId}")
-        transactions.onChargeSuccessful(payload.chargeId)
+        try {
+            LOGGER.info("Charge - Recording Transaction. chargeId=${payload.chargeId}")
+            transactions.onChargeSuccessful(payload.chargeId)
+
+            eventStream.publish(EventURN.CHARGE_SUCCESSFUL.urn, ChargeEventPayload(payload.chargeId))
+        } catch (ex: DataIntegrityViolationException) {
+            LOGGER.warn("Duplicate Transaction. referenceId=${payload.chargeId} type=CHARGE", ex)
+        }
     }
 
     private fun updateBalance(event: Event) {
@@ -89,8 +96,14 @@ class EventHandler(
 
     private fun recordPayoutTransaction(event: Event) {
         val payload = asPayoutEventPayload(event)
-        LOGGER.info("Payout - Recording Transaction. payoutId=${payload.payoutId}")
-        transactions.onPayoutSuccessful(payload.payoutId)
+        try {
+            LOGGER.info("Payout - Recording Transaction. payoutId=${payload.payoutId}")
+            transactions.onPayoutSuccessful(payload.payoutId)
+
+            eventStream.publish(EventURN.PAYOUT_SUCCESSFUL.urn, PayoutEventPayload(payload.payoutId))
+        } catch (ex: DataIntegrityViolationException) {
+            LOGGER.warn("Duplicate Transaction. referenceId=${payload.payoutId} type=PAYOUT", ex)
+        }
     }
 
     private fun notifyPayoutFailure(event: Event) {

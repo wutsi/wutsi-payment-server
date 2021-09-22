@@ -16,9 +16,6 @@ INSERT INTO T_CHARGE(id, merchant_id, customer_id, user_id, application_id, paym
 
 INSERT INTO T_TRANSACTION(reference_id, account_id, payment_method_provider, description, currency, amount, created)
     VALUES
-        ('201', 1, 1, 'yo', 'XAF', 9900, now()),
-        ('201', 1, 1, null, 'XAF', 100, now()),
-
         ('301', 3, 1, null, 'XAF', 100, '2020-02-01'),
         ('302', 3, 1, null, 'XAF', -200, '2020-02-02'),
         ('303', 3, 1, null, 'XAF', 300, '2020-02-03'),

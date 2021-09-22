@@ -1,18 +1,18 @@
-INSERT INTO T_TRANSACTION(reference_id, account_id, payment_method_provider, description, currency, amount, created)
+INSERT INTO T_TRANSACTION(reference_id, type, account_id, payment_method_provider, description, currency, amount, created)
     VALUES
-        ('201', 2, 1, 'yo', 'XAF', 9900, '2020-01-01'),
-        ('202', 2, 1, null, 'XAF', 100, '2020-02-22'),
-        ('203', 2, 1, null, 'XAF', 7777, now()),
+        ('201', 1, 2, 1, 'yo', 'XAF', 9900, '2020-01-01'),
+        ('202', 2, 2, 1, null, 'XAF', 100, '2020-02-22'),
+        ('203', 1, 2, 1, null, 'XAF', 7777, now()),
 
-        ('301', 3, 1, null, 'XAF', 100, '2020-02-01'),
-        ('302', 3, 1, null, 'XAF', -200, '2020-02-02'),
-        ('303', 3, 1, null, 'XAF', 300, '2020-02-03'),
-        ('304', 3, 1, null, 'XAF', 400, '2020-02-04'),
-        ('305', 3, 1, null, 'XAF', 1000, '2020-01-30'),
-        ('306', 3, 1, null, 'XAF', 2000, now()),
+        ('301', 1, 3, 1, null, 'XAF', 100, '2020-02-01'),
+        ('302', 3, 3, 1, null, 'XAF', -200, '2020-02-02'),
+        ('303', 1, 3, 1, null, 'XAF', 300, '2020-02-03'),
+        ('304', 1, 3, 1, null, 'XAF', 400, '2020-02-04'),
+        ('305', 1, 3, 1, null, 'XAF', 1000, '2020-01-30'),
+        ('306', 1, 3, 1, null, 'XAF', 2000, now()),
 
-        ('301', 3, 2, null, 'XAF', 100, '2020-02-01'),
-        ('302', 3, 2, null, 'XAF', -200, '2020-02-02')
+        ('401', 1, 3, 2, null, 'XAF', 100, '2020-02-01'),
+        ('402', 3, 3, 2, null, 'XAF', -200, '2020-02-02')
 ;
 
 INSERT INTO T_BALANCE(account_id, payment_method_provider, synced, amount, currency, payout_id)

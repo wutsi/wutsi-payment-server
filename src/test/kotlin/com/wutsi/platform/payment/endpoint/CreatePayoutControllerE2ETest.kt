@@ -21,7 +21,6 @@ import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.dto.CreateChargeResponse
 import com.wutsi.platform.payment.dto.CreatePayoutRequest
 import com.wutsi.platform.payment.entity.TransactionType
-import com.wutsi.platform.payment.entity.TransactionType.PAYOUT
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -83,7 +82,7 @@ public class CreatePayoutControllerE2ETest : AbstractSecuredController() {
         assertEquals("XAF", payouts[0].currency)
         assertNull(payouts[0].errorCode)
 
-        val txs = txDao.findByReferenceId(payouts[0].id).filter { it.type == PAYOUT }
+        val txs = txDao.findByReferenceId(payouts[0].id)
         assertEquals(1, txs.size)
         assertEquals(TransactionType.PAYOUT, txs[0].type)
         assertEquals(-70000.0, txs[0].amount)
