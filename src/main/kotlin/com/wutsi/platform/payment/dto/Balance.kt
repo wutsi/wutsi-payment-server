@@ -1,7 +1,10 @@
 package com.wutsi.platform.payment.dto
 
-import org.springframework.format.annotation.DateTimeFormat
+import org.springframework.format.`annotation`.DateTimeFormat
 import java.time.LocalDate
+import kotlin.Double
+import kotlin.Long
+import kotlin.String
 
 public data class Balance(
     public val accountId: Long = 0,

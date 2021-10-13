@@ -213,9 +213,6 @@ components:
         paymentMethodProvider:
           description: Payment Provider
           type: string
-          enum:
-            - MTN
-            - ORANGE
       required:
         - paymentMethodToken
 
@@ -305,13 +302,17 @@ components:
           type: string
           description: Type of payment method
           enum:
-            - MOBILE_PAYMENT
+            - MOBILE
+            - CREDIT_CARD
+            - BANK
+            - CASH
         paymentMethodProvider:
           type: string
           description: Payment provider
           enum:
             - MTN
             - ORANGE
+            - NEXTTEL
         created:
           type: string
           format: date-time
@@ -334,10 +335,15 @@ components:
           enum:
             - MTN
             - ORANGE
+            - NEXTTEL
         amount:
           type: number
           format: double
-          description: Amout to charge to the customer
+          description: Amount to charge to the customer
+        amountForPayout:
+          type: number
+          format: double
+          description: Amount avaialable for payout
         currency:
           type: string
           description: 3 letter currency code
@@ -401,6 +407,7 @@ components:
           enum:
             - MTN
             - ORANGE
+            - NEXTTEL
         created:
           type: string
           format: date-time

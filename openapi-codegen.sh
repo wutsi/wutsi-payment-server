@@ -1,7 +1,6 @@
 #/bin/sh
 
-CODEGEN_VERSION="0.0.54-SNAPSHOT"
-CODEGEN_JAR=~/wutsi-codegen/wutsi-codegen-${CODEGEN_VERSION}.jar
+CODEGEN_JAR=~/wutsi-codegen/wutsi-codegen.jar
 
 API_NAME=wutsi-payment
 API_URL=https://raw.githubusercontent.com/wutsi/wutsi-openapi/master/src/openapi/payment/v1/payment_api.yaml
