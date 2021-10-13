@@ -24,7 +24,7 @@ import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.PaymentMethodProvider.MTN
 import com.wutsi.platform.payment.PaymentMethodProvider.ORANGE
 import com.wutsi.platform.payment.PaymentMethodType
-import com.wutsi.platform.payment.PaymentMethodType.MOBILE_PAYMENT
+import com.wutsi.platform.payment.PaymentMethodType.MOBILE
 import com.wutsi.platform.payment.core.Error
 import com.wutsi.platform.payment.core.ErrorCode.EXPIRED
 import com.wutsi.platform.payment.core.Status
@@ -111,7 +111,7 @@ public class CreatePayoutControllerTest : AbstractSecuredController() {
         assertEquals("XAF", payout.currency)
         assertEquals(transferResponse.transactionId, payout.gatewayTransactionId)
         assertEquals(transferResponse.status, payout.status)
-        assertEquals(MOBILE_PAYMENT, payout.paymentMethodType)
+        assertEquals(MOBILE, payout.paymentMethodType)
         assertEquals(MTN, payout.paymentMethodProvider)
         assertEquals(paymentMethod.token, payout.paymentMethodToken)
         assertNull(payout.errorCode)
@@ -140,7 +140,7 @@ public class CreatePayoutControllerTest : AbstractSecuredController() {
         assertEquals("XAF", payout.currency)
         assertEquals(transferResponse.transactionId, payout.gatewayTransactionId)
         assertEquals(transferResponse.status, payout.status)
-        assertEquals(MOBILE_PAYMENT, payout.paymentMethodType)
+        assertEquals(MOBILE, payout.paymentMethodType)
         assertEquals(MTN, payout.paymentMethodProvider)
         assertEquals(paymentMethod.token, payout.paymentMethodToken)
         assertNull(payout.errorCode)
@@ -166,7 +166,7 @@ public class CreatePayoutControllerTest : AbstractSecuredController() {
         assertEquals("XAF", payout.currency)
         assertEquals(transferResponse.transactionId, payout.gatewayTransactionId)
         assertEquals(transferResponse.status, payout.status)
-        assertEquals(MOBILE_PAYMENT, payout.paymentMethodType)
+        assertEquals(MOBILE, payout.paymentMethodType)
         assertEquals(MTN, payout.paymentMethodProvider)
         assertEquals(paymentMethod.token, payout.paymentMethodToken)
         assertNull(payout.errorCode)
@@ -233,7 +233,7 @@ public class CreatePayoutControllerTest : AbstractSecuredController() {
         assertEquals("XAF", payout.currency)
         assertEquals(exception.error.transactionId, payout.gatewayTransactionId)
         assertEquals(Status.FAILED, payout.status)
-        assertEquals(PaymentMethodType.MOBILE_PAYMENT, payout.paymentMethodType)
+        assertEquals(PaymentMethodType.MOBILE, payout.paymentMethodType)
         assertEquals(paymentMethod.token, payout.paymentMethodToken)
         assertEquals(exception.error.code, payout.errorCode)
         assertEquals(exception.error.supplierErrorCode, payout.supplierErrorCode)
@@ -273,7 +273,7 @@ public class CreatePayoutControllerTest : AbstractSecuredController() {
         assertEquals("XAF", payout.currency)
         assertEquals("400-gw", payout.gatewayTransactionId)
         assertEquals(SUCCESSFUL, payout.status)
-        assertEquals(MOBILE_PAYMENT, payout.paymentMethodType)
+        assertEquals(MOBILE, payout.paymentMethodType)
         assertEquals(ORANGE, payout.paymentMethodProvider)
         assertEquals(paymentMethod.token, payout.paymentMethodToken)
         assertNull(payout.errorCode)
@@ -343,7 +343,7 @@ public class CreatePayoutControllerTest : AbstractSecuredController() {
             number = phoneNumber,
             country = country
         ),
-        type = MOBILE_PAYMENT.name,
+        type = MOBILE.name,
         provider = paymentMethodProvider.name
     )
 
@@ -354,7 +354,7 @@ public class CreatePayoutControllerTest : AbstractSecuredController() {
 
     private fun createMethodPaymentSummary(
         token: String,
-        type: PaymentMethodType = MOBILE_PAYMENT,
+        type: PaymentMethodType = MOBILE,
         paymentMethodProvider: PaymentMethodProvider = MTN
     ) = PaymentMethodSummary(
         token = token,

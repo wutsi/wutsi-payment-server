@@ -48,7 +48,7 @@ public class GetChargeControllerTest : AbstractSecuredController() {
         assertEquals(1111L, charge.applicationId)
         assertEquals("1111-token", charge.paymentMethodToken)
         assertEquals(PaymentMethodProvider.MTN.name, charge.paymentMethodProvider)
-        assertEquals(PaymentMethodType.MOBILE_PAYMENT.name, charge.paymentMethodType)
+        assertEquals(PaymentMethodType.MOBILE.name, charge.paymentMethodType)
         assertEquals("urn:order:1111", charge.externalId)
         assertEquals(10000.0, charge.amount)
         assertEquals("XAF", charge.currency)

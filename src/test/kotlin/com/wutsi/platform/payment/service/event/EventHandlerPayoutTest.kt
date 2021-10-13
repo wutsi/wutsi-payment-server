@@ -23,7 +23,7 @@ import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.PaymentMethodProvider.MTN
 import com.wutsi.platform.payment.PaymentMethodType
-import com.wutsi.platform.payment.PaymentMethodType.MOBILE_PAYMENT
+import com.wutsi.platform.payment.PaymentMethodType.MOBILE
 import com.wutsi.platform.payment.PaymentMethodType.UNKNOWN
 import com.wutsi.platform.payment.core.Error
 import com.wutsi.platform.payment.core.ErrorCode.NOT_ENOUGH_FUNDS
@@ -232,13 +232,13 @@ internal class EventHandlerPayoutTest {
             number = phoneNumber,
             country = country
         ),
-        type = MOBILE_PAYMENT.name,
+        type = MOBILE.name,
         provider = paymentMethodProvider.name
     )
 
     private fun createMethodPaymentSummary(
         token: String,
-        type: PaymentMethodType = MOBILE_PAYMENT,
+        type: PaymentMethodType = MOBILE,
         paymentMethodProvider: PaymentMethodProvider = MTN
     ) = PaymentMethodSummary(
         token = token,

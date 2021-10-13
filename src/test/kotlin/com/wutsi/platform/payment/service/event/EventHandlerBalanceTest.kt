@@ -13,7 +13,7 @@ import com.wutsi.platform.core.stream.EventStream
 import com.wutsi.platform.payment.Gateway
 import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.PaymentMethodProvider.MTN
-import com.wutsi.platform.payment.PaymentMethodType.MOBILE_PAYMENT
+import com.wutsi.platform.payment.PaymentMethodType.MOBILE
 import com.wutsi.platform.payment.dao.BalanceRepository
 import com.wutsi.platform.payment.service.GatewayProvider
 import org.junit.jupiter.api.BeforeEach
@@ -110,7 +110,7 @@ internal class EventHandlerBalanceTest {
             number = phoneNumber,
             country = country
         ),
-        type = MOBILE_PAYMENT.name,
+        type = MOBILE.name,
         provider = paymentMethodProvider.name
     )
 }

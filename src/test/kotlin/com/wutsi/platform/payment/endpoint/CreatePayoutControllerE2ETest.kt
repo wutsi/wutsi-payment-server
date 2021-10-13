@@ -143,14 +143,14 @@ public class CreatePayoutControllerE2ETest : AbstractSecuredController() {
                 number = phoneNumber,
                 country = country
             ),
-            type = PaymentMethodType.MOBILE_PAYMENT.name,
+            type = PaymentMethodType.MOBILE.name,
             provider = paymentMethodProvider.name
         )
         doReturn(GetPaymentMethodResponse(paymentMethod)).whenever(accountApi).getPaymentMethod(any(), any())
 
         val summary = PaymentMethodSummary(
             token = token,
-            type = PaymentMethodType.MOBILE_PAYMENT.name,
+            type = PaymentMethodType.MOBILE.name,
             provider = paymentMethodProvider.name
         )
         doReturn(ListPaymentMethodResponse(listOf(summary))).whenever(accountApi).listPaymentMethods(any())

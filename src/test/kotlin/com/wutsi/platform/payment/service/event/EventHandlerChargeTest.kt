@@ -18,7 +18,7 @@ import com.wutsi.platform.payment.Gateway
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.PaymentMethodProvider.MTN
-import com.wutsi.platform.payment.PaymentMethodType.MOBILE_PAYMENT
+import com.wutsi.platform.payment.PaymentMethodType.MOBILE
 import com.wutsi.platform.payment.core.Error
 import com.wutsi.platform.payment.core.ErrorCode.EXPIRED
 import com.wutsi.platform.payment.core.Status
@@ -211,7 +211,7 @@ internal class EventHandlerChargeTest {
             number = phoneNumber,
             country = country
         ),
-        type = MOBILE_PAYMENT.name,
+        type = MOBILE.name,
         provider = paymentMethodProvider.name
     )
 }

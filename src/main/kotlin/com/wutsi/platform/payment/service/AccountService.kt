@@ -42,7 +42,7 @@ class AccountService(
     fun findPaymentMethodForPayout(accountId: Long, preferredPaymentMethodProvider: PaymentMethodProvider): PaymentMethod {
         val paymentMethods = api.listPaymentMethods(accountId).paymentMethods
         val summary = paymentMethods.find { it.provider == preferredPaymentMethodProvider.name }
-            ?: paymentMethods.find { it.type == PaymentMethodType.MOBILE_PAYMENT.name }
+            ?: paymentMethods.find { it.type == PaymentMethodType.MOBILE.name }
 
         return if (summary != null)
             api.getPaymentMethod(accountId, summary.token).paymentMethod

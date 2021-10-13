@@ -324,7 +324,7 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
             number = phoneNumber,
             country = country
         ),
-        type = PaymentMethodType.MOBILE_PAYMENT.name,
+        type = PaymentMethodType.MOBILE.name,
         provider = paymentMethodProvider.name
     )
 
