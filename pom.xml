@@ -32,7 +32,7 @@
     <maven-antrun-plugin.version>3.0.0</maven-antrun-plugin.version>
     <hikari-cp.version>5.0.0</hikari-cp.version>
     <postgresql.version>42.3.1</postgresql.version>
-    <flyway.version>8.0.2</flyway.version>
+    <flyway.version>8.0.4</flyway.version>
     <wutsi-platform-core.version>0.0.62</wutsi-platform-core.version>
     <wutsi-platform-payment.version>0.0.47</wutsi-platform-payment.version>
     <wutsi-account-sdk.version>1.0.6</wutsi-account-sdk.version>
