@@ -89,7 +89,7 @@ wutsi:
         - "PUT /mtn/**"
     cache:
       name: ${wutsi.application.name}
-      type: local
+      type: none
     stream:
       name: ${wutsi.application.name}
       type: local
