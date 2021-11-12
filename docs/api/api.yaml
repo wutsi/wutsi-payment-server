@@ -33,24 +33,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateCashinResponse'
-        403:
-          description: The current user is not owner of the payment method
         409:
-          description: |
-            The cash-in failed
+          description: The operation failed
       tags:
-        - Payment
+        - Transactions
       security:
         - api_key: [ 'payment-manage' ]
 
-  /v1/accounts/{id}:
-    post:
-      operationId: "get-account"
-      description: Return the information of a payment account
+  /v1/users/{user-id}/account:
+    get:
+      operationId: "get-user-account"
+      description: Find account of a user
       parameters:
         - in: path
-          name: id
-          description: ID of the account
+          name: user-id
+          description: ID of the user
           required: true
           schema:
             type: integer
@@ -63,10 +60,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/GetAccountResponse'
       tags:
-        - Payment
+        - Account
       security:
         - api_key: [ 'payment-read' ]
-
 
 components:
   securitySchemes:
@@ -116,14 +112,16 @@ components:
           type: integer
           format: int64
           description: ID of the account
-        ownerId:
-          type: integer
-          format: int64
-          description: ID of the owner
-          nullable: true
+        type:
+          type: string
+          description: Type of account
+          enum:
+            - REVENU
+            - LIABILITY
         name:
           type: string
           description: Name of the owner
+          nullable: true
         balance:
           type: number
           format: double
@@ -131,14 +129,10 @@ components:
         currency:
           type: string
           description: 3 letter currency code
-          maxLength: 3
-        type:
+        created:
           type: string
-          enum:
-            - USER
-            - GATEWAY
-            - FEES
-          description: Type of account
+          description: Creation data-time
+          format: date-time
 
     GetAccountResponse:
       type: object

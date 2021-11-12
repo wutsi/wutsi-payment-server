@@ -1,12 +1,17 @@
 package com.wutsi.platform.payment.dto
 
-import javax.validation.constraints.Size
+import org.springframework.format.`annotation`.DateTimeFormat
+import java.time.OffsetDateTime
+import kotlin.Double
+import kotlin.Long
+import kotlin.String
 
 public data class Account(
     public val id: Long = 0,
-    public val name: String = "",
+    public val type: String = "",
+    public val name: String? = null,
     public val balance: Double = 0.0,
-    @get:Size(max = 3)
     public val currency: String = "",
-    public val ownerType: String = ""
+    @get:DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
+    public val created: OffsetDateTime = OffsetDateTime.now()
 )
