@@ -10,6 +10,7 @@ CREATE TABLE T_ACCOUNT(
     PRIMARY KEY(id)
 );
 
+
 CREATE TABLE T_USER(
     id                          BIGINT NOT NULL,
     created                     TIMESTAMPTZ NOT NULL DEFAULT now(),
