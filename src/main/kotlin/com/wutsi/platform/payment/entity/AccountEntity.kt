@@ -1,7 +1,9 @@
 package com.wutsi.platform.payment.entity
 
+import com.wutsi.platform.payment.entity.AccountType.UNKNOWN
 import java.time.OffsetDateTime
 import javax.persistence.Entity
+import javax.persistence.Enumerated
 import javax.persistence.GeneratedValue
 import javax.persistence.GenerationType
 import javax.persistence.Id
@@ -14,9 +16,12 @@ data class AccountEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
+    @Enumerated
+    val type: AccountType = UNKNOWN,
+
     val tenantId: Long = -1,
     val name: String? = null,
-    val balance: Double = 0.0,
+    var balance: Double = 0.0,
     val currency: String = "",
     val created: OffsetDateTime = OffsetDateTime.now(),
 )

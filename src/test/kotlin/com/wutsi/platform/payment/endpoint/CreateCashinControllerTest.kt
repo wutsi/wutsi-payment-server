@@ -17,9 +17,13 @@ import com.wutsi.platform.payment.PaymentMethodType.MOBILE
 import com.wutsi.platform.payment.core.Error
 import com.wutsi.platform.payment.core.ErrorCode.NOT_ENOUGH_FUNDS
 import com.wutsi.platform.payment.core.Status
+import com.wutsi.platform.payment.dao.AccountRepository
+import com.wutsi.platform.payment.dao.RecordRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
+import com.wutsi.platform.payment.dao.UserRepository
 import com.wutsi.platform.payment.dto.CreateCashinRequest
 import com.wutsi.platform.payment.dto.CreateCashinResponse
+import com.wutsi.platform.payment.entity.AccountType
 import com.wutsi.platform.payment.model.CreatePaymentResponse
 import com.wutsi.platform.payment.util.ErrorURN
 import org.junit.jupiter.api.BeforeEach
@@ -45,6 +49,15 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
     @Autowired
     private lateinit var txDao: TransactionRepository
 
+    @Autowired
+    private lateinit var recordDao: RecordRepository
+
+    @Autowired
+    private lateinit var accountDao: AccountRepository
+
+    @Autowired
+    private lateinit var userDao: UserRepository
+
     @BeforeEach
     override fun setUp() {
         super.setUp()
@@ -53,6 +66,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
     }
 
     @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateCashinController.sql"])
     fun success() {
         // GIVEN
         val paymentResponse = CreatePaymentResponse("111", "222", Status.SUCCESSFUL)
@@ -79,9 +93,35 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertNull(tx.description)
         assertNull(tx.errorCode)
+
+        val records = recordDao.findByTransaction(tx)
+        assertEquals(2, records.size)
+
+        val userRecord = records[0]
+        assertEquals(0.0, userRecord.debit)
+        assertEquals(request.amount, userRecord.credit)
+        assertEquals("XAF", userRecord.currency)
+
+        val userAccount = accountDao.findById(userRecord.account.id).get()
+        assertEquals(request.amount, userAccount.balance)
+        assertEquals(request.currency, userAccount.currency)
+        assertEquals(AccountType.LIABILITY, userAccount.type)
+        assertEquals(TENANT_ID, userAccount.tenantId)
+
+        val gatewayRecord = records[1]
+        assertEquals(request.amount, gatewayRecord.debit)
+        assertEquals(0.0, gatewayRecord.credit)
+        assertEquals(request.currency, gatewayRecord.currency)
+
+        val gatewayAccount = accountDao.findById(gatewayRecord.account.id).get()
+        assertEquals(request.amount, gatewayAccount.balance)
+        assertEquals(request.currency, gatewayAccount.currency)
+        assertEquals(AccountType.REVENUE, gatewayAccount.type)
+        assertEquals(TENANT_ID, gatewayAccount.tenantId)
     }
 
     @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateCashinController.sql"])
     fun successWithExistingAccount() {
         // GIVEN
         user = Account(
@@ -118,6 +158,31 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertNull(tx.description)
         assertNull(tx.errorCode)
+
+        val records = recordDao.findByTransaction(tx)
+        assertEquals(2, records.size)
+
+        val userRecord = records[0]
+        assertEquals(0.0, userRecord.debit)
+        assertEquals(request.amount, userRecord.credit)
+        assertEquals("XAF", userRecord.currency)
+
+        val userAccount = accountDao.findById(userRecord.account.id).get()
+        assertEquals(request.amount + 100000, userAccount.balance)
+        assertEquals(request.currency, userAccount.currency)
+        assertEquals(AccountType.LIABILITY, userAccount.type)
+        assertEquals(TENANT_ID, userAccount.tenantId)
+
+        val gatewayRecord = records[1]
+        assertEquals(request.amount, gatewayRecord.debit)
+        assertEquals(0.0, gatewayRecord.credit)
+        assertEquals(request.currency, gatewayRecord.currency)
+
+        val gatewayAccount = accountDao.findById(gatewayRecord.account.id).get()
+        assertEquals(request.amount, gatewayAccount.balance)
+        assertEquals(request.currency, gatewayAccount.currency)
+        assertEquals(AccountType.REVENUE, gatewayAccount.type)
+        assertEquals(TENANT_ID, gatewayAccount.tenantId)
     }
 
     @Test

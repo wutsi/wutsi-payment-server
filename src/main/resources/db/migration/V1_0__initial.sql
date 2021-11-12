@@ -1,6 +1,7 @@
 CREATE TABLE T_ACCOUNT(
     id                          SERIAL NOT NULL,
     tenant_id                   BIGINT NOT NULL,
+    type                        INT NOT NULL,
     name                        VARCHAR(100),
     balance                     DECIMAL(20, 4) NOT NULL DEFAULT 0,
     currency                    VARCHAR(3),
@@ -11,30 +12,38 @@ CREATE TABLE T_ACCOUNT(
 
 CREATE TABLE T_USER(
     id                          BIGINT NOT NULL,
-    account_fk                  BIGINT NOT NULL REFERENCES T_ACCOUNT(id),
-
     created                     TIMESTAMPTZ NOT NULL DEFAULT now(),
 
-    UNIQUE(account_fk),
     PRIMARY KEY(id)
+);
+
+CREATE TABLE T_USER_ACCOUNT(
+    user_fk     BIGINT NOT NULL REFERENCES T_USER(id),
+    account_fk  BIGINT NOT NULL REFERENCES T_ACCOUNT(id),
+
+    PRIMARY KEY(user_fk, account_fk)
 );
 
 CREATE TABLE T_GATEWAY(
     id                          SERIAL NOT NULL,
 
     code                        VARCHAR(10) NOT NULL,
-    name                        VARCHAR(30) NOT NULL,
     created                     TIMESTAMPTZ NOT NULL DEFAULT now(),
 
     UNIQUE(code),
     PRIMARY KEY(id)
 );
 
+CREATE TABLE T_GATEWAY_ACCOUNT(
+    gateway_fk  BIGINT NOT NULL REFERENCES T_GATEWAY(id),
+    account_fk  BIGINT NOT NULL REFERENCES T_ACCOUNT(id),
+
+    PRIMARY KEY(gateway_fk, account_fk)
+);
+
 
 CREATE TABLE T_TRANSACTION(
     id                          VARCHAR(36) NOT NULL,
-    account_fk                  BIGINT NOT NULL REFERENCES T_ACCOUNT(id),
-    gateway_fk                  BIGINT NOT NULL REFERENCES T_GATEWAY(id),
 
     type                        INT NOT NULL,
     payment_method_token        VARCHAR(36) NOT NULL,
@@ -55,7 +64,8 @@ CREATE TABLE T_RECORD(
     id                          SERIAL NOT NULL,
     transaction_fk              VARCHAR(36) NOT NULL REFERENCES T_TRANSACTION(id),
     account_fk                  BIGINT NOT NULL REFERENCES T_ACCOUNT(id),
-    amount                      DECIMAL(20, 4) NOT NULL DEFAULT 0,
+    credit                      DECIMAL(20, 4) NOT NULL DEFAULT 0,
+    debit                       DECIMAL(20, 4) NOT NULL DEFAULT 0,
     currency                    VARCHAR(3),
     created                     TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY(id)

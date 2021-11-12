@@ -12,12 +12,16 @@ import com.wutsi.platform.payment.core.Money
 import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dao.AccountRepository
 import com.wutsi.platform.payment.dao.GatewayRepository
+import com.wutsi.platform.payment.dao.RecordRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.dao.UserRepository
 import com.wutsi.platform.payment.dto.CreateCashinRequest
 import com.wutsi.platform.payment.dto.CreateCashinResponse
 import com.wutsi.platform.payment.entity.AccountEntity
+import com.wutsi.platform.payment.entity.AccountType.LIABILITY
+import com.wutsi.platform.payment.entity.AccountType.REVENUE
 import com.wutsi.platform.payment.entity.GatewayEntity
+import com.wutsi.platform.payment.entity.RecordEntity
 import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.entity.TransactionType.CASHIN
 import com.wutsi.platform.payment.entity.UserEntity
@@ -43,6 +47,7 @@ class CreateCashinDelegate(
     private val transactionDao: TransactionRepository,
     private val accountDao: AccountRepository,
     private val gatewayDao: GatewayRepository,
+    private val recordDao: RecordRepository,
     private val tenantProvider: TenantProvider,
     private val gatewayProvider: GatewayProvider,
     private val logger: KVLogger
@@ -60,13 +65,13 @@ class CreateCashinDelegate(
         ).paymentMethod
 
         // Create transaction
-        val tx = createTransaction(request, paymentMethod, tenant)
+        val tx = createTransaction(request, tenant)
 
         // Perform the transfer
         try {
             val response = performTransaction(tx, paymentMethod)
             if (response.status == Status.SUCCESSFUL) {
-                onSuccess(tx, response)
+                onSuccess(tx, response, paymentMethod, tenant)
             } else {
                 onPending(tx, response)
             }
@@ -104,18 +109,10 @@ class CreateCashinDelegate(
         }
     }
 
-    private fun createTransaction(request: CreateCashinRequest, paymentMethod: PaymentMethod, tenant: Tenant): TransactionEntity {
-        val userId = securityManager.currentUserId()
-        val user = findUser(userId, tenant)
-        logger.add("user_id", userId)
-
-        val gateway = findGateway(paymentMethod)
-
+    private fun createTransaction(request: CreateCashinRequest, tenant: Tenant): TransactionEntity {
         val tx = transactionDao.save(
             TransactionEntity(
                 id = UUID.randomUUID().toString(),
-                account = user.account,
-                gateway = gateway,
                 paymentMethodToken = request.paymentMethodToken,
                 type = CASHIN,
                 amount = request.amount,
@@ -150,33 +147,6 @@ class CreateCashinDelegate(
         return response
     }
 
-    private fun findUser(userId: Long, tenant: Tenant): UserEntity =
-        userDao.findById(userId)
-            .orElseGet {
-                userDao.save(
-                    UserEntity(
-                        id = userId,
-                        account = accountDao.save(
-                            AccountEntity(
-                                tenantId = tenant.id,
-                                balance = 0.0,
-                                currency = tenant.currency,
-                            )
-                        )
-                    )
-                )
-            }
-
-    private fun findGateway(paymentMethod: PaymentMethod): GatewayEntity =
-        gatewayDao.findByCodeIgnoreCase(paymentMethod.provider)
-            .orElseGet {
-                gatewayDao.save(
-                    GatewayEntity(
-                        code = paymentMethod.provider,
-                    )
-                )
-            }
-
     private fun onError(tx: TransactionEntity, ex: PaymentException) {
         logger.add("gateway_error_code", ex.error.code)
         logger.add("gateway_supplier_error_code", ex.error.supplierErrorCode)
@@ -188,16 +158,83 @@ class CreateCashinDelegate(
         transactionDao.save(tx)
     }
 
-    private fun onSuccess(tx: TransactionEntity, response: CreatePaymentResponse) {
-        tx.status = Status.SUCCESSFUL
-        tx.gatewayTransactionId = response.transactionId
-        tx.financialTransactionId = response.financialTransactionId
-        transactionDao.save(tx)
-    }
-
     private fun onPending(tx: TransactionEntity, response: CreatePaymentResponse) {
         tx.status = Status.PENDING
         tx.gatewayTransactionId = response.transactionId
         transactionDao.save(tx)
+    }
+
+    private fun onSuccess(tx: TransactionEntity, response: CreatePaymentResponse, paymentMethod: PaymentMethod, tenant: Tenant) {
+        tx.status = Status.SUCCESSFUL
+        tx.gatewayTransactionId = response.transactionId
+        tx.financialTransactionId = response.financialTransactionId
+        transactionDao.save(tx)
+
+        updateLedger(tx, paymentMethod, tenant)
+    }
+
+    private fun updateLedger(tx: TransactionEntity, paymentMethod: PaymentMethod, tenant: Tenant) {
+        // Create records
+        val userAccount = findUserAccount(securityManager.currentUserId(), tenant)
+        val gatewayAccount = findGatewayAccount(paymentMethod, tenant)
+        recordDao.saveAll(
+            listOf(
+                RecordEntity.increase(tx, userAccount, tx.amount),
+                RecordEntity.increase(tx, gatewayAccount, tx.amount),
+            )
+        )
+
+        // Update balance
+        updateBalance(userAccount, tx.amount)
+        updateBalance(gatewayAccount, tx.amount)
+    }
+
+    private fun findUserAccount(userId: Long, tenant: Tenant): AccountEntity {
+        // User
+        val user = userDao.findById(userId)
+            .orElseGet {
+                userDao.save(
+                    UserEntity(
+                        id = userId,
+                    )
+                )
+            }
+
+        return user.accounts.find { it.tenantId == tenant.id }
+            ?: accountDao.save(
+                AccountEntity(
+                    type = LIABILITY,
+                    tenantId = tenant.id,
+                    currency = tenant.currency,
+                    name = "User: ${user.id}"
+                )
+            )
+    }
+
+    private fun findGatewayAccount(paymentMethod: PaymentMethod, tenant: Tenant): AccountEntity {
+        val gateway = gatewayDao.findByCodeIgnoreCase(paymentMethod.provider)
+            .orElseGet {
+                gatewayDao.save(
+                    GatewayEntity(
+                        code = paymentMethod.provider,
+                    )
+                )
+            }
+
+        return gateway.accounts.find { it.tenantId == tenant.id }
+            ?: accountDao.save(
+                AccountEntity(
+                    type = REVENUE,
+                    tenantId = tenant.id,
+                    currency = tenant.currency,
+                    name = "Payment Gateway: ${paymentMethod.provider}"
+                )
+            )
+    }
+
+    private fun updateBalance(account: AccountEntity, amount: Double): AccountEntity {
+        account.balance += amount
+        accountDao.save(account)
+        return account
     }
 }

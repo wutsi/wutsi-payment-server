@@ -2,9 +2,11 @@ package com.wutsi.platform.payment.entity
 
 import java.time.OffsetDateTime
 import javax.persistence.Entity
+import javax.persistence.FetchType.LAZY
 import javax.persistence.Id
 import javax.persistence.JoinColumn
-import javax.persistence.OneToOne
+import javax.persistence.JoinTable
+import javax.persistence.ManyToMany
 import javax.persistence.Table
 
 @Entity
@@ -13,9 +15,13 @@ data class UserEntity(
     @Id
     val id: Long? = null,
 
-    @OneToOne
-    @JoinColumn(name = "account_fk")
-    val account: AccountEntity = AccountEntity(),
+    @ManyToMany(fetch = LAZY)
+    @JoinTable(
+        name = "T_USER_ACCOUNT",
+        joinColumns = arrayOf(JoinColumn(name = "user_fk")),
+        inverseJoinColumns = arrayOf(JoinColumn(name = "account_fk"))
+    )
+    val accounts: List<AccountEntity> = emptyList(),
 
     val created: OffsetDateTime = OffsetDateTime.now(),
 )

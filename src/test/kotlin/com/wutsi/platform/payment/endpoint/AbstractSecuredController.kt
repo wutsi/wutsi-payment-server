@@ -42,6 +42,7 @@ import java.util.Base64
 abstract class AbstractSecuredController {
     companion object {
         const val USER_ID = 1L
+        const val TENANT_ID = 1L
     }
 
     private lateinit var keyProvider: RSAKeyProvider
@@ -67,7 +68,7 @@ abstract class AbstractSecuredController {
 
     @BeforeEach
     open fun setUp() {
-        tracingContext = TestTracingContext()
+        tracingContext = TestTracingContext(tenantId = TENANT_ID.toString())
         apiKeyProvider = TestApiKeyProvider("00000000-00000000-00000000-00000000")
         keyProvider = TestRSAKeyProvider()
 
