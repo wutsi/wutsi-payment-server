@@ -3,7 +3,7 @@
 CODEGEN_JAR=~/wutsi-codegen/wutsi-codegen.jar
 
 API_NAME=wutsi-payment
-API_URL=https://raw.githubusercontent.com/wutsi/wutsi-openapi/master/src/openapi/payment/v1/payment_api.yaml
+API_URL=https://raw.githubusercontent.com/wutsi/wutsi-openapi/master/src/openapi/payment/v2/payment_api.yaml
 GITHUB_USER=wutsi
 
 echo "Generating code from ${API_URL}"

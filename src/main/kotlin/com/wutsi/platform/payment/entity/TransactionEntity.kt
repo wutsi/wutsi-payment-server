@@ -1,29 +1,40 @@
 package com.wutsi.platform.payment.entity
 
-import com.wutsi.platform.payment.PaymentMethodProvider
-import com.wutsi.platform.payment.PaymentMethodProvider.UNKNOWN
+import com.wutsi.platform.payment.core.Status
 import java.time.OffsetDateTime
 import javax.persistence.Entity
 import javax.persistence.Enumerated
-import javax.persistence.GeneratedValue
-import javax.persistence.GenerationType
 import javax.persistence.Id
+import javax.persistence.JoinColumn
+import javax.persistence.ManyToOne
 import javax.persistence.Table
 
 @Entity
 @Table(name = "T_TRANSACTION")
 data class TransactionEntity(
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = -1,
-    val referenceId: String = "",
+    val id: String? = null,
+
+    @ManyToOne()
+    @JoinColumn(name = "account_fk")
+    val account: AccountEntity = AccountEntity(),
+
+    @ManyToOne()
+    @JoinColumn(name = "gateway_fk")
+    val gateway: GatewayEntity = GatewayEntity(),
+
     val type: TransactionType = TransactionType.UNKNOWN,
-    val accountId: Long = -1,
+    val paymentMethodToken: String = "",
     val description: String? = null,
     val amount: Double = 0.0,
     val currency: String = "",
+    var gatewayTransactionId: String? = null,
+    var financialTransactionId: String? = null,
+    var errorCode: String? = null,
+    var supplierErrorCode: String? = null,
+
     val created: OffsetDateTime = OffsetDateTime.now(),
 
     @Enumerated
-    val paymentMethodProvider: PaymentMethodProvider = UNKNOWN
+    var status: Status = Status.UNKNOWN
 )

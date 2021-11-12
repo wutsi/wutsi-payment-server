@@ -1,1 +1,0 @@
-CREATE INDEX T_CHARGE__status ON T_CHARGE(status);

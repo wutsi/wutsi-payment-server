@@ -2,7 +2,11 @@ openapi: "3.0.0"
 info:
   title: "Wutsi Payment API"
   description: |
-    API for managing payment
+    API for managing payments.
+    This API allows to
+    - Cash in: Move money from owner's account into the wallet
+    - Cash out: Move monet from wallet to owner's account
+    - Transfer: Transfer money between wallets
   version: "1.0.0"
 
 servers:
@@ -12,130 +16,57 @@ servers:
     description: Production
 
 paths:
-  /v1/charges:
+  /v1/transactions/cashins:
     post:
-      operationId: "create-charge"
-      description: Charge a customer
+      operationId: "create-cashin"
+      description: Cash-in money
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateChargeRequest'
+              $ref: '#/components/schemas/CreateCashinRequest'
       responses:
         200:
           description: Success
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateChargeResponse'
+                $ref: '#/components/schemas/CreateCashinResponse'
+        403:
+          description: The current user is not owner of the payment method
+        409:
+          description: |
+            The cash-in failed
       tags:
-        - Charges
+        - Payment
       security:
         - api_key: [ 'payment-manage' ]
 
-  /v1/charges/{id}:
-    get:
-      operationId: "get-charge"
-      description: Return a charge information
-      parameters:
-        - in: path
-          name: id
-          description: ID of the charge
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GetChargeResponse'
-      tags:
-        - Charges
-      security:
-        - api_key: [ 'payment-read' ]
-
-  /v1/payouts:
+  /v1/accounts/{id}:
     post:
-      operationId: "create-payout"
-      description: Charge a Payout
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreatePayoutRequest'
-      responses:
-        200:
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CreatePayoutResponse'
-      tags:
-        - Charges
-      security:
-        - api_key: [ 'payment-manage' ]
-
-  /v1/payouts/{id}:
-    get:
-      operationId: "get-payout"
-      description: Return a payout information
+      operationId: "get-account"
+      description: Return the information of a payment account
       parameters:
         - in: path
           name: id
-          description: ID of the payout
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GetPayoutResponse'
-      tags:
-        - Payout
-      security:
-        - api_key: [ 'payment-read' ]
-
-  /v1/balances:
-    get:
-      operationId: "get-balance"
-      description: Return the balance of an account
-      parameters:
-        - in: query
-          name: account-id
           description: ID of the account
           required: true
           schema:
             type: integer
             format: int64
-        - in: query
-          name: payment-method-provider
-          description: Payment Provider
-          required: true
-          schema:
-            type: string
-            enum:
-              - MTN
-              - ORANGE
       responses:
         200:
           description: Success
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetBalanceResponse'
+                $ref: '#/components/schemas/GetAccountResponse'
       tags:
-        - Balance
+        - Payment
       security:
         - api_key: [ 'payment-read' ]
+
 
 components:
   securitySchemes:
@@ -145,30 +76,16 @@ components:
       name: Authorization
 
   schemas:
-    CreateChargeRequest:
+    CreateCashinRequest:
       type: object
       properties:
-        accountId:
-          type: integer
-          format: int64
-          description: Account ID of the merchant who charges the customer
-        applicationId:
-          type: integer
-          format: int64
-          description: ID of the application associated with this transaction
         paymentMethodToken:
           type: string
-          description: Payment method used by customer to get charged
-        externalId:
-          type: string
-          description: ID of the product purchased
-        description:
-          type: string
-          description: Description of the transaction
+          description: Token of the payment method from where the money will be transfered from.
         amount:
           type: number
           format: double
-          description: Amout to charge to the customer
+          description: Amout to transfer to the user's wallet
           minimum: 0
         currency:
           type: string
@@ -176,10 +93,9 @@ components:
           maxLength: 3
       required:
         - paymentMethodToken
-        - description
         - currency
 
-    CreateChargeResponse:
+    CreateCashinResponse:
       type: object
       properties:
         id:
@@ -187,232 +103,46 @@ components:
           format: uuid
           description: ID of the charge created
         status:
-          type: string
           description: Status of the charge
-
-
-    GetChargeResponse:
-      type: object
-      properties:
-        charge:
-          type: object
-          $ref: "#/components/schemas/Charge"
-
-
-    GetBalanceResponse:
-      type: object
-      properties:
-        balance:
-          type: object
-          $ref: "#/components/schemas/Balance"
-
-
-    CreatePayoutRequest:
-      type: object
-      properties:
-        paymentMethodProvider:
-          description: Payment Provider
           type: string
-      required:
-        - paymentMethodToken
-
-    CreatePayoutResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          description: ID of the payout created
-        status:
-          type: string
-          description: Status of the payout
-
-    GetPayoutResponse:
-      type: object
-      properties:
-        payout:
-          type: object
-          $ref: "#/components/schemas/Payout"
-
-
-    Charge:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          description: ID of the transaction
-        userId:
-          type: integer
-          format: int64
-          description: ID of the user who performed the transactions
-        merchantId:
-          type: integer
-          format: int64
-          description: Account ID of the merchant who charges the customer
-        customerId:
-          type: integer
-          format: int64
-          description: Account ID of the customer who get charged
-        applicationId:
-          type: integer
-          format: int64
-          description: ID of the application associated with this transaction
-          nullable: true
-        paymentMethodToken:
-          type: string
-          format: uuid
-          description: Payment method used by customer to get charged
-        externalId:
-          type: string
-          description: ID of the product purchased
-        description:
-          type: string
-          description: Description of the transaction
-        amount:
-          type: number
-          format: double
-          description: Amout to charge to the customer
-        gatewayTransactionId:
-          type: string
-          description: Transaction ID
-        financialTransactionId:
-          type: string
-          description: Financial Transaction ID
-          nullable: true
-        currency:
-          type: string
-          description: 3 letter currency code
-        status:
-          type: string
-          description: Transaction status
           enum:
             - PENDING
-            - SUCESSFUL
-            - FAILED
-        errorCode:
-          type: string
-          description: Error code
-          nullable: true
-        supplierErrorCode:
-          type: string
-          description: Error Details
-          nullable: true
-        paymentMethodType:
-          type: string
-          description: Type of payment method
-          enum:
-            - MOBILE
-            - CREDIT_CARD
-            - BANK
-            - CASH
-        paymentMethodProvider:
-          type: string
-          description: Payment provider
-          enum:
-            - MTN
-            - ORANGE
-            - NEXTTEL
-        created:
-          type: string
-          format: date-time
-          description: Creation Date/Time
-        updated:
-          type: string
-          format: date-time
-          description: Last modification Date/Time
+            - SUCESS
 
-    Balance:
-      type: object
-      properties:
-        accountId:
-          type: integer
-          format: int64
-          description: ID of account
-        paymentMethodProvider:
-          type: string
-          description: Payment provider
-          enum:
-            - MTN
-            - ORANGE
-            - NEXTTEL
-        amount:
-          type: number
-          format: double
-          description: Amount to charge to the customer
-        amountForPayout:
-          type: number
-          format: double
-          description: Amount avaialable for payout
-        currency:
-          type: string
-          description: 3 letter currency code
-        synced:
-          type: string
-          format: date
-          description: Last synchornization date
-
-    Payout:
+    Account:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
-          description: ID of the transaction
-        userId:
           type: integer
           format: int64
-          description: ID of the user who performed the transactions
-          nullable: true
-        accountId:
+          description: ID of the account
+        ownerId:
           type: integer
           format: int64
-          description: ID of the account from where the payout will be done
-        description:
-          type: string
-          description: Description of the transaction
-        gatewayTransactionId:
-          type: string
-          description: Transaction ID
-        financialTransactionId:
-          type: string
-          description: Financial Transaction ID
+          description: ID of the owner
           nullable: true
-        amount:
+        name:
+          type: string
+          description: Name of the owner
+        balance:
           type: number
           format: double
-          description: Amout to charge to the customer
+          description: Balance of the account
         currency:
           type: string
           description: 3 letter currency code
           maxLength: 3
-        status:
+        type:
           type: string
-          description: Status of the payout
-        errorCode:
-          type: string
-          description: Error code
-          nullable: true
           enum:
-            - PENDING
-            - SUCESSFUL
-            - FAILED
-        supplierErrorCode:
-          type: string
-          description: Error Details
-          nullable: true
-        paymentMethodProvider:
-          type: string
-          description: Payment provider
-          enum:
-            - MTN
-            - ORANGE
-            - NEXTTEL
-        created:
-          type: string
-          format: date-time
-          description: Creation Date/Time
-        updated:
-          type: string
-          format: date-time
-          description: Last modification Date/Time
+            - USER
+            - GATEWAY
+            - FEES
+          description: Type of account
+
+    GetAccountResponse:
+      type: object
+      properties:
+        account:
+          type: object
+          $ref: "#/components/schemas/Account"
