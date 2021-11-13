@@ -1,6 +1,5 @@
 package com.wutsi.platform.payment.endpoint
 
-import com.auth0.jwt.interfaces.RSAKeyProvider
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.whenever
@@ -25,9 +24,6 @@ import com.wutsi.platform.core.tracing.spring.SpringTracingRequestInterceptor
 import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.PaymentMethodType
 import com.wutsi.platform.payment.provider.mtn.MTNGateway
-import com.wutsi.platform.security.WutsiSecurityApi
-import com.wutsi.platform.security.dto.GetKeyResponse
-import com.wutsi.platform.security.dto.Key
 import com.wutsi.platform.tenant.WutsiTenantApi
 import com.wutsi.platform.tenant.dto.GetTenantResponse
 import com.wutsi.platform.tenant.dto.Logo
@@ -37,7 +33,6 @@ import com.wutsi.platform.tenant.dto.Tenant
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.web.client.RestTemplate
-import java.util.Base64
 
 abstract class AbstractSecuredController {
     companion object {
@@ -45,7 +40,6 @@ abstract class AbstractSecuredController {
         const val TENANT_ID = 1L
     }
 
-    private lateinit var keyProvider: RSAKeyProvider
     private lateinit var apiKeyProvider: ApiKeyProvider
     private lateinit var tracingContext: TracingContext
 
@@ -54,9 +48,6 @@ abstract class AbstractSecuredController {
 
     @MockBean
     protected lateinit var tenantApi: WutsiTenantApi
-
-    @MockBean
-    protected lateinit var securityAPI: WutsiSecurityApi
 
     @MockBean
     protected lateinit var mtnGateway: MTNGateway
@@ -70,13 +61,6 @@ abstract class AbstractSecuredController {
     open fun setUp() {
         tracingContext = TestTracingContext(tenantId = TENANT_ID.toString())
         apiKeyProvider = TestApiKeyProvider("00000000-00000000-00000000-00000000")
-        keyProvider = TestRSAKeyProvider()
-
-        val key = Key(
-            algorithm = "RSA",
-            content = Base64.getEncoder().encodeToString(keyProvider.getPublicKeyById("1").encoded)
-        )
-        doReturn(GetKeyResponse(key)).whenever(securityAPI).getKey(any())
 
         val tenant = Tenant(
             id = 1,
@@ -159,7 +143,7 @@ abstract class AbstractSecuredController {
                 subject = subjectId.toString(),
                 subjectType = subjectType,
                 scope = scope,
-                keyProvider = keyProvider,
+                keyProvider = TestRSAKeyProvider(),
                 admin = admin
             ).build()
         )
