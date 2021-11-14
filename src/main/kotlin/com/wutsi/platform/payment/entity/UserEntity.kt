@@ -21,7 +21,7 @@ data class UserEntity(
         joinColumns = arrayOf(JoinColumn(name = "user_fk")),
         inverseJoinColumns = arrayOf(JoinColumn(name = "account_fk"))
     )
-    val accounts: List<AccountEntity> = emptyList(),
+    val accounts: MutableList<AccountEntity> = mutableListOf(),
 
     val created: OffsetDateTime = OffsetDateTime.now(),
 )

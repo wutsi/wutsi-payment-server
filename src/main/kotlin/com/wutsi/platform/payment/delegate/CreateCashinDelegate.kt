@@ -7,6 +7,7 @@ import com.wutsi.platform.core.error.Parameter
 import com.wutsi.platform.core.error.ParameterType.PARAMETER_TYPE_PAYLOAD
 import com.wutsi.platform.core.error.exception.BadRequestException
 import com.wutsi.platform.core.logging.KVLogger
+import com.wutsi.platform.core.util.URN
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
@@ -191,6 +192,8 @@ class CreateCashinDelegate(
     }
 
     private fun findUserAccount(userId: Long, tenant: Tenant): AccountEntity {
+        logger.add("user_id", userId)
+
         // User
         val user = userDao.findById(userId)
             .orElseGet {
@@ -201,18 +204,25 @@ class CreateCashinDelegate(
                 )
             }
 
-        return user.accounts.find { it.tenantId == tenant.id }
-            ?: accountDao.save(
+        var account = user.accounts.find { it.tenantId == tenant.id }
+        if (account == null) {
+            account = accountDao.save(
                 AccountEntity(
                     type = LIABILITY,
                     tenantId = tenant.id,
                     currency = tenant.currency,
-                    name = "User: ${user.id}"
+                    name = URN.of(type = "account", domain = "payment", name = "user:${user.id}").value
                 )
             )
+            user.accounts.add(account)
+            userDao.save(user)
+        }
+        return account!!
     }
 
     private fun findGatewayAccount(paymentMethod: PaymentMethod, tenant: Tenant): AccountEntity {
+        logger.add("payment_method", paymentMethod)
+
         val gateway = gatewayDao.findByCodeIgnoreCase(paymentMethod.provider)
             .orElseGet {
                 gatewayDao.save(
@@ -222,20 +232,26 @@ class CreateCashinDelegate(
                 )
             }
 
-        return gateway.accounts.find { it.tenantId == tenant.id }
-            ?: accountDao.save(
+        var account = gateway.accounts.find { it.tenantId == tenant.id }
+        if (account == null) {
+            account = accountDao.save(
                 AccountEntity(
                     type = REVENUE,
                     tenantId = tenant.id,
                     currency = tenant.currency,
-                    name = "Payment Gateway: ${paymentMethod.provider}"
+                    name = URN.of(type = "account", domain = "payment", name = "gateway:${paymentMethod.provider}").value
                 )
             )
+            gateway.accounts.add(account)
+        }
+        return account!!
     }
 
     private fun updateBalance(account: AccountEntity, amount: Double): AccountEntity {
         account.balance += amount
         accountDao.save(account)
+
+        logger.add("account_${account.id}_balance", amount)
         return account
     }
 }
