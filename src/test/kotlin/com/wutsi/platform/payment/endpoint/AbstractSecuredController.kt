@@ -21,9 +21,11 @@ import com.wutsi.platform.core.test.TestTokenProvider
 import com.wutsi.platform.core.test.TestTracingContext
 import com.wutsi.platform.core.tracing.TracingContext
 import com.wutsi.platform.core.tracing.spring.SpringTracingRequestInterceptor
+import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.PaymentMethodType
 import com.wutsi.platform.payment.provider.mtn.MTNGateway
+import com.wutsi.platform.payment.provider.om.OMGateway
 import com.wutsi.platform.tenant.WutsiTenantApi
 import com.wutsi.platform.tenant.dto.GetTenantResponse
 import com.wutsi.platform.tenant.dto.Logo
@@ -31,6 +33,7 @@ import com.wutsi.platform.tenant.dto.MobileCarrier
 import com.wutsi.platform.tenant.dto.PhonePrefix
 import com.wutsi.platform.tenant.dto.Tenant
 import org.junit.jupiter.api.BeforeEach
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.web.client.RestTemplate
 
@@ -48,6 +51,12 @@ abstract class AbstractSecuredController {
 
     @MockBean
     protected lateinit var tenantApi: WutsiTenantApi
+
+    @Autowired
+    protected lateinit var gatewayProvider: GatewayProvider
+
+    @MockBean
+    protected lateinit var omGateway: OMGateway
 
     @MockBean
     protected lateinit var mtnGateway: MTNGateway
@@ -123,6 +132,11 @@ abstract class AbstractSecuredController {
             ownerName = user.displayName!!
         )
         doReturn(GetPaymentMethodResponse(paymentMethod)).whenever(accountApi).getPaymentMethod(any(), any())
+
+        doReturn(PaymentMethodProvider.ORANGE).whenever(omGateway).provider()
+        doReturn(PaymentMethodProvider.MTN).whenever(mtnGateway).provider()
+        gatewayProvider.register(mtnGateway)
+        gatewayProvider.register(omGateway)
 
         rest = createResTemplate()
     }

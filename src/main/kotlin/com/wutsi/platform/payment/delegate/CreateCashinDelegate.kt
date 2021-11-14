@@ -7,7 +7,9 @@ import com.wutsi.platform.core.error.Parameter
 import com.wutsi.platform.core.error.ParameterType.PARAMETER_TYPE_PAYLOAD
 import com.wutsi.platform.core.error.exception.BadRequestException
 import com.wutsi.platform.core.logging.KVLogger
+import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentException
+import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.core.Money
 import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dao.AccountRepository
@@ -29,7 +31,6 @@ import com.wutsi.platform.payment.exception.TransactionException
 import com.wutsi.platform.payment.model.CreatePaymentRequest
 import com.wutsi.platform.payment.model.CreatePaymentResponse
 import com.wutsi.platform.payment.model.Party
-import com.wutsi.platform.payment.service.GatewayProvider
 import com.wutsi.platform.payment.service.SecurityManager
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.payment.util.ErrorURN
@@ -127,7 +128,7 @@ class CreateCashinDelegate(
     }
 
     private fun performTransaction(tx: TransactionEntity, paymentMethod: PaymentMethod): CreatePaymentResponse {
-        val paymentGateway = gatewayProvider.get(paymentMethod.provider)
+        val paymentGateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
         val response = paymentGateway.createPayment(
             CreatePaymentRequest(
                 payer = Party(

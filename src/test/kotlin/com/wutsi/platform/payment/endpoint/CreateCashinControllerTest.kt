@@ -7,13 +7,8 @@ import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.whenever
 import com.wutsi.platform.account.dto.Account
 import com.wutsi.platform.account.dto.GetAccountResponse
-import com.wutsi.platform.account.dto.GetPaymentMethodResponse
-import com.wutsi.platform.account.dto.PaymentMethod
-import com.wutsi.platform.account.dto.Phone
 import com.wutsi.platform.core.error.ErrorResponse
 import com.wutsi.platform.payment.PaymentException
-import com.wutsi.platform.payment.PaymentMethodProvider
-import com.wutsi.platform.payment.PaymentMethodType.MOBILE
 import com.wutsi.platform.payment.core.Error
 import com.wutsi.platform.payment.core.ErrorCode.NOT_ENOUGH_FUNDS
 import com.wutsi.platform.payment.core.Status
@@ -34,7 +29,6 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.web.client.HttpClientErrorException
-import org.springframework.web.client.HttpServerErrorException
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
@@ -264,33 +258,5 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
 
         // THEN
         assertEquals(400, ex.rawStatusCode)
-    }
-
-    @Test
-    fun gatewayNotSupported() {
-        // GIVEN
-        paymentMethod = PaymentMethod(
-            token = "xxxx",
-            type = MOBILE.name,
-            provider = PaymentMethodProvider.NEXTTEL.name,
-            phone = Phone(
-                number = "+237995076666"
-            ),
-            ownerName = user.displayName!!
-        )
-        doReturn(GetPaymentMethodResponse(paymentMethod)).whenever(accountApi).getPaymentMethod(any(), any())
-
-        // WHEN
-        val request = CreateCashinRequest(
-            paymentMethodToken = "11111",
-            amount = 50000.0,
-            currency = "XAF"
-        )
-        val ex = assertThrows<HttpServerErrorException> {
-            rest.postForEntity(url, request, CreateCashinResponse::class.java)
-        }
-
-        // THEN
-        assertEquals(500, ex.rawStatusCode)
     }
 }
