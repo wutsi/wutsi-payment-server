@@ -15,7 +15,6 @@ import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dao.AccountRepository
 import com.wutsi.platform.payment.dao.RecordRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
-import com.wutsi.platform.payment.dao.UserRepository
 import com.wutsi.platform.payment.dto.CreateCashinRequest
 import com.wutsi.platform.payment.dto.CreateCashinResponse
 import com.wutsi.platform.payment.entity.AccountType
@@ -49,9 +48,6 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
     @Autowired
     private lateinit var accountDao: AccountRepository
 
-    @Autowired
-    private lateinit var userDao: UserRepository
-
     @BeforeEach
     override fun setUp() {
         super.setUp()
@@ -76,6 +72,8 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
 
         // THEN
         assertEquals(200, response.statusCodeValue)
+
+        assertEquals(Status.SUCCESSFUL.name, response.body.status)
 
         val tx = txDao.findById(response.body.id).get()
         assertEquals(request.currency, tx.currency)
@@ -142,6 +140,8 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         // THEN
         assertEquals(200, response.statusCodeValue)
 
+        assertEquals(Status.SUCCESSFUL.name, response.body.status)
+
         val tx = txDao.findById(response.body.id).get()
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
@@ -196,6 +196,8 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         // THEN
         assertEquals(200, response.statusCodeValue)
 
+        assertEquals(Status.PENDING.name, response.body.status)
+
         val tx = txDao.findById(response.body.id).get()
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
@@ -206,6 +208,9 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertNull(tx.description)
         assertNull(tx.errorCode)
+
+        val records = recordDao.findByTransaction(tx)
+        assertEquals(0, records.size)
     }
 
     @Test
@@ -242,6 +247,9 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertEquals(e.error.supplierErrorCode, tx.supplierErrorCode)
         assertEquals(e.error.code.name, tx.errorCode)
         assertEquals(e.error.transactionId, tx.gatewayTransactionId)
+
+        val records = recordDao.findByTransaction(tx)
+        assertEquals(0, records.size)
     }
 
     @Test
@@ -258,5 +266,27 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
 
         // THEN
         assertEquals(400, ex.rawStatusCode)
+
+        val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.CURRENCY_NOT_SUPPORTED.urn, response.error.code)
+    }
+
+    @Test
+    fun userNotFound() {
+        // WHEN
+        val request = CreateCashinRequest(
+            paymentMethodToken = "11111",
+            amount = 50000.0,
+            currency = "EUR"
+        )
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateCashinResponse::class.java)
+        }
+
+        // THEN
+        assertEquals(400, ex.rawStatusCode)
+
+        val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.CURRENCY_NOT_SUPPORTED.urn, response.error.code)
     }
 }

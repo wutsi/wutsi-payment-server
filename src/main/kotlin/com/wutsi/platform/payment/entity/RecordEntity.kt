@@ -39,5 +39,14 @@ data class RecordEntity(
                 debit = if (account.type.increaseOnDebit) amount else 0.0,
                 credit = if (!account.type.increaseOnDebit) amount else 0.0
             )
+
+        fun decrease(transaction: TransactionEntity, account: AccountEntity, amount: Double): RecordEntity =
+            RecordEntity(
+                transaction = transaction,
+                account = account,
+                currency = transaction.currency,
+                debit = if (account.type.increaseOnDebit) 0.0 else amount,
+                credit = if (!account.type.increaseOnDebit) 0.0 else amount
+            )
     }
 }

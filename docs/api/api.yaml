@@ -19,7 +19,7 @@ paths:
   /v1/transactions/cashins:
     post:
       operationId: "create-cashin"
-      description: Cash-in money
+      description: Add money into the wallet
       requestBody:
         required: true
         content:
@@ -33,6 +33,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CreateCashinResponse'
+        409:
+          description: The operation failed
+      tags:
+        - Transactions
+      security:
+        - api_key: [ 'payment-manage' ]
+
+  /v1/transactions/transfers:
+    post:
+      operationId: "create-transfer"
+      description: Transfer money to another user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransferRequest'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateTransferResponse'
         409:
           description: The operation failed
       tags:
@@ -97,13 +121,47 @@ components:
         id:
           type: string
           format: uuid
-          description: ID of the charge created
+          description: ID of the transaction
         status:
           description: Status of the charge
           type: string
           enum:
             - PENDING
             - SUCESS
+
+    CreateTransferRequest:
+      type: object
+      properties:
+        recipientId:
+          type: integer
+          format: int64
+          description: ID of the recipient of the transfer
+        amount:
+          type: number
+          format: double
+          description: Amout to transfer to the user's wallet
+          minimum: 0
+        currency:
+          type: string
+          description: 3 letter currency code
+          maxLength: 3
+      required:
+        - currency
+
+    CreateTransferResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID of the transaction
+        status:
+          description: Status of the charge
+          type: string
+          enum:
+            - PENDING
+            - SUCESS
+
 
     Account:
       type: object
