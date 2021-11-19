@@ -1,12 +1,16 @@
 package com.wutsi.platform.payment.endpoint
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.doThrow
+import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import com.wutsi.platform.account.dto.Account
 import com.wutsi.platform.account.dto.GetAccountResponse
 import com.wutsi.platform.core.error.ErrorResponse
+import com.wutsi.platform.core.stream.EventStream
 import com.wutsi.platform.payment.core.ErrorCode
 import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dao.AccountRepository
@@ -15,6 +19,9 @@ import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.dto.CreateCashinResponse
 import com.wutsi.platform.payment.dto.CreateTransferRequest
 import com.wutsi.platform.payment.dto.CreateTransferResponse
+import com.wutsi.platform.payment.entity.TransactionType
+import com.wutsi.platform.payment.event.EventURN
+import com.wutsi.platform.payment.event.TransactionEventPayload
 import com.wutsi.platform.payment.util.ErrorURN
 import feign.FeignException
 import feign.Request
@@ -25,6 +32,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.web.client.HttpClientErrorException
@@ -47,6 +55,9 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
     @Autowired
     private lateinit var accountDao: AccountRepository
+
+    @MockBean
+    private lateinit var eventStream: EventStream
 
     @BeforeEach
     override fun setUp() {
@@ -102,6 +113,13 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
         val toAccount = accountDao.findById(toRecord.account.id).get()
         assertEquals(10000 + request.amount, toAccount.balance)
+
+        val payload = argumentCaptor<TransactionEventPayload>()
+        verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFULL.urn), payload.capture())
+        assertEquals(USER_ID, payload.firstValue.senderId)
+        assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
+        assertEquals(request.recipientId, payload.firstValue.recipientId)
+        assertEquals(tx.id, payload.firstValue.transactionId)
     }
 
     @Test
@@ -140,10 +158,17 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
         val records = recordDao.findByTransaction(tx)
         assertEquals(0, records.size)
+
+        val payload = argumentCaptor<TransactionEventPayload>()
+        verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
+        assertEquals(USER_ID, payload.firstValue.senderId)
+        assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
+        assertEquals(request.recipientId, payload.firstValue.recipientId)
+        assertEquals(tx.id, payload.firstValue.transactionId)
     }
 
     @Test
-    public fun receipientNotFound() {
+    public fun recipientNotFound() {
         // GIVEN
         val ex = FeignException.NotFound(
             "",
@@ -187,6 +212,13 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
         val records = recordDao.findByTransaction(tx)
         assertEquals(0, records.size)
+
+        val payload = argumentCaptor<TransactionEventPayload>()
+        verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
+        assertEquals(USER_ID, payload.firstValue.senderId)
+        assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
+        assertEquals(request.recipientId, payload.firstValue.recipientId)
+        assertEquals(tx.id, payload.firstValue.transactionId)
     }
 
     @Test
@@ -229,5 +261,12 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
         val records = recordDao.findByTransaction(tx)
         assertEquals(0, records.size)
+
+        val payload = argumentCaptor<TransactionEventPayload>()
+        verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
+        assertEquals(USER_ID, payload.firstValue.senderId)
+        assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
+        assertEquals(request.recipientId, payload.firstValue.recipientId)
+        assertEquals(tx.id, payload.firstValue.transactionId)
     }
 }
