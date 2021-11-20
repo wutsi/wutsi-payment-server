@@ -1,5 +1,6 @@
 package com.wutsi.platform.payment.entity
 
+import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.core.Status
 import java.time.OffsetDateTime
 import javax.persistence.Entity
@@ -18,6 +19,7 @@ data class TransactionEntity(
 
     val type: TransactionType = TransactionType.UNKNOWN,
     val paymentMethodToken: String? = null,
+    val paymentMethodProvider: PaymentMethodProvider? = null,
     val description: String? = null,
     val amount: Double = 0.0,
     val currency: String = "",

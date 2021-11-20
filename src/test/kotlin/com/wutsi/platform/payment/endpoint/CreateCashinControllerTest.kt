@@ -9,6 +9,7 @@ import com.wutsi.platform.account.dto.Account
 import com.wutsi.platform.account.dto.GetAccountResponse
 import com.wutsi.platform.core.error.ErrorResponse
 import com.wutsi.platform.payment.PaymentException
+import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.core.Error
 import com.wutsi.platform.payment.core.ErrorCode.NOT_ENOUGH_FUNDS
 import com.wutsi.platform.payment.core.Status
@@ -79,6 +80,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
+        assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)
         assertEquals(Status.SUCCESSFUL, tx.status)
         assertEquals(paymentResponse.transactionId, tx.gatewayTransactionId)
         assertEquals(paymentResponse.financialTransactionId, tx.financialTransactionId)
@@ -146,6 +148,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
+        assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)
         assertEquals(Status.SUCCESSFUL, tx.status)
         assertEquals(paymentResponse.transactionId, tx.gatewayTransactionId)
         assertEquals(paymentResponse.financialTransactionId, tx.financialTransactionId)
@@ -202,6 +205,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
+        assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)
         assertEquals(Status.PENDING, tx.status)
         assertEquals(paymentResponse.transactionId, tx.gatewayTransactionId)
         assertEquals(paymentResponse.financialTransactionId, tx.financialTransactionId)
@@ -241,6 +245,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
+        assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)
         assertEquals(Status.FAILED, tx.status)
         assertNull(tx.financialTransactionId)
         assertNull(tx.description)

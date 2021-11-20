@@ -61,7 +61,7 @@ class CreateCashinDelegate(
         ).paymentMethod
 
         // Create transaction
-        val tx = createTransaction(request, tenant)
+        val tx = createTransaction(request, paymentMethod, tenant)
         logger.add("transaction_id", tx.id)
 
         // Perform the transfer
@@ -113,11 +113,12 @@ class CreateCashinDelegate(
         }
     }
 
-    private fun createTransaction(request: CreateCashinRequest, tenant: Tenant): TransactionEntity =
+    private fun createTransaction(request: CreateCashinRequest, paymentMethod: PaymentMethod, tenant: Tenant): TransactionEntity =
         transactionDao.save(
             TransactionEntity(
                 id = UUID.randomUUID().toString(),
                 paymentMethodToken = request.paymentMethodToken,
+                paymentMethodProvider = PaymentMethodProvider.valueOf(paymentMethod.provider),
                 type = CASHIN,
                 amount = request.amount,
                 currency = tenant.currency,

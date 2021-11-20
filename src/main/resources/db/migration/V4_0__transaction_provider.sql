@@ -1,0 +1,1 @@
+ALTER TABLE T_TRANSACTION ADD COLUMN payment_method_provider INT;
