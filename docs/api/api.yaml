@@ -16,6 +16,32 @@ servers:
     description: Production
 
 paths:
+  /v1/transactions/{id}:
+    post:
+      operationId: "get-transaction"
+      description: Return a transaction
+      parameters:
+        - in: path
+          name: id
+          description: ID of the payout
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetTransactionResponse'
+        404:
+          description: The transactions not found
+      tags:
+        - Transactions
+      security:
+        - api_key: [ 'payment-read' ]
+
   /v1/transactions/cashins:
     post:
       operationId: "create-cashin"
@@ -145,6 +171,10 @@ components:
           type: string
           description: 3 letter currency code
           maxLength: 3
+        description:
+          type: string
+          description: Description of the transfer
+          nullable: true
       required:
         - currency
 
@@ -198,3 +228,78 @@ components:
         account:
           type: object
           $ref: "#/components/schemas/Account"
+
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Transaction unique ID
+        type:
+          type: string
+          enum:
+            - CASHIN
+            - CASHOUT
+            - TRANSFER
+          description: Type of transaction
+        paymentMethodToken:
+          type: string
+          description: Token of payment method used for the transaction. (for CASHIN or CASHOUT)
+          nullable: true
+        paymentMethodProvider:
+          type: string
+          description: Payment Gateway provider
+          nullable: true
+        description:
+          type: string
+          description: Description of the transaction
+          nullable: true
+        amount:
+          type: number
+          format: double
+          description: Transaction amount
+        currency:
+          type: string
+          description: 3 letter currency code
+        gatewayTransactionId:
+          type: string
+          description: Transaction ID from payment gateway
+          nullable: true
+        financialTransactionId:
+          type: string
+          description: Transaction ID from financial institution
+          nullable: true
+        status:
+          type: string
+          enum:
+            - SUCCESSFULL
+            - PENDING
+            - FAILED
+          description: Status of the transaction
+        errorCode:
+          type: string
+          description: Error code
+          nullable: true
+        supplierErrorCode:
+          type: string
+          description: Error code from payment supplier
+          nullable: true
+        fromAccount:
+          type: object
+          $ref: "#/components/schemas/Account"
+        toAccount:
+          type: object
+          $ref: "#/components/schemas/Account"
+        created:
+          type: string
+          format: date-time
+          description: Date/Time of the transaction
+
+    GetTransactionResponse:
+      type: object
+      properties:
+        account:
+          type: object
+          $ref: "#/components/schemas/Transaction"
+

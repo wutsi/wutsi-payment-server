@@ -1,6 +1,6 @@
 package com.wutsi.platform.payment.endpoint
 
-import com.wutsi.platform.payment.`delegate`.GetUserAccountDelegate
+import com.wutsi.platform.payment.delegate.GetUserAccountDelegate
 import com.wutsi.platform.payment.dto.GetAccountResponse
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.`annotation`.GetMapping

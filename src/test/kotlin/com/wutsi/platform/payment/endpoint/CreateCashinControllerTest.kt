@@ -77,6 +77,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertEquals(Status.SUCCESSFUL.name, response.body.status)
 
         val tx = txDao.findById(response.body.id).get()
+        assertEquals(1L, tx.tenantId)
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
@@ -145,6 +146,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertEquals(Status.SUCCESSFUL.name, response.body.status)
 
         val tx = txDao.findById(response.body.id).get()
+        assertEquals(1L, tx.tenantId)
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
@@ -202,6 +204,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertEquals(Status.PENDING.name, response.body.status)
 
         val tx = txDao.findById(response.body.id).get()
+        assertEquals(1L, tx.tenantId)
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)

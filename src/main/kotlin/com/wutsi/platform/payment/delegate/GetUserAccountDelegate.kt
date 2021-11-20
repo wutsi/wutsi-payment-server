@@ -6,7 +6,6 @@ import com.wutsi.platform.core.error.ParameterType.PARAMETER_TYPE_PATH
 import com.wutsi.platform.core.error.exception.NotFoundException
 import com.wutsi.platform.core.tracing.TracingContext
 import com.wutsi.platform.payment.dao.UserRepository
-import com.wutsi.platform.payment.dto.Account
 import com.wutsi.platform.payment.dto.GetAccountResponse
 import com.wutsi.platform.payment.util.ErrorURN
 import org.springframework.stereotype.Service
@@ -44,14 +43,7 @@ class GetUserAccountDelegate(
             )
 
         return GetAccountResponse(
-            account = Account(
-                id = account.id!!,
-                type = account.type.name,
-                balance = account.balance,
-                currency = account.currency,
-                created = account.created,
-                name = account.name
-            )
+            account = account.toAccount()
         )
     }
 }

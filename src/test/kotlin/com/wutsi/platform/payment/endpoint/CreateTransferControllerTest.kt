@@ -83,6 +83,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertEquals(Status.SUCCESSFUL.name, response.body.status)
 
         val tx = txDao.findById(response.body.id).get()
+        assertEquals(1L, tx.tenantId)
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
         assertNull(tx.paymentMethodToken)
@@ -121,6 +122,9 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
         assertEquals(request.recipientId, payload.firstValue.recipientId)
         assertEquals(tx.id, payload.firstValue.transactionId)
+        assertEquals(tx.tenantId, payload.firstValue.tenantId)
+        assertEquals(tx.amount, payload.firstValue.amount)
+        assertEquals(tx.currency, payload.firstValue.currency)
     }
 
     @Test
@@ -145,6 +149,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
         val id = response.error.data?.get("id").toString()
         val tx = txDao.findById(id).get()
+        assertEquals(1L, tx.tenantId)
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
         assertNull(tx.paymentMethodToken)
@@ -167,6 +172,9 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
         assertEquals(request.recipientId, payload.firstValue.recipientId)
         assertEquals(tx.id, payload.firstValue.transactionId)
+        assertEquals(tx.tenantId, payload.firstValue.tenantId)
+        assertEquals(tx.amount, payload.firstValue.amount)
+        assertEquals(tx.currency, payload.firstValue.currency)
     }
 
     @Test
@@ -200,6 +208,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
         val id = response.error.data?.get("id").toString()
         val tx = txDao.findById(id).get()
+        assertEquals(1L, tx.tenantId)
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
         assertNull(tx.paymentMethodToken)
@@ -222,6 +231,9 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
         assertEquals(request.recipientId, payload.firstValue.recipientId)
         assertEquals(tx.id, payload.firstValue.transactionId)
+        assertEquals(tx.tenantId, payload.firstValue.tenantId)
+        assertEquals(tx.amount, payload.firstValue.amount)
+        assertEquals(tx.currency, payload.firstValue.currency)
     }
 
     @Test
@@ -250,6 +262,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
         val id = response.error.data?.get("id").toString()
         val tx = txDao.findById(id).get()
+        assertEquals(1L, tx.tenantId)
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
         assertNull(tx.paymentMethodToken)
@@ -272,5 +285,8 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
         assertEquals(request.recipientId, payload.firstValue.recipientId)
         assertEquals(tx.id, payload.firstValue.transactionId)
+        assertEquals(tx.tenantId, payload.firstValue.tenantId)
+        assertEquals(tx.amount, payload.firstValue.amount)
+        assertEquals(tx.currency, payload.firstValue.currency)
     }
 }

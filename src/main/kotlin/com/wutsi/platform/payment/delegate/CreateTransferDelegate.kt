@@ -105,6 +105,7 @@ public class CreateTransferDelegate(
         return transactionDao.save(
             TransactionEntity(
                 id = UUID.randomUUID().toString(),
+                tenantId = tenant.id,
                 type = TRANSFER,
                 amount = request.amount,
                 currency = tenant.currency,
@@ -184,10 +185,13 @@ public class CreateTransferDelegate(
             eventStream.publish(
                 type.urn,
                 TransactionEventPayload(
+                    tenantId = tx.tenantId,
                     transactionId = tx.id!!,
                     type = TRANSFER.name,
                     senderId = securityManager.currentUserId(),
-                    recipientId = request.recipientId
+                    recipientId = request.recipientId,
+                    amount = tx.amount,
+                    currency = tx.currency
                 )
             )
         } catch (ex: Exception) {

@@ -117,6 +117,7 @@ class CreateCashinDelegate(
         transactionDao.save(
             TransactionEntity(
                 id = UUID.randomUUID().toString(),
+                tenantId = tenant.id,
                 paymentMethodToken = request.paymentMethodToken,
                 paymentMethodProvider = PaymentMethodProvider.valueOf(paymentMethod.provider),
                 type = CASHIN,
