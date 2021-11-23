@@ -5,10 +5,12 @@ import com.wutsi.platform.core.error.Error
 import com.wutsi.platform.core.error.Parameter
 import com.wutsi.platform.core.error.ParameterType.PARAMETER_TYPE_PAYLOAD
 import com.wutsi.platform.core.error.exception.BadRequestException
+import com.wutsi.platform.core.error.exception.ConflictException
 import com.wutsi.platform.core.error.exception.ForbiddenException
 import com.wutsi.platform.core.logging.KVLogger
 import com.wutsi.platform.core.stream.EventStream
 import com.wutsi.platform.payment.PaymentException
+import com.wutsi.platform.payment.core.ErrorCode
 import com.wutsi.platform.payment.dao.BalanceRepository
 import com.wutsi.platform.payment.entity.BalanceEntity
 import com.wutsi.platform.payment.entity.TransactionEntity
@@ -64,11 +66,31 @@ class AbstractDelegate {
         if (!user.status.equals("ACTIVE", ignoreCase = true)) {
             throw ForbiddenException(
                 error = Error(
-                    code = ErrorURN.USER_NOT_ACTIVE.urn
-                )
+                    code = ErrorURN.USER_NOT_ACTIVE.urn,
+                    data = mapOf("userId" to userId)
+                ),
             )
         }
+    }
 
+    protected fun ensureBalanceAbove(userId: Long, threshold: Double, tenant: Tenant) {
+        val balance = balanceDao.findByUserIdAndTenantId(userId, tenant.id)
+            .orElseThrow {
+                ConflictException(
+                    error = Error(
+                        code = ErrorURN.TRANSACTION_FAILED.urn,
+                        downstreamCode = ErrorCode.NOT_ENOUGH_FUNDS.name
+                    )
+                )
+            }
+
+        if (balance.amount < threshold)
+            throw ConflictException(
+                error = Error(
+                    code = ErrorURN.TRANSACTION_FAILED.urn,
+                    downstreamCode = ErrorCode.NOT_ENOUGH_FUNDS.name
+                )
+            )
     }
 
     protected fun updateBalance(userId: Long, amount: Double, tenant: Tenant): BalanceEntity {

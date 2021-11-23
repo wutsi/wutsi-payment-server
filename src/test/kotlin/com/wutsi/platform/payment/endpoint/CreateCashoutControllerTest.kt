@@ -17,14 +17,12 @@ import com.wutsi.platform.payment.core.Error
 import com.wutsi.platform.payment.core.ErrorCode
 import com.wutsi.platform.payment.core.ErrorCode.NOT_ENOUGH_FUNDS
 import com.wutsi.platform.payment.core.Status
-import com.wutsi.platform.payment.dao.AccountRepository
-import com.wutsi.platform.payment.dao.RecordRepository
+import com.wutsi.platform.payment.dao.BalanceRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.dto.CreateCashinRequest
 import com.wutsi.platform.payment.dto.CreateCashinResponse
 import com.wutsi.platform.payment.dto.CreateCashoutRequest
 import com.wutsi.platform.payment.dto.CreateCashoutResponse
-import com.wutsi.platform.payment.entity.AccountType
 import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.event.TransactionEventPayload
@@ -54,14 +52,12 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
     @Autowired
     private lateinit var txDao: TransactionRepository
 
-    @Autowired
-    private lateinit var recordDao: RecordRepository
-
-    @Autowired
-    private lateinit var accountDao: AccountRepository
-
     @MockBean
     private lateinit var eventStream: EventStream
+
+    @Autowired
+    private lateinit var balanceDao: BalanceRepository
+
 
     @BeforeEach
     override fun setUp() {
@@ -95,6 +91,8 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertEquals(USER_ID, tx.userId)
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
+        assertEquals(0.0, tx.fees)
+        assertEquals(request.amount, tx.net)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
         assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)
         assertEquals(TransactionType.CASHOUT, tx.type)
@@ -105,36 +103,15 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertNull(tx.description)
         assertNull(tx.errorCode)
 
-        val records = recordDao.findByTransaction(tx)
-        assertEquals(2, records.size)
-
-        val userRecord = records[0]
-        assertEquals(0.0, userRecord.credit)
-        assertEquals(request.amount, userRecord.debit)
-        assertEquals("XAF", userRecord.currency)
-
-        val userAccount = accountDao.findById(userRecord.account.id).get()
-        assertEquals(100000.0 - request.amount, userAccount.balance)
-        assertEquals(request.currency, userAccount.currency)
-        assertEquals(AccountType.LIABILITY, userAccount.type)
-        assertEquals(TENANT_ID, userAccount.tenantId)
-
-        val gatewayRecord = records[1]
-        assertEquals(request.amount, gatewayRecord.credit)
-        assertEquals(0.0, gatewayRecord.debit)
-        assertEquals(request.currency, gatewayRecord.currency)
-
-        val gatewayAccount = accountDao.findById(gatewayRecord.account.id).get()
-        assertEquals(500000.0 - request.amount, gatewayAccount.balance)
-        assertEquals(request.currency, gatewayAccount.currency)
-        assertEquals(AccountType.REVENUE, gatewayAccount.type)
-        assertEquals(TENANT_ID, gatewayAccount.tenantId)
+        val balance = balanceDao.findByUserIdAndTenantId(USER_ID, TENANT_ID).get()
+        assertEquals(request.amount, 100000 - balance.amount)
+        assertEquals(request.currency, balance.currency)
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFULL.urn), payload.capture())
-        assertEquals(-1, payload.firstValue.userId)
+        assertEquals(USER_ID, payload.firstValue.userId)
         assertEquals(TransactionType.CASHOUT.name, payload.firstValue.type)
-        assertEquals(-1, payload.firstValue.recipientId)
+        assertNull(payload.firstValue.recipientId)
         assertEquals(tx.id, payload.firstValue.transactionId)
         assertEquals(tx.tenantId, payload.firstValue.tenantId)
         assertEquals(tx.amount, payload.firstValue.amount)
@@ -142,6 +119,7 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
     }
 
     @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateCashoutController.sql"])
     fun pending() {
         // GIVEN
         val paymentResponse = CreateTransferResponse("111", null, Status.PENDING)
@@ -165,6 +143,8 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertEquals(USER_ID, tx.userId)
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
+        assertEquals(0.0, tx.fees)
+        assertEquals(request.amount, tx.net)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
         assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)
         assertEquals(TransactionType.CASHOUT, tx.type)
@@ -175,8 +155,8 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertNull(tx.description)
         assertNull(tx.errorCode)
 
-        val records = recordDao.findByTransaction(tx)
-        assertEquals(0, records.size)
+        val balance = balanceDao.findByUserIdAndTenantId(USER_ID, TENANT_ID).get()
+        assertEquals(100000.0, balance.amount)
 
         verify(eventStream, never()).publish(any(), any())
     }
@@ -210,6 +190,8 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertEquals(USER_ID, tx.userId)
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
+        assertEquals(0.0, tx.fees)
+        assertEquals(request.amount, tx.net)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
         assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)
         assertEquals(TransactionType.CASHOUT, tx.type)
@@ -220,14 +202,11 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertEquals(e.error.code.name, tx.errorCode)
         assertEquals(e.error.transactionId, tx.gatewayTransactionId)
 
-        val records = recordDao.findByTransaction(tx)
-        assertEquals(0, records.size)
-
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
-        assertEquals(-1, payload.firstValue.userId)
+        assertEquals(USER_ID, payload.firstValue.userId)
         assertEquals(TransactionType.CASHOUT.name, payload.firstValue.type)
-        assertEquals(-1, payload.firstValue.recipientId)
+        assertNull(payload.firstValue.recipientId)
         assertEquals(tx.id, payload.firstValue.transactionId)
         assertEquals(tx.tenantId, payload.firstValue.tenantId)
         assertEquals(tx.amount, payload.firstValue.amount)
@@ -273,32 +252,8 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, response.error.downstreamCode)
 
         val id = response.error.data?.get("id").toString()
-        val tx = txDao.findById(id).get()
-        assertEquals(1L, tx.tenantId)
-        assertEquals(USER_ID, tx.userId)
-        assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount, tx.amount)
-        assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
-        assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)
-        assertEquals(TransactionType.CASHOUT, tx.type)
-        assertEquals(Status.FAILED, tx.status)
-        assertNull(tx.description)
-        assertTrue(tx.gatewayTransactionId.isNullOrBlank())
-        assertNull(tx.financialTransactionId)
-        assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, tx.errorCode)
-        assertNull(tx.supplierErrorCode)
+        assertTrue(txDao.findById(id).isEmpty)
 
-        val records = recordDao.findByTransaction(tx)
-        assertEquals(0, records.size)
-
-        val payload = argumentCaptor<TransactionEventPayload>()
-        verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
-        assertEquals(-1, payload.firstValue.userId)
-        assertEquals(TransactionType.CASHOUT.name, payload.firstValue.type)
-        assertEquals(-1, payload.firstValue.recipientId)
-        assertEquals(tx.id, payload.firstValue.transactionId)
-        assertEquals(tx.tenantId, payload.firstValue.tenantId)
-        assertEquals(tx.amount, payload.firstValue.amount)
-        assertEquals(tx.currency, payload.firstValue.currency)
+        verify(eventStream, never()).publish(any(), any())
     }
 }

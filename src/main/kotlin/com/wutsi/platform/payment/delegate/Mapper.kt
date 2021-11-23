@@ -1,13 +1,12 @@
 package com.wutsi.platform.payment.delegate
 
-import com.wutsi.platform.payment.dto.Account
-import com.wutsi.platform.payment.entity.AccountEntity
+import com.wutsi.platform.payment.dto.Balance
+import com.wutsi.platform.payment.entity.BalanceEntity
 
-fun AccountEntity.toAccount() = Account(
-    id = this.id!!,
-    type = this.type.name,
-    balance = this.balance,
+fun BalanceEntity.toBalance() = Balance(
+    id = this.id ?: -1,
+    amount = this.amount,
     currency = this.currency,
     created = this.created,
-    name = this.name
+    userId = this.userId
 )

@@ -5,10 +5,7 @@ import com.wutsi.platform.payment.core.Status
 import java.time.OffsetDateTime
 import javax.persistence.Entity
 import javax.persistence.Enumerated
-import javax.persistence.FetchType.LAZY
 import javax.persistence.Id
-import javax.persistence.JoinColumn
-import javax.persistence.ManyToOne
 import javax.persistence.Table
 
 @Entity
@@ -19,6 +16,7 @@ data class TransactionEntity(
 
     val tenantId: Long = -1,
     val userId: Long = -1,
+    val recipientId: Long? = null,
     val type: TransactionType = TransactionType.UNKNOWN,
     val paymentMethodToken: String? = null,
     val paymentMethodProvider: PaymentMethodProvider? = null,
@@ -35,14 +33,4 @@ data class TransactionEntity(
     var errorCode: String? = null,
     var supplierErrorCode: String? = null,
     val created: OffsetDateTime = OffsetDateTime.now(),
-
-    @Deprecated("")
-    @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "from_account_fk")
-    val fromAccount: AccountEntity? = null,
-
-    @Deprecated("")
-    @ManyToOne(fetch = LAZY)
-    @JoinColumn(name = "to_account_fk")
-    val toAccount: AccountEntity? = null,
 )

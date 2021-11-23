@@ -153,15 +153,15 @@ class CreateCashinDelegate(
         response: CreatePaymentResponse,
         tenant: Tenant
     ) {
+        // Update balance
+        val balance = updateBalance(tx.userId, tx.net, tenant)
+        logger.add("balance", balance.amount)
+
         // Update transaction
         tx.status = Status.SUCCESSFUL
         tx.gatewayTransactionId = response.transactionId
         tx.financialTransactionId = response.financialTransactionId
         transactionDao.save(tx)
-
-        // Update balance
-        val balance = updateBalance(tx.userId, tx.net, tenant)
-        logger.add("balance", balance.amount)
 
         publish(EventURN.TRANSACTION_SUCCESSFULL, tx)
     }
