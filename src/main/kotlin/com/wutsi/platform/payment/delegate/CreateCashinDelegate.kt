@@ -1,16 +1,12 @@
 package com.wutsi.platform.payment.`delegate`
 
-import com.wutsi.platform.account.WutsiAccountApi
 import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.core.error.Error
-import com.wutsi.platform.core.logging.KVLogger
-import com.wutsi.platform.core.stream.EventStream
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.core.Money
 import com.wutsi.platform.payment.core.Status
-import com.wutsi.platform.payment.dao.BalanceRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.dto.CreateCashinRequest
 import com.wutsi.platform.payment.dto.CreateCashinResponse
@@ -21,7 +17,6 @@ import com.wutsi.platform.payment.exception.TransactionException
 import com.wutsi.platform.payment.model.CreatePaymentRequest
 import com.wutsi.platform.payment.model.CreatePaymentResponse
 import com.wutsi.platform.payment.model.Party
-import com.wutsi.platform.payment.service.SecurityManager
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.payment.util.ErrorURN
 import com.wutsi.platform.tenant.dto.Tenant
@@ -32,21 +27,15 @@ import java.util.UUID
 
 @Service
 class CreateCashinDelegate(
-    accountApi: WutsiAccountApi,
-    eventStream: EventStream,
-    balanceDao: BalanceRepository,
-
-    private val securityManager: SecurityManager,
     private val transactionDao: TransactionRepository,
     private val tenantProvider: TenantProvider,
     private val gatewayProvider: GatewayProvider,
-    private val logger: KVLogger,
-) : AbstractDelegate(accountApi, balanceDao, eventStream) {
+) : AbstractDelegate() {
     @Transactional(noRollbackFor = [TransactionException::class])
     fun invoke(request: CreateCashinRequest): CreateCashinResponse {
         logger.add("currency", request.currency)
         logger.add("amount", request.amount)
-        logger.add("payment_token", request.paymentMethodToken)
+        logger.add("payment_token", "******")
 
         // Tenant
         val tenant = tenantProvider.get()
@@ -76,8 +65,7 @@ class CreateCashinDelegate(
                 status = tx.status.name
             )
         } catch (ex: PaymentException) {
-            logger.add("gateway_error_code", ex.error.code)
-            logger.add("gateway_supplier_error_code", ex.error.supplierErrorCode)
+            log(ex)
 
             onError(tx, ex)
             throw TransactionException(
@@ -93,6 +81,7 @@ class CreateCashinDelegate(
     }
 
     private fun validateRequest(request: CreateCashinRequest, tenant: Tenant) {
+        ensureCurrentUserActive()
         validateCurrency(request.currency, tenant)
     }
 

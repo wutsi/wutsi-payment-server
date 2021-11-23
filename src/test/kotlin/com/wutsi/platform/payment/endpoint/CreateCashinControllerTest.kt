@@ -282,5 +282,38 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
 
         val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
         assertEquals(ErrorURN.CURRENCY_NOT_SUPPORTED.urn, response.error.code)
+
+        verify(eventStream, never()).publish(any(), any())
+    }
+
+
+    @Test
+    fun suspendedUser() {
+        // GIVEN
+        user = Account(
+            id = USER_ID,
+            displayName = "Ray Sponsible",
+            language = "en",
+            status = "SUSPENDED",
+        )
+        doReturn(GetAccountResponse(user)).whenever(accountApi).getAccount(any())
+
+        // WHEN
+        val request = CreateCashinRequest(
+            paymentMethodToken = "11111",
+            amount = 50000.0,
+            currency = "EUR"
+        )
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateCashinResponse::class.java)
+        }
+
+        // THEN
+        assertEquals(403, ex.rawStatusCode)
+
+        val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.USER_NOT_ACTIVE.urn, response.error.code)
+
+        verify(eventStream, never()).publish(any(), any())
     }
 }
