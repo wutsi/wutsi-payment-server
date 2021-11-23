@@ -18,26 +18,30 @@ data class TransactionEntity(
     val id: String? = null,
 
     val tenantId: Long = -1,
+    val userId: Long = -1,
     val type: TransactionType = TransactionType.UNKNOWN,
     val paymentMethodToken: String? = null,
     val paymentMethodProvider: PaymentMethodProvider? = null,
     val description: String? = null,
     val amount: Double = 0.0,
+    val fees: Double = 0.0,
+    val net: Double = 0.0,
     val currency: String = "",
+
+    @Enumerated
+    var status: Status = Status.UNKNOWN,
     var gatewayTransactionId: String? = null,
     var financialTransactionId: String? = null,
     var errorCode: String? = null,
     var supplierErrorCode: String? = null,
-
     val created: OffsetDateTime = OffsetDateTime.now(),
 
-    @Enumerated
-    var status: Status = Status.UNKNOWN,
-
+    @Deprecated("")
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "from_account_fk")
     val fromAccount: AccountEntity? = null,
 
+    @Deprecated("")
     @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "to_account_fk")
     val toAccount: AccountEntity? = null,

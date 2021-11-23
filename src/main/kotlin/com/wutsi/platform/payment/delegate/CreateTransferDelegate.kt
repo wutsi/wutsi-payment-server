@@ -65,6 +65,8 @@ public class CreateTransferDelegate(
         val tx = createTransaction(request, tenant)
         logger.add("transaction_id", tx.id)
         try {
+            ensureCanTransfer(request, tx)
+
             onSuccess(request, tx)
             return CreateTransferResponse(
                 id = tx.id!!,
@@ -105,6 +107,7 @@ public class CreateTransferDelegate(
         return transactionDao.save(
             TransactionEntity(
                 id = UUID.randomUUID().toString(),
+                userId = userId,
                 tenantId = tenant.id,
                 type = TRANSFER,
                 amount = request.amount,
@@ -119,8 +122,6 @@ public class CreateTransferDelegate(
     }
 
     private fun updateLedger(request: CreateTransferRequest, tx: TransactionEntity) {
-        ensureCanTransfer(request, tx)
-
         // Update balance
         accountService.updateBalance(tx.fromAccount!!, -tx.amount)
         accountService.updateBalance(tx.toAccount!!, tx.amount)

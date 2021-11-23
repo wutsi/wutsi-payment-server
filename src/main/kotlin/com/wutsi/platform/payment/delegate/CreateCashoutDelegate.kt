@@ -1,4 +1,4 @@
-package com.wutsi.platform.payment.`delegate`
+package com.wutsi.platform.payment.delegate
 
 import com.wutsi.platform.account.WutsiAccountApi
 import com.wutsi.platform.account.dto.PaymentMethod
@@ -11,27 +11,29 @@ import com.wutsi.platform.core.stream.EventStream
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
+import com.wutsi.platform.payment.core.ErrorCode
 import com.wutsi.platform.payment.core.Money
 import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dao.RecordRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
-import com.wutsi.platform.payment.dto.CreateCashinRequest
-import com.wutsi.platform.payment.dto.CreateCashinResponse
+import com.wutsi.platform.payment.dto.CreateCashoutRequest
+import com.wutsi.platform.payment.dto.CreateCashoutResponse
 import com.wutsi.platform.payment.entity.RecordEntity
 import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.entity.TransactionType
-import com.wutsi.platform.payment.entity.TransactionType.CASHIN
+import com.wutsi.platform.payment.entity.TransactionType.CASHOUT
 import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.event.TransactionEventPayload
 import com.wutsi.platform.payment.exception.TransactionException
-import com.wutsi.platform.payment.model.CreatePaymentRequest
-import com.wutsi.platform.payment.model.CreatePaymentResponse
+import com.wutsi.platform.payment.model.CreateTransferRequest
+import com.wutsi.platform.payment.model.CreateTransferResponse
 import com.wutsi.platform.payment.model.Party
 import com.wutsi.platform.payment.service.AccountService
 import com.wutsi.platform.payment.service.SecurityManager
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.payment.util.ErrorURN
 import com.wutsi.platform.tenant.dto.Tenant
+import feign.FeignException
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -39,7 +41,7 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 @Service
-class CreateCashinDelegate(
+class CreateCashoutDelegate(
     private val securityManager: SecurityManager,
     private val accountApi: WutsiAccountApi,
     private val accountService: AccountService,
@@ -48,14 +50,14 @@ class CreateCashinDelegate(
     private val tenantProvider: TenantProvider,
     private val gatewayProvider: GatewayProvider,
     private val logger: KVLogger,
-    private val eventStream: EventStream
+    private val eventStream: EventStream,
 ) {
     companion object {
-        private val LOGGER = LoggerFactory.getLogger(CreateCashinDelegate::class.java)
+        private val LOGGER = LoggerFactory.getLogger(CreateCashoutDelegate::class.java)
     }
 
     @Transactional(noRollbackFor = [TransactionException::class])
-    fun invoke(request: CreateCashinRequest): CreateCashinResponse {
+    fun invoke(request: CreateCashoutRequest): CreateCashoutResponse {
         logger.add("currency", request.currency)
         logger.add("amount", request.amount)
         logger.add("payment_token", request.paymentMethodToken)
@@ -76,6 +78,8 @@ class CreateCashinDelegate(
 
         // Perform the transfer
         try {
+            ensureCanCashout(tx, tenant)
+
             val response = performTransaction(tx, paymentMethod)
             logger.add("gateway_status", response.status)
             logger.add("gateway_transaction_id", response.transactionId)
@@ -87,19 +91,19 @@ class CreateCashinDelegate(
                 onPending(tx, response)
             }
 
-            return CreateCashinResponse(
+            return CreateCashoutResponse(
                 id = tx.id!!,
                 status = tx.status.name
             )
-        } catch (ex: PaymentException) {
-            logger.add("gateway_error_code", ex.error.code)
-            logger.add("gateway_supplier_error_code", ex.error.supplierErrorCode)
+        } catch (paymentEx: PaymentException) {
+            logger.add("gateway_error_code", paymentEx.error.code)
+            logger.add("gateway_supplier_error_code", paymentEx.error.supplierErrorCode)
 
-            onError(tx, ex)
+            onError(tx, paymentEx)
             throw TransactionException(
                 error = Error(
                     code = ErrorURN.TRANSACTION_FAILED.urn,
-                    downstreamCode = ex.error.code.name,
+                    downstreamCode = paymentEx.error.code.name,
                     data = mapOf(
                         "id" to tx.id!!
                     )
@@ -108,7 +112,7 @@ class CreateCashinDelegate(
         }
     }
 
-    private fun validateRequest(request: CreateCashinRequest, tenant: Tenant) {
+    private fun validateRequest(request: CreateCashoutRequest, tenant: Tenant) {
         if (request.currency != tenant.currency) {
             throw BadRequestException(
                 error = Error(
@@ -123,7 +127,11 @@ class CreateCashinDelegate(
         }
     }
 
-    private fun createTransaction(request: CreateCashinRequest, paymentMethod: PaymentMethod, tenant: Tenant): TransactionEntity =
+    private fun createTransaction(
+        request: CreateCashoutRequest,
+        paymentMethod: PaymentMethod,
+        tenant: Tenant
+    ): TransactionEntity =
         transactionDao.save(
             TransactionEntity(
                 id = UUID.randomUUID().toString(),
@@ -131,7 +139,7 @@ class CreateCashinDelegate(
                 tenantId = tenant.id,
                 paymentMethodToken = request.paymentMethodToken,
                 paymentMethodProvider = PaymentMethodProvider.valueOf(paymentMethod.provider),
-                type = CASHIN,
+                type = CASHOUT,
                 amount = request.amount,
                 currency = tenant.currency,
                 status = Status.PENDING,
@@ -139,17 +147,17 @@ class CreateCashinDelegate(
             )
         )
 
-    private fun performTransaction(tx: TransactionEntity, paymentMethod: PaymentMethod): CreatePaymentResponse {
+    private fun performTransaction(tx: TransactionEntity, paymentMethod: PaymentMethod): CreateTransferResponse {
         val paymentGateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
-        return paymentGateway.createPayment(
-            CreatePaymentRequest(
-                payer = Party(
+        return paymentGateway.createTransfer(
+            CreateTransferRequest(
+                payee = Party(
                     fullName = paymentMethod.ownerName,
                     phoneNumber = paymentMethod.phone!!.number
                 ),
                 amount = Money(tx.amount, tx.currency),
                 externalId = tx.id!!,
-                description = "Cash-in",
+                description = "Cash-out",
                 payerMessage = null
             )
         )
@@ -165,13 +173,18 @@ class CreateCashinDelegate(
         publish(EventURN.TRANSACTION_FAILED, tx)
     }
 
-    private fun onPending(tx: TransactionEntity, response: CreatePaymentResponse) {
+    private fun onPending(tx: TransactionEntity, response: CreateTransferResponse) {
         tx.status = Status.PENDING
         tx.gatewayTransactionId = response.transactionId
         transactionDao.save(tx)
     }
 
-    private fun onSuccess(tx: TransactionEntity, response: CreatePaymentResponse, paymentMethod: PaymentMethod, tenant: Tenant) {
+    private fun onSuccess(
+        tx: TransactionEntity,
+        response: CreateTransferResponse,
+        paymentMethod: PaymentMethod,
+        tenant: Tenant
+    ) {
         tx.status = Status.SUCCESSFUL
         tx.gatewayTransactionId = response.transactionId
         tx.financialTransactionId = response.financialTransactionId
@@ -182,19 +195,54 @@ class CreateCashinDelegate(
     }
 
     private fun updateLedger(tx: TransactionEntity, paymentMethod: PaymentMethod, tenant: Tenant) {
-        // Create records
         val userAccount = accountService.findUserAccount(tx.userId, tenant)
+
+        // Create records
         val gatewayAccount = accountService.findGatewayAccount(paymentMethod, tenant)
-        recordDao.saveAll(
-            listOf(
-                RecordEntity.increase(tx, userAccount, tx.amount),
-                RecordEntity.increase(tx, gatewayAccount, tx.amount),
-            )
+        val records = listOf(
+            RecordEntity.decrease(tx, userAccount, tx.amount),
+            RecordEntity.decrease(tx, gatewayAccount, tx.amount),
         )
+        recordDao.saveAll(records)
 
         // Update balance
-        accountService.updateBalance(userAccount, tx.amount)
-        accountService.updateBalance(gatewayAccount, tx.amount)
+        accountService.updateBalance(userAccount, -tx.amount)
+        accountService.updateBalance(gatewayAccount, -tx.amount)
+    }
+
+    private fun ensureCanCashout(tx: TransactionEntity, tenant: Tenant) {
+        // Check balance
+        val userId = securityManager.currentUserId()
+        val account = accountService.findUserAccount(userId, tenant)
+        if (account.balance < tx.amount) {
+            throw PaymentException(
+                error = com.wutsi.platform.payment.core.Error(
+                    code = ErrorCode.NOT_ENOUGH_FUNDS
+                )
+            )
+        }
+
+        // Make sure the recipient can cash-out
+        try {
+            val userId = securityManager.currentUserId()
+            val user = accountApi.getAccount(userId).account
+            if (!user.status.equals("ACTIVE", ignoreCase = true)) {
+                throw PaymentException(
+                    error = com.wutsi.platform.payment.core.Error(
+                        code = ErrorCode.PAYMENT_NOT_APPROVED,
+                        transactionId = tx.id!!
+                    )
+                )
+            }
+        } catch (ex: FeignException.NotFound) {
+            throw PaymentException(
+                error = com.wutsi.platform.payment.core.Error(
+                    code = ErrorCode.PAYMENT_NOT_APPROVED,
+                    transactionId = tx.id!!
+                ),
+                ex
+            )
+        }
     }
 
     private fun publish(type: EventURN, tx: TransactionEntity) {
@@ -204,7 +252,7 @@ class CreateCashinDelegate(
                 TransactionEventPayload(
                     tenantId = tx.tenantId,
                     transactionId = tx.id!!,
-                    type = TransactionType.CASHIN.name,
+                    type = TransactionType.CASHOUT.name,
                     amount = tx.amount,
                     currency = tx.currency
                 )
