@@ -294,7 +294,6 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         verify(eventStream, never()).publish(any(), any())
     }
 
-
     @Test
     fun suspendedUser() {
         // GIVEN

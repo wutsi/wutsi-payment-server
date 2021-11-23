@@ -58,7 +58,6 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
     @Autowired
     private lateinit var balanceDao: BalanceRepository
 
-
     @BeforeEach
     override fun setUp() {
         super.setUp()

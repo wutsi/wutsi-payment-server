@@ -10,15 +10,12 @@ import com.wutsi.platform.payment.dto.CreateTransferRequest
 import com.wutsi.platform.payment.dto.CreateTransferResponse
 import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.entity.TransactionType.TRANSFER
-import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.event.EventURN.TRANSACTION_FAILED
 import com.wutsi.platform.payment.event.EventURN.TRANSACTION_SUCCESSFULL
-import com.wutsi.platform.payment.event.TransactionEventPayload
 import com.wutsi.platform.payment.exception.TransactionException
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.payment.util.ErrorURN
 import com.wutsi.platform.tenant.dto.Tenant
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.OffsetDateTime
@@ -29,10 +26,6 @@ public class CreateTransferDelegate(
     private val transactionDao: TransactionRepository,
     private val tenantProvider: TenantProvider,
 ) : AbstractDelegate() {
-    companion object {
-        private val LOGGER = LoggerFactory.getLogger(CreateTransferDelegate::class.java)
-    }
-
     @Transactional(noRollbackFor = [TransactionException::class])
     public fun invoke(request: CreateTransferRequest): CreateTransferResponse {
         logger.add("currency", request.currency)
@@ -53,7 +46,7 @@ public class CreateTransferDelegate(
         } catch (ex: PaymentException) {
             log(ex)
 
-            onFailure(request, tx, ex)
+            onFailure(tx, ex)
             throw TransactionException(
                 error = Error(
                     code = ErrorURN.TRANSACTION_FAILED.urn,
@@ -68,14 +61,14 @@ public class CreateTransferDelegate(
         updateBalance(securityManager.currentUserId(), -request.amount, tenant)
         updateBalance(request.recipientId, request.amount, tenant)
 
-        publish(TRANSACTION_SUCCESSFULL, request, tx)
+        publish(TRANSACTION_SUCCESSFULL, tx)
     }
 
-    private fun onFailure(request: CreateTransferRequest, tx: TransactionEntity, ex: PaymentException) {
+    private fun onFailure(tx: TransactionEntity, ex: PaymentException) {
         tx.status = Status.FAILED
         tx.errorCode = ex.error.code.name
         transactionDao.save(tx)
-        publish(TRANSACTION_FAILED, request, tx)
+        publish(TRANSACTION_FAILED, tx)
     }
 
     private fun createTransaction(request: CreateTransferRequest, tenant: Tenant): TransactionEntity {
@@ -83,6 +76,7 @@ public class CreateTransferDelegate(
             TransactionEntity(
                 id = UUID.randomUUID().toString(),
                 userId = securityManager.currentUserId(),
+                recipientId = request.recipientId,
                 tenantId = tenant.id,
                 type = TRANSFER,
                 amount = request.amount,
@@ -112,25 +106,6 @@ public class CreateTransferDelegate(
                     data = mapOf("userId" to request.recipientId)
                 ),
             )
-        }
-    }
-
-    private fun publish(type: EventURN, request: CreateTransferRequest, tx: TransactionEntity) {
-        try {
-            eventStream.publish(
-                type.urn,
-                TransactionEventPayload(
-                    tenantId = tx.tenantId,
-                    transactionId = tx.id!!,
-                    type = TRANSFER.name,
-                    userId = securityManager.currentUserId(),
-                    recipientId = request.recipientId,
-                    amount = tx.amount,
-                    currency = tx.currency
-                )
-            )
-        } catch (ex: Exception) {
-            LOGGER.error("Unable to publish event $type", ex)
         }
     }
 }

@@ -120,11 +120,11 @@ class AbstractDelegate {
                     amount = tx.amount,
                     currency = tx.currency,
                     userId = tx.userId,
+                    recipientId = tx.recipientId
                 )
             )
         } catch (ex: Exception) {
             LoggerFactory.getLogger(this::class.java).error("Unable to publish event $type", ex)
         }
     }
-
 }
