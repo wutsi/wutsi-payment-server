@@ -189,7 +189,7 @@ public class CreateTransferDelegate(
                     tenantId = tx.tenantId,
                     transactionId = tx.id!!,
                     type = TRANSFER.name,
-                    senderId = securityManager.currentUserId(),
+                    userId = securityManager.currentUserId(),
                     recipientId = request.recipientId,
                     amount = tx.amount,
                     currency = tx.currency

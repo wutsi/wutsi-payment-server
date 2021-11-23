@@ -9,6 +9,7 @@ import javax.persistence.GenerationType
 import javax.persistence.Id
 import javax.persistence.Table
 
+@Deprecated("")
 @Entity
 @Table(name = "T_ACCOUNT")
 data class AccountEntity(

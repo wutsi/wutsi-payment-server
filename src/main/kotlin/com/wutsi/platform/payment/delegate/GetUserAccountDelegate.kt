@@ -10,6 +10,7 @@ import com.wutsi.platform.payment.dto.GetAccountResponse
 import com.wutsi.platform.payment.util.ErrorURN
 import org.springframework.stereotype.Service
 
+@Deprecated("")
 @Service
 class GetUserAccountDelegate(
     private val userDao: UserRepository,

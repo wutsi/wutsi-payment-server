@@ -9,6 +9,7 @@ import javax.persistence.JoinTable
 import javax.persistence.ManyToMany
 import javax.persistence.Table
 
+@Deprecated("")
 @Entity
 @Table(name = "T_USER")
 data class UserEntity(

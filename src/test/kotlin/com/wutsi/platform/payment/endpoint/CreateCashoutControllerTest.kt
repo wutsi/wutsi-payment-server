@@ -132,7 +132,7 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFULL.urn), payload.capture())
-        assertEquals(-1, payload.firstValue.senderId)
+        assertEquals(-1, payload.firstValue.userId)
         assertEquals(TransactionType.CASHOUT.name, payload.firstValue.type)
         assertEquals(-1, payload.firstValue.recipientId)
         assertEquals(tx.id, payload.firstValue.transactionId)
@@ -225,7 +225,7 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
-        assertEquals(-1, payload.firstValue.senderId)
+        assertEquals(-1, payload.firstValue.userId)
         assertEquals(TransactionType.CASHOUT.name, payload.firstValue.type)
         assertEquals(-1, payload.firstValue.recipientId)
         assertEquals(tx.id, payload.firstValue.transactionId)
@@ -293,7 +293,7 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
-        assertEquals(-1, payload.firstValue.senderId)
+        assertEquals(-1, payload.firstValue.userId)
         assertEquals(TransactionType.CASHOUT.name, payload.firstValue.type)
         assertEquals(-1, payload.firstValue.recipientId)
         assertEquals(tx.id, payload.firstValue.transactionId)

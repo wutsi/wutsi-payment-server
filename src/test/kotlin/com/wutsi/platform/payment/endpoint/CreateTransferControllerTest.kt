@@ -120,7 +120,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFULL.urn), payload.capture())
-        assertEquals(USER_ID, payload.firstValue.senderId)
+        assertEquals(USER_ID, payload.firstValue.userId)
         assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
         assertEquals(request.recipientId, payload.firstValue.recipientId)
         assertEquals(tx.id, payload.firstValue.transactionId)
@@ -172,7 +172,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
-        assertEquals(USER_ID, payload.firstValue.senderId)
+        assertEquals(USER_ID, payload.firstValue.userId)
         assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
         assertEquals(request.recipientId, payload.firstValue.recipientId)
         assertEquals(tx.id, payload.firstValue.transactionId)
@@ -233,7 +233,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
-        assertEquals(USER_ID, payload.firstValue.senderId)
+        assertEquals(USER_ID, payload.firstValue.userId)
         assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
         assertEquals(request.recipientId, payload.firstValue.recipientId)
         assertEquals(tx.id, payload.firstValue.transactionId)
@@ -289,7 +289,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
-        assertEquals(USER_ID, payload.firstValue.senderId)
+        assertEquals(USER_ID, payload.firstValue.userId)
         assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
         assertEquals(request.recipientId, payload.firstValue.recipientId)
         assertEquals(tx.id, payload.firstValue.transactionId)

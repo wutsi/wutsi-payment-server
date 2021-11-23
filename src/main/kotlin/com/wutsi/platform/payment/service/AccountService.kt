@@ -19,6 +19,7 @@ class AccountService(
     private val accountDao: AccountRepository,
     private val gatewayDao: GatewayRepository,
 ) {
+    @Deprecated("")
     fun findUserAccount(userId: Long, tenant: Tenant): AccountEntity {
         // User
         val user = userDao.findById(userId)
@@ -63,7 +64,11 @@ class AccountService(
                     type = REVENUE,
                     tenantId = tenant.id,
                     currency = tenant.currency,
-                    name = URN.of(type = "account", domain = "payment", name = "gateway:${paymentMethod.provider}").value
+                    name = URN.of(
+                        type = "account",
+                        domain = "payment",
+                        name = "gateway:${paymentMethod.provider}"
+                    ).value
                 )
             )
             gateway.accounts.add(account)

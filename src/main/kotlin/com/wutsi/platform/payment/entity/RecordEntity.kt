@@ -10,6 +10,7 @@ import javax.persistence.JoinColumn
 import javax.persistence.ManyToOne
 import javax.persistence.Table
 
+@Deprecated("")
 @Entity
 @Table(name = "T_RECORD")
 data class RecordEntity(
