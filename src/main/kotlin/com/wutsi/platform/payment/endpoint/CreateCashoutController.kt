@@ -1,6 +1,6 @@
 package com.wutsi.platform.payment.endpoint
 
-import com.wutsi.platform.payment.delegate.CreateCashoutDelegate
+import com.wutsi.platform.payment.`delegate`.CreateCashoutDelegate
 import com.wutsi.platform.payment.dto.CreateCashoutRequest
 import com.wutsi.platform.payment.dto.CreateCashoutResponse
 import org.springframework.security.access.prepost.PreAuthorize
