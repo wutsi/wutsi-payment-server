@@ -7,6 +7,7 @@ info:
     - Cash in: Move money from owner's account into the wallet
     - Cash out: Move monet from wallet to owner's account
     - Transfer: Transfer money between wallets
+    - Search transactions
   version: "1.0.0"
 
 servers:
@@ -64,6 +65,79 @@ paths:
       security:
         - api_key: [ 'payment-manage' ]
 
+  /v1/transactions/transfers:
+    post:
+      operationId: "create-transfer"
+      description: Transfer money to another user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransferRequest'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateTransferResponse'
+        409:
+          description: The operation failed
+      tags:
+        - Transactions
+      security:
+        - api_key: [ 'payment-manage' ]
+
+  /v1/transactions/{id}:
+    get:
+      operationId: "get-transaction"
+      description: Return a transaction
+      parameters:
+        - in: path
+          name: id
+          description: ID of the transaction
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetTransactionResponse'
+        404:
+          description: Transaction not found
+      tags:
+        - Transactions
+      security:
+        - api_key: [ 'payment-read' ]
+
+  /v1/transactions/search:
+    post:
+      operationId: "search-transaction"
+      description: Search transactions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchTransactionRequest'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetTransactionResponse'
+        404:
+          description: Transaction not found
+      tags:
+        - Transactions
+      security:
+        - api_key: [ 'payment-read' ]
+
   /v1/accounts/{user-id}/balance:
     get:
       operationId: "get-balance"
@@ -105,7 +179,7 @@ components:
         amount:
           type: number
           format: double
-          description: Amout to transfer to the user's wallet
+          description: Amount to transfer to the user's wallet
           minimum: 0
         currency:
           type: string
@@ -162,6 +236,42 @@ components:
             - PENDING
             - SUCESS
 
+    CreateTransferRequest:
+      type: object
+      properties:
+        recipientId:
+          type: integer
+          format: int64
+          description: ID of the recipient of the transfer
+        amount:
+          type: number
+          format: double
+          description: Amout to transfer to the user's wallet
+          minimum: 0
+        currency:
+          type: string
+          description: 3 letter currency code
+          maxLength: 3
+        description:
+          type: string
+          description: Description of the transfer
+          nullable: true
+      required:
+        - currency
+
+    CreateTransferResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID of the transaction
+        status:
+          description: Status of the charge
+          type: string
+          enum:
+            - PENDING
+            - SUCESS
 
     Balance:
       type: object
@@ -200,3 +310,171 @@ components:
         balance:
           type: object
           $ref: "#/components/schemas/Balance"
+
+    TransactionSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID of the transaction
+        userId:
+          type: integer
+          format: int64
+          description: ID of the user who initiated the transaction
+        recipientId:
+          type: integer
+          format: int64
+          description: ID of the recipient of the transaction
+          nullable: true
+        tenantId:
+          type: integer
+          format: int64
+          description: ID of the tenant
+        type:
+          type: string
+          enum:
+            - CASHIN
+            - CASHOUT
+            - TRANSFER
+          description: Type of transaction
+        paymentMethodProvider:
+          type: string
+          description: Type of payment provider
+          nullable: true
+        description:
+          type: string
+          description: Description of the transaction
+          nullable: true
+        amount:
+          type: number
+          format: double
+          description: Amount of the transaction
+        fees:
+          type: number
+          format: double
+          description: Fees
+        net:
+          type: number
+          format: double
+          description: Net amount
+        currency:
+          type: string
+          description: 3 letter currency code
+        status:
+          type: string
+          enum:
+            - SUCCESSFULL
+            - PENDING
+            - FAILED
+          description: Status of the transaction
+
+    SearchTransactionRequest:
+      type: object
+      properties:
+        userId:
+          type: integer
+          format: int64
+        limit:
+          type: integer
+          default: 30
+        offset:
+          type: integer
+          default: 0
+
+    SearchTransactionResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransactionSummary"
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID of the transaction
+        userId:
+          type: integer
+          format: int64
+          description: ID of the user who initiated the transaction
+        recipientId:
+          type: integer
+          format: int64
+          description: ID of the recipient of the transaction
+          nullable: true
+        tenantId:
+          type: integer
+          format: int64
+          description: ID of the tenant
+        type:
+          type: string
+          enum:
+            - CASHIN
+            - CASHOUT
+            - TRANSFER
+          description: Type of transaction
+        paymentMethodToken:
+          type: string
+          description: Token of the payment method
+          nullable: true
+        paymentMethodProvider:
+          type: string
+          description: Type of payment provider
+          nullable: true
+        description:
+          type: string
+          description: Description of the transaction
+          nullable: true
+        amount:
+          type: number
+          format: double
+          description: Amount of the transaction
+        fees:
+          type: number
+          format: double
+          description: Fees
+        net:
+          type: number
+          format: double
+          description: Net amount
+        currency:
+          type: string
+          description: 3 letter currency code
+        status:
+          type: string
+          enum:
+            - SUCCESSFULL
+            - PENDING
+            - FAILED
+          description: Status of the transaction
+        gatewayTransactionId:
+          type: string
+          description: Transaction ID from the payment gateway
+          nullable: true
+        financialTransactionId:
+          type: string
+          description: Transaction ID from the financial institution
+          nullable: true
+        errorCode:
+          type: string
+          description: Error code
+          nullable: true
+        supplierErrorCode:
+          type: string
+          description: Error code from supplier
+          nullable: true
+        created:
+          type: string
+          description: Creation data-time
+          format: date-time
+
+    GetTransactionResponse:
+      type: object
+      properties:
+        transaction:
+          type: object
+          $ref: "#/components/schemas/Transaction"

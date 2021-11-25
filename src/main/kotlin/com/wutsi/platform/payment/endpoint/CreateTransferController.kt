@@ -1,6 +1,6 @@
 package com.wutsi.platform.payment.endpoint
 
-import com.wutsi.platform.payment.delegate.CreateTransferDelegate
+import com.wutsi.platform.payment.`delegate`.CreateTransferDelegate
 import com.wutsi.platform.payment.dto.CreateTransferRequest
 import com.wutsi.platform.payment.dto.CreateTransferResponse
 import org.springframework.security.access.prepost.PreAuthorize
