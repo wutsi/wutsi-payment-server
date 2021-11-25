@@ -35,7 +35,7 @@
     <flyway.version>7.15.0</flyway.version>
     <wutsi-platform-core.version>0.0.74</wutsi-platform-core.version>
     <wutsi-platform-payment.version>0.0.51</wutsi-platform-payment.version>
-    <wutsi-account.version>1.0.9</wutsi-account.version>
+    <wutsi-account.version>1.0.12</wutsi-account.version>
     <wutsi-tenant.version>0.0.4</wutsi-tenant.version>
   </properties>
 
@@ -279,7 +279,8 @@
             <phase>validate</phase>
             <configuration>
               <target name="ktlint">
-                <java taskname="ktlint" dir="${basedir}" fork="true" failonerror="true" classname="com.pinterest.ktlint.Main"
+                <java taskname="ktlint" dir="${basedir}" fork="true" failonerror="true"
+                      classname="com.pinterest.ktlint.Main"
                       classpathref="maven.plugin.classpath">
                   <arg value="src/**/*.kt"/>
                   <!-- to generate report in checkstyle format prepend following args: -->
