@@ -130,7 +130,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetTransactionResponse'
+                $ref: '#/components/schemas/SearchTransactionResponse'
         404:
           description: Transaction not found
       tags:
@@ -368,11 +368,18 @@ components:
             - PENDING
             - FAILED
           description: Status of the transaction
+        created:
+          type: string
+          description: Creation data-time
+          format: date-time
 
     SearchTransactionRequest:
       type: object
       properties:
         userId:
+          type: integer
+          format: int64
+        tenantId:
           type: integer
           format: int64
         limit:
