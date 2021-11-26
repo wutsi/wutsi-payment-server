@@ -1,8 +1,7 @@
 package com.wutsi.platform.payment.dto
 
-import kotlin.Double
-import kotlin.Long
-import kotlin.String
+import org.springframework.format.annotation.DateTimeFormat
+import java.time.OffsetDateTime
 
 public data class TransactionSummary(
     public val id: String = "",
@@ -16,5 +15,7 @@ public data class TransactionSummary(
     public val fees: Double = 0.0,
     public val net: Double = 0.0,
     public val currency: String = "",
-    public val status: String = ""
+    public val status: String = "",
+    @get:DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
+    public val created: OffsetDateTime = OffsetDateTime.now()
 )

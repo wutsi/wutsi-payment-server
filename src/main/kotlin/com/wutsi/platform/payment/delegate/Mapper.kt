@@ -39,6 +39,7 @@ fun TransactionEntity.toTransactionSummary() = TransactionSummary(
     id = this.id ?: "",
     recipientId = this.recipientId,
     type = this.type.name,
+    created = this.created,
     userId = this.userId,
     tenantId = this.tenantId,
     currency = this.currency,
