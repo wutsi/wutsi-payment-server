@@ -8,9 +8,8 @@ import kotlin.String
 
 public data class TransactionSummary(
     public val id: String = "",
-    public val userId: Long = 0,
+    public val accountId: Long = 0,
     public val recipientId: Long? = null,
-    public val tenantId: Long = 0,
     public val type: String = "",
     public val paymentMethodProvider: String? = null,
     public val description: String? = null,

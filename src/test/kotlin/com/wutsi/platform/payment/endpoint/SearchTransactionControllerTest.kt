@@ -20,8 +20,7 @@ public class SearchTransactionControllerTest : AbstractSecuredController() {
         val request = SearchTransactionRequest(
             limit = 30,
             offset = 0,
-            userId = 1L,
-            tenantId = 1L
+            accountId = 1L,
         )
         val url = "http://localhost:$port/v1/transactions/search"
         val response = rest.postForEntity(url, request, SearchTransactionResponse::class.java)

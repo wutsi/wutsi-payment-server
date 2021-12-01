@@ -46,8 +46,7 @@ public class GetTransactionControllerTest : AbstractSecuredController() {
         assertEquals(100.0, tx.fees)
         assertEquals(900.0, tx.net)
         assertEquals(11L, tx.recipientId)
-        assertEquals(1L, tx.userId)
-        assertEquals(1L, tx.tenantId)
+        assertEquals(1L, tx.accountId)
     }
 
     @Test

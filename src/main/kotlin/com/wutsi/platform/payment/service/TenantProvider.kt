@@ -11,7 +11,9 @@ public class TenantProvider(
     private val tracingContext: TracingContext
 ) {
     fun get(): Tenant {
-        val tenantId = tracingContext.tenantId()!!.toLong()
-        return tenantApi.getTenant(tenantId).tenant
+        return tenantApi.getTenant(id()).tenant
     }
+
+    fun id(): Long =
+        tracingContext.tenantId()!!.toLong()
 }

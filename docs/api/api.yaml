@@ -284,10 +284,6 @@ components:
           type: integer
           format: int64
           description: ID of the user who owns this balance
-        tenantId:
-          type: integer
-          format: int64
-          description: ID of the tenant
         amount:
           type: number
           format: double
@@ -318,7 +314,7 @@ components:
           type: string
           format: uuid
           description: ID of the transaction
-        userId:
+        accountId:
           type: integer
           format: int64
           description: ID of the user who initiated the transaction
@@ -327,10 +323,6 @@ components:
           format: int64
           description: ID of the recipient of the transaction
           nullable: true
-        tenantId:
-          type: integer
-          format: int64
-          description: ID of the tenant
         type:
           type: string
           enum:
@@ -376,10 +368,7 @@ components:
     SearchTransactionRequest:
       type: object
       properties:
-        userId:
-          type: integer
-          format: int64
-        tenantId:
+        accountId:
           type: integer
           format: int64
         limit:
@@ -404,7 +393,7 @@ components:
           type: string
           format: uuid
           description: ID of the transaction
-        userId:
+        accountId:
           type: integer
           format: int64
           description: ID of the user who initiated the transaction
@@ -413,10 +402,6 @@ components:
           format: int64
           description: ID of the recipient of the transaction
           nullable: true
-        tenantId:
-          type: integer
-          format: int64
-          description: ID of the tenant
         type:
           type: string
           enum:
