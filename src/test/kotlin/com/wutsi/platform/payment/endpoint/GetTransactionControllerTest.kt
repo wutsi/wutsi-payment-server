@@ -3,7 +3,7 @@ package com.wutsi.platform.payment.endpoint
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.wutsi.platform.core.error.ErrorResponse
 import com.wutsi.platform.payment.dto.GetTransactionResponse
-import com.wutsi.platform.payment.util.ErrorURN
+import com.wutsi.platform.payment.error.ErrorURN
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired

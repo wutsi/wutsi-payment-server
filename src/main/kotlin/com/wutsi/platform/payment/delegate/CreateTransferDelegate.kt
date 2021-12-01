@@ -10,11 +10,11 @@ import com.wutsi.platform.payment.dto.CreateTransferRequest
 import com.wutsi.platform.payment.dto.CreateTransferResponse
 import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.entity.TransactionType.TRANSFER
+import com.wutsi.platform.payment.error.ErrorURN
+import com.wutsi.platform.payment.error.TransactionException
 import com.wutsi.platform.payment.event.EventURN.TRANSACTION_FAILED
 import com.wutsi.platform.payment.event.EventURN.TRANSACTION_SUCCESSFULL
-import com.wutsi.platform.payment.exception.TransactionException
 import com.wutsi.platform.payment.service.TenantProvider
-import com.wutsi.platform.payment.util.ErrorURN
 import com.wutsi.platform.tenant.dto.Tenant
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

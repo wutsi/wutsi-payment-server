@@ -12,13 +12,13 @@ import com.wutsi.platform.payment.dto.CreateCashoutRequest
 import com.wutsi.platform.payment.dto.CreateCashoutResponse
 import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.entity.TransactionType.CASHOUT
+import com.wutsi.platform.payment.error.ErrorURN
+import com.wutsi.platform.payment.error.TransactionException
 import com.wutsi.platform.payment.event.EventURN
-import com.wutsi.platform.payment.exception.TransactionException
 import com.wutsi.platform.payment.model.CreateTransferRequest
 import com.wutsi.platform.payment.model.CreateTransferResponse
 import com.wutsi.platform.payment.model.Party
 import com.wutsi.platform.payment.service.TenantProvider
-import com.wutsi.platform.payment.util.ErrorURN
 import com.wutsi.platform.tenant.dto.Tenant
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional

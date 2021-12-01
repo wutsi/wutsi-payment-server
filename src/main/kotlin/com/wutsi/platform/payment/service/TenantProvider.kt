@@ -10,9 +10,11 @@ public class TenantProvider(
     private val tenantApi: WutsiTenantApi,
     private val tracingContext: TracingContext
 ) {
-    fun get(): Tenant {
-        return tenantApi.getTenant(id()).tenant
-    }
+    fun get(): Tenant =
+        get(id())
+
+    fun get(id: Long): Tenant =
+        tenantApi.getTenant(id).tenant
 
     fun id(): Long =
         tracingContext.tenantId()!!.toLong()

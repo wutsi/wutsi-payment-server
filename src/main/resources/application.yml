@@ -61,15 +61,10 @@ wutsi:
   application:
     name: wutsi-payment
     jobs:
-      process-pending-charges:
-        enabled: true
-        cron: "0 */5 * * * *"
-      process-pending-payouts:
-        enabled: true
-        cron: "0 */30 * * * *"
-      update-balances:
-        enabled: true
-        cron: "0 0 1 * * *"   # Everyday at 1AM
+      pending-cashin:
+        cron: "0 */15 * * * *"
+      pending-cashout:
+        cron: "0 */15 * * * *"
 
   platform:
     payment:

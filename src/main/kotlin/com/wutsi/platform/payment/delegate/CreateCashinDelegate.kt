@@ -12,13 +12,13 @@ import com.wutsi.platform.payment.dto.CreateCashinRequest
 import com.wutsi.platform.payment.dto.CreateCashinResponse
 import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.entity.TransactionType.CASHIN
+import com.wutsi.platform.payment.error.ErrorURN
+import com.wutsi.platform.payment.error.TransactionException
 import com.wutsi.platform.payment.event.EventURN
-import com.wutsi.platform.payment.exception.TransactionException
 import com.wutsi.platform.payment.model.CreatePaymentRequest
 import com.wutsi.platform.payment.model.CreatePaymentResponse
 import com.wutsi.platform.payment.model.Party
 import com.wutsi.platform.payment.service.TenantProvider
-import com.wutsi.platform.payment.util.ErrorURN
 import com.wutsi.platform.tenant.dto.Tenant
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -132,7 +132,14 @@ class CreateCashinDelegate(
         return response
     }
 
-    private fun onError(tx: TransactionEntity, ex: PaymentException) {
+    private fun onPending(tx: TransactionEntity, response: CreatePaymentResponse) {
+        tx.status = Status.PENDING
+        tx.gatewayTransactionId = response.transactionId
+        transactionDao.save(tx)
+    }
+
+    @Transactional
+    fun onError(tx: TransactionEntity, ex: PaymentException) {
         tx.status = Status.FAILED
         tx.errorCode = ex.error.code.name
         tx.supplierErrorCode = ex.error.supplierErrorCode
@@ -142,20 +149,14 @@ class CreateCashinDelegate(
         publish(EventURN.TRANSACTION_FAILED, tx)
     }
 
-    private fun onPending(tx: TransactionEntity, response: CreatePaymentResponse) {
-        tx.status = Status.PENDING
-        tx.gatewayTransactionId = response.transactionId
-        transactionDao.save(tx)
-    }
-
-    private fun onSuccess(
+    @Transactional
+    fun onSuccess(
         tx: TransactionEntity,
         response: CreatePaymentResponse,
         tenant: Tenant
     ) {
         // Update balance
-        val balance = updateBalance(tx.accountId, tx.net, tenant)
-        logger.add("balance", balance.amount)
+        updateBalance(tx.accountId, tx.net, tenant)
 
         // Update transaction
         tx.status = Status.SUCCESSFUL

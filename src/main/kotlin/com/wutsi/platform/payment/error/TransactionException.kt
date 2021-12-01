@@ -1,4 +1,4 @@
-package com.wutsi.platform.payment.exception
+package com.wutsi.platform.payment.error
 
 import com.wutsi.platform.core.error.Error
 import com.wutsi.platform.core.error.exception.WutsiException

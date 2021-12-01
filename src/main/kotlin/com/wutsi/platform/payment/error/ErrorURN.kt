@@ -1,4 +1,4 @@
-package com.wutsi.platform.payment.util
+package com.wutsi.platform.payment.error
 
 enum class ErrorURN(val urn: String) {
     TRANSACTION_FAILED("urn:wutsi:error:payment:transaction-failed"),

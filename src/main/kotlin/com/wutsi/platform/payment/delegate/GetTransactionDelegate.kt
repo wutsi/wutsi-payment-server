@@ -8,8 +8,8 @@ import com.wutsi.platform.core.error.exception.NotFoundException
 import com.wutsi.platform.core.tracing.TracingContext
 import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.dto.GetTransactionResponse
+import com.wutsi.platform.payment.error.ErrorURN
 import com.wutsi.platform.payment.service.SecurityManager
-import com.wutsi.platform.payment.util.ErrorURN
 import org.springframework.stereotype.Service
 
 @Service

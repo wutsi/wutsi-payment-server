@@ -14,10 +14,10 @@ import com.wutsi.platform.payment.core.ErrorCode
 import com.wutsi.platform.payment.dao.BalanceRepository
 import com.wutsi.platform.payment.entity.BalanceEntity
 import com.wutsi.platform.payment.entity.TransactionEntity
+import com.wutsi.platform.payment.error.ErrorURN
 import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.event.TransactionEventPayload
 import com.wutsi.platform.payment.service.SecurityManager
-import com.wutsi.platform.payment.util.ErrorURN
 import com.wutsi.platform.tenant.dto.Tenant
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
