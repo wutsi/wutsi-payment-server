@@ -75,7 +75,7 @@ public class CreateTransferDelegate(
         val tx = transactionDao.save(
             TransactionEntity(
                 id = UUID.randomUUID().toString(),
-                userId = securityManager.currentUserId(),
+                accountId = securityManager.currentUserId(),
                 recipientId = request.recipientId,
                 tenantId = tenant.id,
                 type = TRANSFER,

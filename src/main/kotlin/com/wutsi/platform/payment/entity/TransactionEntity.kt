@@ -15,7 +15,7 @@ data class TransactionEntity(
     val id: String? = null,
 
     val tenantId: Long = -1,
-    val userId: Long = -1,
+    val accountId: Long = -1,
     val recipientId: Long? = null,
     val type: TransactionType = TransactionType.UNKNOWN,
     val paymentMethodToken: String? = null,

@@ -86,7 +86,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
 
         val tx = txDao.findById(response.body.id).get()
         assertEquals(1L, tx.tenantId)
-        assertEquals(USER_ID, tx.userId)
+        assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
         assertEquals(0.0, tx.fees)
@@ -148,7 +148,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
 
         val tx = txDao.findById(response.body.id).get()
         assertEquals(1L, tx.tenantId)
-        assertEquals(user.id, tx.userId)
+        assertEquals(user.id, tx.accountId)
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
         assertEquals(0.0, tx.fees)
@@ -200,7 +200,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
 
         val tx = txDao.findById(response.body.id).get()
         assertEquals(1L, tx.tenantId)
-        assertEquals(USER_ID, tx.userId)
+        assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
         assertEquals(0.0, tx.fees)
@@ -247,7 +247,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
 
         val txId = response.error.data?.get("id").toString()
         val tx = txDao.findById(txId).get()
-        assertEquals(USER_ID, tx.userId)
+        assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
         assertEquals(0.0, tx.fees)

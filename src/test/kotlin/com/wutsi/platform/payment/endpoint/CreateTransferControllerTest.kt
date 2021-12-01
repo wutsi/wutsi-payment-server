@@ -77,7 +77,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
         val tx = txDao.findById(response.body.id).get()
         assertEquals(1L, tx.tenantId)
-        assertEquals(USER_ID, tx.userId)
+        assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
         assertEquals(0.0, tx.fees)

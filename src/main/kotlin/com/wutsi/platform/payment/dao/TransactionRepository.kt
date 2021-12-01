@@ -8,6 +8,6 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface TransactionRepository : CrudRepository<TransactionEntity, String> {
-    @Query("SELECT T FROM TransactionEntity T WHERE T.tenantId = ?1 AND (T.userId=?2 OR T.recipientId=?2)")
-    fun findByTenantIdAndUserId(tenantId: Long, userId: Long, page: Pageable): List<TransactionEntity>
+    @Query("SELECT T FROM TransactionEntity T WHERE T.tenantId = ?1 AND (T.accountId=?2 OR T.recipientId=?2)")
+    fun findByTenantIdAndAccountId(tenantId: Long, accountId: Long, page: Pageable): List<TransactionEntity>
 }

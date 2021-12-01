@@ -17,7 +17,7 @@ public class SearchTransactionDelegate(
             request.limit,
             Sort.by("created").descending()
         )
-        val txs = dao.findByTenantIdAndUserId(request.tenantId, request.userId, page)
+        val txs = dao.findByTenantIdAndAccountId(request.tenantId, request.userId, page)
 
         return SearchTransactionResponse(
             transactions = txs.map { it.toTransactionSummary() }

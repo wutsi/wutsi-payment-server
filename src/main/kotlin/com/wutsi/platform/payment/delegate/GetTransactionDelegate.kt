@@ -34,7 +34,7 @@ public class GetTransactionDelegate(
             }
 
         // Are you the owner
-        if (tx.userId != securityManager.currentUserId())
+        if (tx.accountId != securityManager.currentUserId())
             throw ForbiddenException(
                 error = Error(
                     code = ErrorURN.OWNERSHIP_ERROR.urn

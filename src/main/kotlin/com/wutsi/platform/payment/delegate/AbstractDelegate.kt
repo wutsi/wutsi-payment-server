@@ -119,7 +119,7 @@ class AbstractDelegate {
                     type = tx.type.name,
                     amount = tx.amount,
                     currency = tx.currency,
-                    userId = tx.userId,
+                    userId = tx.accountId,
                     recipientId = tx.recipientId
                 )
             )

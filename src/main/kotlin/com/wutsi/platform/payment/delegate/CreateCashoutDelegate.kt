@@ -95,7 +95,7 @@ class CreateCashoutDelegate(
         val tx = transactionDao.save(
             TransactionEntity(
                 id = UUID.randomUUID().toString(),
-                userId = securityManager.currentUserId(),
+                accountId = securityManager.currentUserId(),
                 tenantId = tenant.id,
                 paymentMethodToken = request.paymentMethodToken,
                 paymentMethodProvider = PaymentMethodProvider.valueOf(paymentMethod.provider),
@@ -156,7 +156,7 @@ class CreateCashoutDelegate(
         tenant: Tenant
     ) {
         // Update balance
-        val balance = updateBalance(tx.userId, -tx.net, tenant)
+        val balance = updateBalance(tx.accountId, -tx.net, tenant)
         logger.add("balance", balance.amount)
 
         // Update transaction
