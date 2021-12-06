@@ -42,6 +42,7 @@ fun TransactionEntity.toTransactionSummary() = TransactionSummary(
     accountId = this.accountId,
     currency = this.currency,
     amount = this.amount,
+    paymentMethodToken = this.paymentMethodToken,
     paymentMethodProvider = this.paymentMethodProvider?.name,
     description = this.description,
     fees = this.fees,

@@ -330,6 +330,10 @@ components:
             - CASHOUT
             - TRANSFER
           description: Type of transaction
+        paymentMethodToken:
+          type: string
+          description: Token of the payment method
+          nullable: true
         paymentMethodProvider:
           type: string
           description: Type of payment provider

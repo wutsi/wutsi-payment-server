@@ -11,6 +11,7 @@ public data class TransactionSummary(
     public val accountId: Long = 0,
     public val recipientId: Long? = null,
     public val type: String = "",
+    public val paymentMethodToken: String? = null,
     public val paymentMethodProvider: String? = null,
     public val description: String? = null,
     public val amount: Double = 0.0,
