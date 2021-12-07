@@ -134,7 +134,8 @@ class CreateCashoutDelegate(
         return response
     }
 
-    private fun onError(tx: TransactionEntity, ex: PaymentException) {
+    @Transactional
+    fun onError(tx: TransactionEntity, ex: PaymentException) {
         tx.status = Status.FAILED
         tx.errorCode = ex.error.code.name
         tx.supplierErrorCode = ex.error.supplierErrorCode
@@ -150,14 +151,14 @@ class CreateCashoutDelegate(
         transactionDao.save(tx)
     }
 
-    private fun onSuccess(
+    @Transactional
+    fun onSuccess(
         tx: TransactionEntity,
         response: CreateTransferResponse,
         tenant: Tenant
     ) {
         // Update balance
-        val balance = updateBalance(tx.accountId, -tx.net, tenant)
-        logger.add("balance", balance.amount)
+        updateBalance(tx.accountId, -tx.net, tenant)
 
         // Update transaction
         tx.status = Status.SUCCESSFUL

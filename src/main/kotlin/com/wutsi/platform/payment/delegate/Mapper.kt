@@ -11,7 +11,7 @@ fun BalanceEntity.toBalance() = Balance(
     amount = this.amount,
     currency = this.currency,
     created = this.created,
-    userId = this.userId
+    userId = this.accountId
 )
 
 fun TransactionEntity.toTransaction() = Transaction(

@@ -13,8 +13,8 @@ import kotlin.Long
 public class GetBalanceController(
     private val `delegate`: GetBalanceDelegate
 ) {
-    @GetMapping("/v1/accounts/{user-id}/balance")
+    @GetMapping("/v1/accounts/{account-id}/balance")
     @PreAuthorize(value = "hasAuthority('payment-read')")
-    public fun invoke(@PathVariable(name = "user-id") @NotNull userId: Long): GetBalanceResponse =
-        delegate.invoke(userId)
+    public fun invoke(@PathVariable(name = "account-id") @NotNull accountId: Long): GetBalanceResponse =
+        delegate.invoke(accountId)
 }

@@ -138,14 +138,14 @@ paths:
       security:
         - api_key: [ 'payment-read' ]
 
-  /v1/accounts/{user-id}/balance:
+  /v1/accounts/{account-id}/balance:
     get:
       operationId: "get-balance"
-      description: Get balance of a user
+      description: Get balance of a user's account
       parameters:
         - in: path
-          name: user-id
-          description: ID of the user
+          name: account-id
+          description: ID of the account
           required: true
           schema:
             type: integer

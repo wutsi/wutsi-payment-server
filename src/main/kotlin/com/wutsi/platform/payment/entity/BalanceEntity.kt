@@ -14,7 +14,7 @@ data class BalanceEntity(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
-    val userId: Long = -1,
+    val accountId: Long = -1,
     val tenantId: Long = -1,
     var amount: Double = 0.0,
     val currency: String = "",

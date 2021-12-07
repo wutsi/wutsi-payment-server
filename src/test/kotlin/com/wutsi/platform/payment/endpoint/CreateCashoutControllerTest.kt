@@ -102,7 +102,7 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertNull(tx.description)
         assertNull(tx.errorCode)
 
-        val balance = balanceDao.findByUserIdAndTenantId(USER_ID, TENANT_ID).get()
+        val balance = balanceDao.findByAccountIdAndTenantId(USER_ID, TENANT_ID).get()
         assertEquals(request.amount, 100000 - balance.amount)
         assertEquals(request.currency, balance.currency)
 
@@ -154,7 +154,7 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertNull(tx.description)
         assertNull(tx.errorCode)
 
-        val balance = balanceDao.findByUserIdAndTenantId(USER_ID, TENANT_ID).get()
+        val balance = balanceDao.findByAccountIdAndTenantId(USER_ID, TENANT_ID).get()
         assertEquals(100000.0, balance.amount)
 
         verify(eventStream, never()).publish(any(), any())

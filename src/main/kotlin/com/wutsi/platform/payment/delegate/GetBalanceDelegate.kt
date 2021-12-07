@@ -10,12 +10,12 @@ import java.time.OffsetDateTime
 class GetBalanceDelegate(
     private val tenantProvider: TenantProvider,
 ) : AbstractDelegate() {
-    fun invoke(userId: Long): GetBalanceResponse {
+    fun invoke(accountId: Long): GetBalanceResponse {
         val tenant = tenantProvider.get()
-        val balance = balanceDao.findByUserIdAndTenantId(userId, tenant.id)
+        val balance = balanceDao.findByAccountIdAndTenantId(accountId, tenant.id)
             .orElseGet {
                 BalanceEntity(
-                    userId = userId,
+                    accountId = accountId,
                     amount = 0.0,
                     currency = tenant.currency,
                     created = OffsetDateTime.now(),
