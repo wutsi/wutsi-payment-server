@@ -32,9 +32,7 @@ spring:
     mapper:
       ACCEPT_CASE_INSENSITIVE_ENUMS: true
       ACCEPT_CASE_INSENSITIVE_PROPERTIES: true
-    default-property-inclusion:
-      - non_null
-      - non_empty
+    default-property-inclusion: non_null
 
   flyway:
     baseline-on-migrate: true

@@ -53,6 +53,9 @@ class CreateCashinDelegate(
         // Perform the transfer
         try {
             val response = cashin(tx, paymentMethod)
+            logger.add("gateway_status", response.status)
+            logger.add("gateway_transaction_id", response.transactionId)
+            logger.add("gateway_financial_transaction_id", response.financialTransactionId)
 
             if (response.status == Status.SUCCESSFUL) {
                 onSuccess(tx, response, tenant)
@@ -125,10 +128,6 @@ class CreateCashinDelegate(
                 payerMessage = null
             )
         )
-
-        logger.add("gateway_status", response.status)
-        logger.add("gateway_transaction_id", response.transactionId)
-        logger.add("gateway_financial_transaction_id", response.financialTransactionId)
         return response
     }
 
