@@ -35,7 +35,7 @@ class PendingCashoutJob(
             val pagination = PageRequest.of(page, size)
             val txs = dao.findByTypeAndStatus(TransactionType.CASHOUT, Status.PENDING, pagination)
 
-            LOGGER.info("${txs.size} Pending Transactions")
+            LOGGER.info("job=PendingCashoutJob transaction_count=${txs.size}")
             txs.forEach { onCashout(it) }
 
             if (txs.isEmpty())
@@ -49,6 +49,7 @@ class PendingCashoutJob(
         val logger = RequestKVLogger()
         logger.add("transaction_id", tx.id)
         logger.add("provider", tx.paymentMethodProvider)
+        logger.add("job", "PendingCashoutJob")
 
         if (tx.paymentMethodProvider == null)
             return
@@ -78,6 +79,8 @@ class PendingCashoutJob(
             logger.add("error_supplier_error_code", ex.error.supplierErrorCode)
 
             delegate.onError(tx, ex)
+        } finally {
+            logger.log()
         }
     }
 
