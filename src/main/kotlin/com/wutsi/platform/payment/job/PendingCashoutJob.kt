@@ -26,21 +26,24 @@ class PendingCashoutJob(
         private val LOGGER = LoggerFactory.getLogger(PendingCashoutJob::class.java)
     }
 
-    fun run() {
+    fun run(): Int {
+        var count = 0
         val size = 100
         var page = 0
         while (true) {
             val pagination = PageRequest.of(page, size)
             val txs = dao.findByTypeAndStatus(TransactionType.CASHOUT, Status.PENDING, pagination)
-
-            LOGGER.info("job=PendingCashoutJob transaction_count=${txs.size}")
-            txs.forEach { onCashout(it) }
+            txs.forEach {
+                onCashout(it)
+                count++
+            }
 
             if (txs.isEmpty())
                 break
             else
                 page += size
         }
+        return count
     }
 
     private fun onCashout(tx: TransactionEntity) {
