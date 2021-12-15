@@ -162,6 +162,32 @@ paths:
       security:
         - api_key: [ 'payment-read' ]
 
+  /v1/jobs/{name}:
+    post:
+      operationId: "run-job"
+      description: Execute a payment job
+      parameters:
+        - in: path
+          name: name
+          description: Name of the job to run
+          required: true
+          schema:
+            type: string
+            enum:
+              - pending-cashout
+              - pending-cashin
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunJobResponse'
+      tags:
+        - Job
+      security:
+        - api_key: [ 'payment-job-manage' ]
+
 components:
   securitySchemes:
     api_key:
@@ -474,3 +500,10 @@ components:
         transaction:
           type: object
           $ref: "#/components/schemas/Transaction"
+
+    RunJobResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Job ID

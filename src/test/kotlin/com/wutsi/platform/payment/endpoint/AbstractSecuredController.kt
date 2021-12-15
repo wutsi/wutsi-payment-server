@@ -144,7 +144,8 @@ abstract class AbstractSecuredController {
     protected fun createResTemplate(
         scope: List<String> = listOf(
             "payment-manage",
-            "payment-read"
+            "payment-read",
+            "payment-job-manage",
         ),
         subjectId: Long = USER_ID,
         subjectType: SubjectType = USER,

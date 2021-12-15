@@ -8,4 +8,5 @@ enum class ErrorURN(val urn: String) {
     RECIPIENT_NOT_ACTIVE("urn:wutsi:error:payment:recipient-not-found"),
     OWNERSHIP_ERROR("urn:wutsi:error:payment:ownership-error"),
     INVALID_TENANT("urn:wutsi:error:payment:invalid-tenant"),
+    INVALID_JOB("urn:wutsi:error:payment:invalid-job"),
 }

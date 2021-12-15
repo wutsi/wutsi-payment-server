@@ -14,5 +14,6 @@ public data class CreateTransferRequest(
     @get:NotBlank
     @get:Size(max = 3)
     public val currency: String = "",
+    @get:NotBlank
     public val description: String? = null
 )

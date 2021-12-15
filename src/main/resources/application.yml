@@ -58,12 +58,6 @@ spring:
 wutsi:
   application:
     name: wutsi-payment
-    jobs:
-      pending-cashin:
-        cron: "0 */15 * * * *"
-      pending-cashout:
-        cron: "0 */15 * * * *"
-
   platform:
     payment:
       mtn:
