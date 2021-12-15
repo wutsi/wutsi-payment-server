@@ -13,7 +13,6 @@ import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.tenant.dto.Tenant
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
-import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 
 @Service
@@ -27,7 +26,6 @@ class PendingCashinJob(
         private val LOGGER = LoggerFactory.getLogger(PendingCashinJob::class.java)
     }
 
-    @Async
     fun run() {
         val size = 100
         var page = 0
