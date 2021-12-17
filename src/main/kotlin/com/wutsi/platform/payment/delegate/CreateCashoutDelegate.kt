@@ -60,7 +60,7 @@ class CreateCashoutDelegate(
             if (response.status == Status.SUCCESSFUL) {
                 onSuccess(tx, response, tenant)
             } else {
-                onPending(tx, response)
+                onPending(tx, response, tenant)
             }
 
             return CreateCashoutResponse(
@@ -71,7 +71,7 @@ class CreateCashoutDelegate(
             logger.add("gateway_error_code", paymentEx.error.code)
             logger.add("gateway_supplier_error_code", paymentEx.error.supplierErrorCode)
 
-            onError(tx, paymentEx)
+            onError(tx, paymentEx, tenant, false)
             throw TransactionException(
                 error = Error(
                     code = ErrorURN.TRANSACTION_FAILED.urn,
@@ -118,7 +118,7 @@ class CreateCashoutDelegate(
 
     private fun cashout(tx: TransactionEntity, paymentMethod: PaymentMethod): CreateTransferResponse {
         val paymentGateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
-        val response = paymentGateway.createTransfer(
+        return paymentGateway.createTransfer(
             CreateTransferRequest(
                 payee = Party(
                     fullName = paymentMethod.ownerName,
@@ -130,11 +130,15 @@ class CreateCashoutDelegate(
                 payerMessage = null
             )
         )
-        return response
     }
 
     @Transactional
-    fun onError(tx: TransactionEntity, ex: PaymentException) {
+    fun onError(tx: TransactionEntity, ex: PaymentException, tenant: Tenant, updateBalance: Boolean) {
+        // Update balance
+        if (updateBalance)
+            updateBalance(tx.accountId, tx.net, tenant)
+
+        // Update the transaction
         tx.status = Status.FAILED
         tx.errorCode = ex.error.code.name
         tx.supplierErrorCode = ex.error.supplierErrorCode
@@ -144,7 +148,11 @@ class CreateCashoutDelegate(
         publish(EventURN.TRANSACTION_FAILED, tx)
     }
 
-    private fun onPending(tx: TransactionEntity, response: CreateTransferResponse) {
+    private fun onPending(tx: TransactionEntity, response: CreateTransferResponse, tenant: Tenant) {
+        // Update balance
+        updateBalance(tx.accountId, -tx.net, tenant)
+
+        // Update the transaction
         tx.status = Status.PENDING
         tx.gatewayTransactionId = response.transactionId
         transactionDao.save(tx)

@@ -155,7 +155,8 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertNull(tx.errorCode)
 
         val balance = balanceDao.findByAccountIdAndTenantId(USER_ID, TENANT_ID).get()
-        assertEquals(100000.0, balance.amount)
+        assertEquals(100000.0 - request.amount, balance.amount)
+        assertEquals(request.currency, balance.currency)
 
         verify(eventStream, never()).publish(any(), any())
     }
@@ -200,6 +201,10 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertEquals(e.error.supplierErrorCode, tx.supplierErrorCode)
         assertEquals(e.error.code.name, tx.errorCode)
         assertEquals(e.error.transactionId, tx.gatewayTransactionId)
+
+        val balance = balanceDao.findByAccountIdAndTenantId(USER_ID, TENANT_ID).get()
+        assertEquals(100000.0, balance.amount)
+        assertEquals(request.currency, balance.currency)
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())

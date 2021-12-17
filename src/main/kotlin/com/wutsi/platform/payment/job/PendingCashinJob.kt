@@ -11,7 +11,6 @@ import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.payment.model.CreatePaymentResponse
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.tenant.dto.Tenant
-import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 
@@ -22,10 +21,6 @@ class PendingCashinJob(
     private val gatewayProvider: GatewayProvider,
     private val tenantProvider: TenantProvider
 ) {
-    companion object {
-        private val LOGGER = LoggerFactory.getLogger(PendingCashinJob::class.java)
-    }
-
     fun run(): Int {
         var count = 0
         val size = 100

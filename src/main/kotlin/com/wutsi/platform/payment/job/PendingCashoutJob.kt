@@ -11,7 +11,6 @@ import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.payment.model.CreateTransferResponse
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.tenant.dto.Tenant
-import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 
@@ -22,10 +21,6 @@ class PendingCashoutJob(
     private val gatewayProvider: GatewayProvider,
     private val tenantProvider: TenantProvider
 ) {
-    companion object {
-        private val LOGGER = LoggerFactory.getLogger(PendingCashoutJob::class.java)
-    }
-
     fun run(): Int {
         var count = 0
         val size = 100
@@ -57,13 +52,13 @@ class PendingCashoutJob(
 
         val gateway = gatewayProvider.get(tx.paymentMethodProvider)
         val tenants: MutableMap<Long, Tenant> = mutableMapOf()
+        val tenant = findTenant(tx.tenantId, tenants)
         try {
             val response = gateway.getTransfer(tx.id!!)
             logger.add("status", response.status)
             logger.add("financial_transaction_id", response.financialTransactionId)
 
             if (response.status == Status.SUCCESSFUL) {
-                val tenant = findTenant(tx.tenantId, tenants)
                 delegate.onSuccess(
                     tx = tx,
                     tenant = tenant,
@@ -79,7 +74,7 @@ class PendingCashoutJob(
             logger.add("error_code", ex.error.code)
             logger.add("error_supplier_error_code", ex.error.supplierErrorCode)
 
-            delegate.onError(tx, ex)
+            delegate.onError(tx, ex, tenant, true)
         } finally {
             logger.log()
         }
