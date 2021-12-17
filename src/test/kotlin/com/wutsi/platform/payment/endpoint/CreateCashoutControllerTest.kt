@@ -158,7 +158,16 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertEquals(100000.0 - request.amount, balance.amount)
         assertEquals(request.currency, balance.currency)
 
-        verify(eventStream, never()).publish(any(), any())
+
+        val payload = argumentCaptor<TransactionEventPayload>()
+        verify(eventStream).publish(eq(EventURN.TRANSACTION_PENDING.urn), payload.capture())
+        assertEquals(USER_ID, payload.firstValue.accountId)
+        assertEquals(TransactionType.CASHOUT.name, payload.firstValue.type)
+        assertNull(payload.firstValue.recipientId)
+        assertEquals(tx.id, payload.firstValue.transactionId)
+        assertEquals(tx.tenantId, payload.firstValue.tenantId)
+        assertEquals(tx.amount, payload.firstValue.amount)
+        assertEquals(tx.currency, payload.firstValue.currency)
     }
 
     @Test

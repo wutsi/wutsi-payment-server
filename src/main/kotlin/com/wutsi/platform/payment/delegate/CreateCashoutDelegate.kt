@@ -156,6 +156,8 @@ class CreateCashoutDelegate(
         tx.status = Status.PENDING
         tx.gatewayTransactionId = response.transactionId
         transactionDao.save(tx)
+
+        publish(EventURN.TRANSACTION_PENDING, tx)
     }
 
     @Transactional
