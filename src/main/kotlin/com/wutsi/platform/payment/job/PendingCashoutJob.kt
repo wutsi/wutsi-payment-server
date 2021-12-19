@@ -74,7 +74,7 @@ class PendingCashoutJob(
             logger.add("error_code", ex.error.code)
             logger.add("error_supplier_error_code", ex.error.supplierErrorCode)
 
-            delegate.onError(tx, ex, tenant, true)
+            delegate.onError(tx, ex, tenant)
         } finally {
             logger.log()
         }

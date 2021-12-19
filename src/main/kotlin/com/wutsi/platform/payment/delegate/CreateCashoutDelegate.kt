@@ -50,6 +50,9 @@ class CreateCashoutDelegate(
         // Create transaction
         val tx = createTransaction(request, paymentMethod, tenant)
 
+        // Update balance
+        updateBalance(tx.accountId, -tx.net, tenant)
+
         // Perform the transfer
         try {
             val response = cashout(tx, paymentMethod)
@@ -60,7 +63,7 @@ class CreateCashoutDelegate(
             if (response.status == Status.SUCCESSFUL) {
                 onSuccess(tx, response, tenant)
             } else {
-                onPending(tx, response, tenant)
+                onPending(tx, response)
             }
 
             return CreateCashoutResponse(
@@ -71,7 +74,7 @@ class CreateCashoutDelegate(
             logger.add("gateway_error_code", paymentEx.error.code)
             logger.add("gateway_supplier_error_code", paymentEx.error.supplierErrorCode)
 
-            onError(tx, paymentEx, tenant, false)
+            onError(tx, paymentEx, tenant)
             throw TransactionException(
                 error = Error(
                     code = ErrorURN.TRANSACTION_FAILED.urn,
@@ -133,10 +136,9 @@ class CreateCashoutDelegate(
     }
 
     @Transactional
-    fun onError(tx: TransactionEntity, ex: PaymentException, tenant: Tenant, updateBalance: Boolean) {
-        // Update balance
-        if (updateBalance)
-            updateBalance(tx.accountId, tx.net, tenant)
+    fun onError(tx: TransactionEntity, ex: PaymentException, tenant: Tenant) {
+        // Revert balance
+        updateBalance(tx.accountId, tx.net, tenant)
 
         // Update the transaction
         tx.status = Status.FAILED
@@ -148,10 +150,7 @@ class CreateCashoutDelegate(
         publish(EventURN.TRANSACTION_FAILED, tx)
     }
 
-    private fun onPending(tx: TransactionEntity, response: CreateTransferResponse, tenant: Tenant) {
-        // Update balance
-        updateBalance(tx.accountId, -tx.net, tenant)
-
+    private fun onPending(tx: TransactionEntity, response: CreateTransferResponse) {
         // Update the transaction
         tx.status = Status.PENDING
         tx.gatewayTransactionId = response.transactionId
@@ -166,9 +165,6 @@ class CreateCashoutDelegate(
         response: CreateTransferResponse,
         tenant: Tenant
     ) {
-        // Update balance
-        updateBalance(tx.accountId, -tx.net, tenant)
-
         // Update transaction
         tx.status = Status.SUCCESSFUL
         tx.gatewayTransactionId = response.transactionId
