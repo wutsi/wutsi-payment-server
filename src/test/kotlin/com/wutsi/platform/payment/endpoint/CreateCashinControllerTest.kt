@@ -218,7 +218,6 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         val balance = balanceDao.findByAccountIdAndTenantId(USER_ID, TENANT_ID)
         assertFalse(balance.isPresent)
 
-
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_PENDING.urn), payload.capture())
         assertEquals(USER_ID, payload.firstValue.accountId)
