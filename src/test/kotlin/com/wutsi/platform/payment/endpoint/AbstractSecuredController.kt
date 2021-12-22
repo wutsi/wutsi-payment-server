@@ -103,7 +103,7 @@ abstract class AbstractSecuredController {
                     phonePrefixes = listOf(
                         PhonePrefix(
                             country = "CM",
-                            prefixes = listOf("+23722")
+                            prefixes = listOf("+237745")
                         ),
                     ),
                     logos = listOf(

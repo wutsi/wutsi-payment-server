@@ -1,12 +1,13 @@
 package com.wutsi.platform.payment.error
 
 enum class ErrorURN(val urn: String) {
+    BALANCE_NOT_FOUND("urn:wutsi:error:payment:balance-not-found"),
     TRANSACTION_FAILED("urn:wutsi:error:payment:transaction-failed"),
     TRANSACTION_NOT_FOUND("urn:wutsi:error:payment:transaction-not-found"),
     CURRENCY_NOT_SUPPORTED("urn:wutsi:error:payment:currency-not-supported"),
     USER_NOT_ACTIVE("urn:wutsi:error:payment:user-not-found"),
     RECIPIENT_NOT_ACTIVE("urn:wutsi:error:payment:recipient-not-found"),
-    OWNERSHIP_ERROR("urn:wutsi:error:payment:ownership-error"),
-    INVALID_TENANT("urn:wutsi:error:payment:invalid-tenant"),
     INVALID_JOB("urn:wutsi:error:payment:invalid-job"),
+    ILLEGAL_TRANSACTION_ACCESS("urn:wutsi:error:payment:illegal-transaction-access"),
+    ILLEGAL_TENANT_ACCESS("urn:wutsi:error:account:illegal-tenant-access"),
 }

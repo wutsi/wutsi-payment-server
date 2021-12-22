@@ -74,7 +74,7 @@ class AbstractDelegate {
     }
 
     protected fun ensureBalanceAbove(userId: Long, threshold: Double, tenant: Tenant) {
-        val balance = balanceDao.findByAccountIdAndTenantId(userId, tenant.id)
+        val balance = balanceDao.findByAccountId(userId)
             .orElseThrow {
                 ConflictException(
                     error = Error(
@@ -94,7 +94,7 @@ class AbstractDelegate {
     }
 
     protected fun updateBalance(userId: Long, amount: Double, tenant: Tenant): BalanceEntity {
-        val balance = balanceDao.findByAccountIdAndTenantId(userId, tenant.id)
+        val balance = balanceDao.findByAccountId(userId)
             .orElseGet {
                 balanceDao.save(
                     BalanceEntity(

@@ -7,5 +7,5 @@ import java.util.Optional
 
 @Repository
 interface BalanceRepository : CrudRepository<BalanceEntity, Long> {
-    fun findByAccountIdAndTenantId(accountId: Long, tenantId: Long): Optional<BalanceEntity>
+    fun findByAccountId(accountId: Long): Optional<BalanceEntity>
 }

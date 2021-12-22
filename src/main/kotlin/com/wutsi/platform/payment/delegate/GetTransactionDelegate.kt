@@ -3,9 +3,7 @@ package com.wutsi.platform.payment.`delegate`
 import com.wutsi.platform.core.error.Error
 import com.wutsi.platform.core.error.Parameter
 import com.wutsi.platform.core.error.ParameterType
-import com.wutsi.platform.core.error.exception.ForbiddenException
 import com.wutsi.platform.core.error.exception.NotFoundException
-import com.wutsi.platform.core.tracing.TracingContext
 import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.dto.GetTransactionResponse
 import com.wutsi.platform.payment.error.ErrorURN
@@ -15,8 +13,7 @@ import org.springframework.stereotype.Service
 @Service
 public class GetTransactionDelegate(
     private val dao: TransactionRepository,
-    private val securityManager: SecurityManager,
-    private val tracingContext: TracingContext
+    private val securityManager: SecurityManager
 ) {
     public fun invoke(id: String): GetTransactionResponse {
         val tx = dao.findById(id)
@@ -33,21 +30,7 @@ public class GetTransactionDelegate(
                 )
             }
 
-        // Are you the owner
-        if (tx.accountId != securityManager.currentUserId())
-            throw ForbiddenException(
-                error = Error(
-                    code = ErrorURN.OWNERSHIP_ERROR.urn
-                )
-            )
-
-        // Is this transaction belong to the tenant?
-        if (tx.tenantId.toString() != tracingContext.tenantId())
-            throw ForbiddenException(
-                error = Error(
-                    code = ErrorURN.INVALID_TENANT.urn
-                )
-            )
+        securityManager.checkOwnership(tx) && securityManager.checkTenant(tx)
 
         return GetTransactionResponse(
             transaction = tx.toTransaction()

@@ -92,11 +92,11 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertNull(tx.errorCode)
         assertNull(tx.supplierErrorCode)
 
-        val balance = balanceDao.findByAccountIdAndTenantId(USER_ID, TENANT_ID).get()
+        val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(100000 - request.amount, balance.amount)
         assertEquals(request.currency, balance.currency)
 
-        val balance2 = balanceDao.findByAccountIdAndTenantId(request.recipientId, TENANT_ID).get()
+        val balance2 = balanceDao.findByAccountId(request.recipientId).get()
         assertEquals(200000 + request.amount, balance2.amount)
         assertEquals(request.currency, balance2.currency)
 

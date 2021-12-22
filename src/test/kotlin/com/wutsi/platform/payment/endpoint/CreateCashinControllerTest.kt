@@ -101,7 +101,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertNull(tx.description)
         assertNull(tx.errorCode)
 
-        val balance = balanceDao.findByAccountIdAndTenantId(USER_ID, TENANT_ID).get()
+        val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(request.amount, balance.amount)
         assertEquals(request.currency, balance.currency)
 
@@ -163,7 +163,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertNull(tx.description)
         assertNull(tx.errorCode)
 
-        val balance = balanceDao.findByAccountIdAndTenantId(user.id, TENANT_ID).get()
+        val balance = balanceDao.findByAccountId(user.id).get()
         assertEquals(100000.0 + request.amount, balance.amount)
         assertEquals(request.currency, balance.currency)
 
@@ -215,7 +215,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertNull(tx.description)
         assertNull(tx.errorCode)
 
-        val balance = balanceDao.findByAccountIdAndTenantId(USER_ID, TENANT_ID)
+        val balance = balanceDao.findByAccountId(USER_ID)
         assertFalse(balance.isPresent)
 
         val payload = argumentCaptor<TransactionEventPayload>()

@@ -1,27 +1,30 @@
 package com.wutsi.platform.payment.`delegate`
 
+import com.wutsi.platform.core.error.Error
+import com.wutsi.platform.core.error.Parameter
+import com.wutsi.platform.core.error.ParameterType
+import com.wutsi.platform.core.error.exception.NotFoundException
 import com.wutsi.platform.payment.dto.GetBalanceResponse
-import com.wutsi.platform.payment.entity.BalanceEntity
-import com.wutsi.platform.payment.service.TenantProvider
+import com.wutsi.platform.payment.error.ErrorURN
 import org.springframework.stereotype.Service
-import java.time.OffsetDateTime
 
 @Service
-class GetBalanceDelegate(
-    private val tenantProvider: TenantProvider,
-) : AbstractDelegate() {
+class GetBalanceDelegate : AbstractDelegate() {
     fun invoke(accountId: Long): GetBalanceResponse {
-        val tenant = tenantProvider.get()
-        val balance = balanceDao.findByAccountIdAndTenantId(accountId, tenant.id)
-            .orElseGet {
-                BalanceEntity(
-                    accountId = accountId,
-                    amount = 0.0,
-                    currency = tenant.currency,
-                    created = OffsetDateTime.now(),
-                    updated = OffsetDateTime.now()
+        val balance = balanceDao.findByAccountId(accountId)
+            .orElseThrow {
+                NotFoundException(
+                    error = Error(
+                        code = ErrorURN.BALANCE_NOT_FOUND.urn,
+                        parameter = Parameter(
+                            name = "accountId",
+                            value = accountId,
+                            type = ParameterType.PARAMETER_TYPE_PATH
+                        )
+                    )
                 )
             }
+        securityManager.checkTenant(balance)
 
         return GetBalanceResponse(
             balance = balance.toBalance()
