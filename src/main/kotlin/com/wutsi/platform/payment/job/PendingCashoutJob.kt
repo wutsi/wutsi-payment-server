@@ -1,6 +1,7 @@
 package com.wutsi.platform.payment.job
 
-import com.wutsi.platform.core.logging.RequestKVLogger
+import com.wutsi.platform.core.cron.AbstractCronJob
+import com.wutsi.platform.core.logging.DefaultKVLogger
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.core.Status
@@ -12,6 +13,7 @@ import com.wutsi.platform.payment.model.CreateTransferResponse
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.tenant.dto.Tenant
 import org.springframework.data.domain.PageRequest
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 
 @Service
@@ -20,9 +22,17 @@ class PendingCashoutJob(
     private val delegate: CreateCashoutDelegate,
     private val gatewayProvider: GatewayProvider,
     private val tenantProvider: TenantProvider
-) {
-    fun run(): Int {
-        var count = 0
+) : AbstractCronJob() {
+    @Scheduled(cron = "\${wutsi.application.jobs.pending-cashin.cron}")
+    override fun run() {
+        super.run()
+    }
+
+    override fun getJobName(): String =
+        "pending-cashout"
+
+    override fun doRun(): Long {
+        var count = 0L
         val size = 100
         var page = 0
         while (true) {
@@ -42,10 +52,10 @@ class PendingCashoutJob(
     }
 
     private fun onCashout(tx: TransactionEntity) {
-        val logger = RequestKVLogger()
+        val logger = DefaultKVLogger()
         logger.add("transaction_id", tx.id)
         logger.add("provider", tx.paymentMethodProvider)
-        logger.add("job", "PendingCashoutJob")
+        logger.add("job", getJobName())
 
         if (tx.paymentMethodProvider == null)
             return
