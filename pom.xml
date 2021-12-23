@@ -33,7 +33,7 @@
     <hikari-cp.version>5.0.0</hikari-cp.version>
     <postgresql.version>42.2.24</postgresql.version>
     <flyway.version>7.15.0</flyway.version>
-    <wutsi-platform-core.version>0.0.85-SNAPSHOT</wutsi-platform-core.version>
+    <wutsi-platform-core.version>0.0.87</wutsi-platform-core.version>
     <wutsi-platform-payment.version>0.0.65</wutsi-platform-payment.version>
     <wutsi-account.version>1.0.23</wutsi-account.version>
     <wutsi-tenant.version>0.0.11</wutsi-tenant.version>
