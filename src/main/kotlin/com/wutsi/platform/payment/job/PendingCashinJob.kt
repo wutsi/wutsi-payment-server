@@ -1,6 +1,5 @@
 package com.wutsi.platform.payment.job
 
-import com.wutsi.platform.core.cron.AbstractCronJob
 import com.wutsi.platform.core.logging.DefaultKVLogger
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentException
@@ -21,8 +20,8 @@ class PendingCashinJob(
     private val dao: TransactionRepository,
     private val delegate: CreateCashinDelegate,
     private val gatewayProvider: GatewayProvider,
-    private val tenantProvider: TenantProvider
-) : AbstractCronJob() {
+    tenantProvider: TenantProvider
+) : AbstractTransactionJob(tenantProvider) {
 
     @Scheduled(cron = "\${wutsi.application.jobs.pending-cashin.cron}")
     override fun run() {
@@ -40,8 +39,13 @@ class PendingCashinJob(
             val pagination = PageRequest.of(page, size)
             val txs = dao.findByTypeAndStatus(TransactionType.CASHIN, Status.PENDING, pagination)
             txs.forEach {
-                onCashin(it)
-                count++
+                val tc = initTracingContext(it)
+                try {
+                    onCashin(it)
+                    count++
+                } finally {
+                    restoreTracingContext(tc)
+                }
             }
 
             if (txs.isEmpty())
@@ -89,15 +93,5 @@ class PendingCashinJob(
         } finally {
             logger.log()
         }
-    }
-
-    private fun findTenant(id: Long, tenants: MutableMap<Long, Tenant>): Tenant {
-        var tenant = tenants[id]
-        if (tenant != null)
-            return tenant
-
-        tenant = tenantProvider.get(id)
-        tenants[id] = tenant
-        return tenant
     }
 }
