@@ -1,6 +1,6 @@
-package com.wutsi.platform.notification.config
+package com.wutsi.platform.payment.config
 
-import com.wutsi.platform.notification.service.ApplicationTokenInitializer
+import com.wutsi.platform.payment.service.ApplicationTokenInitializer
 import org.springframework.context.annotation.Configuration
 import javax.annotation.PostConstruct
 

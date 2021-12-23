@@ -12,6 +12,8 @@ spring:
 
 wutsi:
   platform:
+    security:
+      api-key: ${API_KEY}
     stream:
       type: rabbitmq
       rabbitmq:

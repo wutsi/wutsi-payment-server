@@ -9,7 +9,6 @@ import com.wutsi.platform.payment.delegate.CreateCashinDelegate
 import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.payment.model.CreatePaymentResponse
-import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.tenant.dto.Tenant
 import org.springframework.data.domain.PageRequest
 import org.springframework.scheduling.annotation.Scheduled
@@ -19,9 +18,8 @@ import org.springframework.stereotype.Service
 class PendingCashinJob(
     private val dao: TransactionRepository,
     private val delegate: CreateCashinDelegate,
-    private val gatewayProvider: GatewayProvider,
-    tenantProvider: TenantProvider
-) : AbstractTransactionJob(tenantProvider) {
+    private val gatewayProvider: GatewayProvider
+) : AbstractTransactionJob() {
 
     @Scheduled(cron = "\${wutsi.application.jobs.pending-cashin.cron}")
     override fun run() {

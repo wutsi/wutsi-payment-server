@@ -1,4 +1,4 @@
-package com.wutsi.platform.notification.service
+package com.wutsi.platform.payment.service
 
 import com.wutsi.platform.core.security.spring.ApplicationTokenProvider
 import com.wutsi.platform.security.WutsiSecurityApi

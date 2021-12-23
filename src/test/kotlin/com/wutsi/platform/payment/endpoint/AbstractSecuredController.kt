@@ -9,13 +9,10 @@ import com.wutsi.platform.account.dto.GetAccountResponse
 import com.wutsi.platform.account.dto.GetPaymentMethodResponse
 import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.account.dto.Phone
-import com.wutsi.platform.core.security.ApiKeyProvider
 import com.wutsi.platform.core.security.SubjectType
 import com.wutsi.platform.core.security.SubjectType.USER
-import com.wutsi.platform.core.security.spring.SpringApiKeyRequestInterceptor
 import com.wutsi.platform.core.security.spring.SpringAuthorizationRequestInterceptor
 import com.wutsi.platform.core.security.spring.jwt.JWTBuilder
-import com.wutsi.platform.core.test.TestApiKeyProvider
 import com.wutsi.platform.core.test.TestRSAKeyProvider
 import com.wutsi.platform.core.test.TestTokenProvider
 import com.wutsi.platform.core.test.TestTracingContext
@@ -43,7 +40,6 @@ abstract class AbstractSecuredController {
         const val TENANT_ID = 1L
     }
 
-    private lateinit var apiKeyProvider: ApiKeyProvider
     private lateinit var tracingContext: TracingContext
 
     @MockBean
@@ -69,7 +65,6 @@ abstract class AbstractSecuredController {
     @BeforeEach
     open fun setUp() {
         tracingContext = TestTracingContext(tenantId = TENANT_ID.toString())
-        apiKeyProvider = TestApiKeyProvider("00000000-00000000-00000000-00000000")
 
         val tenant = Tenant(
             id = 1,
@@ -165,7 +160,6 @@ abstract class AbstractSecuredController {
 
         rest.interceptors.add(SpringTracingRequestInterceptor(tracingContext))
         rest.interceptors.add(SpringAuthorizationRequestInterceptor(tokenProvider))
-        rest.interceptors.add(SpringApiKeyRequestInterceptor(apiKeyProvider))
         return rest
     }
 }

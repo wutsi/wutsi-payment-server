@@ -33,9 +33,10 @@
     <hikari-cp.version>5.0.0</hikari-cp.version>
     <postgresql.version>42.2.24</postgresql.version>
     <flyway.version>7.15.0</flyway.version>
-    <wutsi-platform-core.version>0.0.87</wutsi-platform-core.version>
+    <wutsi-platform-core.version>0.0.90</wutsi-platform-core.version>
     <wutsi-platform-payment.version>0.0.65</wutsi-platform-payment.version>
     <wutsi-account.version>1.0.23</wutsi-account.version>
+    <wutsi-security.version>0.0.14</wutsi-security.version>
     <wutsi-tenant.version>0.0.11</wutsi-tenant.version>
   </properties>
 
@@ -49,6 +50,11 @@
       <groupId>com.wutsi</groupId>
       <artifactId>wutsi-platform-payment</artifactId>
       <version>${wutsi-platform-payment.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.wutsi.platform.security</groupId>
+      <artifactId>wutsi-security-sdk-kotlin</artifactId>
+      <version>${wutsi-security.version}</version>
     </dependency>
     <dependency>
       <groupId>com.wutsi.platform.account</groupId>
