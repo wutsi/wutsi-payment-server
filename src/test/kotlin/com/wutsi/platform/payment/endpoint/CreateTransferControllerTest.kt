@@ -33,7 +33,6 @@ import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.web.client.HttpClientErrorException
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNull
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -132,10 +131,32 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, response.error.downstreamCode)
 
         val id = response.error.data?.get("id").toString()
-        val tx = txDao.findById(id)
-        assertFalse(tx.isPresent)
+        val tx = txDao.findById(id).get()
+        assertEquals(1L, tx.tenantId)
+        assertEquals(USER_ID, tx.accountId)
+        assertEquals(request.currency, tx.currency)
+        assertEquals(request.amount, tx.amount)
+        assertEquals(0.0, tx.fees)
+        assertEquals(request.amount, tx.net)
+        assertNull(tx.paymentMethodToken)
+        assertNull(tx.paymentMethodProvider)
+        assertEquals(TransactionType.TRANSFER, tx.type)
+        assertEquals(Status.FAILED, tx.status)
+        assertEquals(request.description, tx.description)
+        assertNull(tx.gatewayTransactionId)
+        assertNull(tx.financialTransactionId)
+        assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, tx.errorCode)
+        assertNull(tx.supplierErrorCode)
 
-        verify(eventStream, never()).publish(any(), any())
+        val payload = argumentCaptor<TransactionEventPayload>()
+        verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
+        assertEquals(USER_ID, payload.firstValue.accountId)
+        assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
+        assertEquals(request.recipientId, payload.firstValue.recipientId)
+        assertEquals(tx.id, payload.firstValue.transactionId)
+        assertEquals(tx.tenantId, payload.firstValue.tenantId)
+        assertEquals(tx.amount, payload.firstValue.amount)
+        assertEquals(tx.currency, payload.firstValue.currency)
     }
 
     @Test
@@ -156,14 +177,40 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         }
 
         // THEN
-        assertEquals(409, e.rawStatusCode)
+        assertEquals(403, e.rawStatusCode)
 
         val response = ObjectMapper().readValue(e.responseBodyAsString, ErrorResponse::class.java)
         assertEquals(ErrorURN.RECIPIENT_NOT_ACTIVE.urn, response.error.code)
 
-        val id = response.error.data?.get("id").toString()
-        val tx = txDao.findById(id)
-        assertFalse(tx.isPresent)
+        assertNull(response.error.data?.get("id"))
+
+        verify(eventStream, never()).publish(any(), any())
+    }
+
+    @Test
+    public fun userNotActive() {
+        // GIVEN
+        val account = Account(status = "SUSPENDED")
+        doReturn(GetAccountResponse(account)).whenever(accountApi).getAccount(USER_ID)
+
+        // WHEN
+        val request = CreateTransferRequest(
+            amount = 100.0,
+            currency = "XAF",
+            recipientId = 200,
+            description = "Yo man"
+        )
+        val e = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateCashinResponse::class.java)
+        }
+
+        // THEN
+        assertEquals(403, e.rawStatusCode)
+
+        val response = ObjectMapper().readValue(e.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.USER_NOT_ACTIVE.urn, response.error.code)
+
+        assertNull(response.error.data?.get("id"))
 
         verify(eventStream, never()).publish(any(), any())
     }

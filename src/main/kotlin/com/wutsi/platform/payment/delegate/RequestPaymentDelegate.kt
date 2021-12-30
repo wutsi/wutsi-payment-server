@@ -1,9 +1,9 @@
 package com.wutsi.platform.payment.`delegate`
 
-import com.wutsi.platform.payment.dao.RequestPaymentRepository
+import com.wutsi.platform.payment.dao.PaymentRequestRepository
 import com.wutsi.platform.payment.dto.RequestPaymentRequest
 import com.wutsi.platform.payment.dto.RequestPaymentResponse
-import com.wutsi.platform.payment.entity.RequestPaymentEntity
+import com.wutsi.platform.payment.entity.PaymentRequestEntity
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.tenant.dto.Tenant
 import org.springframework.stereotype.Service
@@ -12,16 +12,22 @@ import java.util.UUID
 
 @Service
 public class RequestPaymentDelegate(
-    private val dao: RequestPaymentRepository,
+    private val dao: PaymentRequestRepository,
     private val tenantProvider: TenantProvider,
 ) : AbstractDelegate() {
     public fun invoke(request: RequestPaymentRequest): RequestPaymentResponse {
+        logger.add("currency", request.currency)
+        logger.add("amount", request.amount)
+        logger.add("invoice_id", request.invoiceId)
+        logger.add("description", request.description)
+        logger.add("time_to_live", request.timeToLive)
+
         val tenant = tenantProvider.get()
         validateRequest(request, tenant)
 
         val now = OffsetDateTime.now()
         val obj = dao.save(
-            RequestPaymentEntity(
+            PaymentRequestEntity(
                 id = UUID.randomUUID().toString(),
                 accountId = securityManager.currentUserId(),
                 tenantId = tenantProvider.id(),
@@ -40,5 +46,6 @@ public class RequestPaymentDelegate(
 
     private fun validateRequest(request: RequestPaymentRequest, tenant: Tenant) {
         validateCurrency(request.currency, tenant)
+        ensureCurrentUserActive()
     }
 }

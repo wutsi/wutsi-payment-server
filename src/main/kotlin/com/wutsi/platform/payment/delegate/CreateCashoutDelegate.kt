@@ -49,12 +49,11 @@ class CreateCashoutDelegate(
 
         // Create transaction
         val tx = createTransaction(request, paymentMethod, tenant)
-
-        // Update balance
-        updateBalance(tx.accountId, -tx.net, tenant)
-
-        // Perform the transfer
         try {
+            // Update balance
+            validateTransaction(tx)
+            updateBalance(tx.accountId, -tx.net, tenant)
+
             val response = cashout(tx, paymentMethod)
             logger.add("gateway_status", response.status)
             logger.add("gateway_transaction_id", response.transactionId)
@@ -89,8 +88,11 @@ class CreateCashoutDelegate(
 
     private fun validateRequest(request: CreateCashoutRequest, tenant: Tenant) {
         ensureCurrentUserActive()
-        ensureBalanceAbove(securityManager.currentUserId(), request.amount, tenant)
         validateCurrency(request.currency, tenant)
+    }
+
+    private fun validateTransaction(tx: TransactionEntity) {
+        ensureBalanceAbove(securityManager.currentUserId(), tx)
     }
 
     private fun createTransaction(

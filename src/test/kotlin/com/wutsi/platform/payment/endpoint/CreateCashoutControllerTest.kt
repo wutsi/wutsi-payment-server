@@ -6,7 +6,6 @@ import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.eq
-import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import com.wutsi.platform.core.error.ErrorResponse
@@ -39,7 +38,6 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.web.client.HttpClientErrorException
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(value = ["/db/clean.sql", "/db/CreateCashoutController.sql"])
@@ -226,25 +224,6 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
     }
 
     @Test
-    fun badCurrency() {
-        // WHEN
-        val request = CreateCashoutRequest(
-            paymentMethodToken = "11111",
-            amount = 50000.0,
-            currency = "EUR"
-        )
-        val ex = assertThrows<HttpClientErrorException> {
-            rest.postForEntity(url, request, CreateCashinResponse::class.java)
-        }
-
-        // THEN
-        assertEquals(400, ex.rawStatusCode)
-
-        val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
-        assertEquals(ErrorURN.CURRENCY_NOT_SUPPORTED.urn, response.error.code)
-    }
-
-    @Test
     public fun notEnoughFunds() {
         // WHEN
         val request = CreateCashoutRequest(
@@ -263,9 +242,50 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertEquals(ErrorURN.TRANSACTION_FAILED.urn, response.error.code)
         assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, response.error.downstreamCode)
 
-        val id = response.error.data?.get("id").toString()
-        assertTrue(txDao.findById(id).isEmpty)
+        val txId = response.error.data?.get("id").toString()
+        val tx = txDao.findById(txId).get()
+        assertEquals(USER_ID, tx.accountId)
+        assertEquals(request.currency, tx.currency)
+        assertEquals(request.amount, tx.amount)
+        assertEquals(0.0, tx.fees)
+        assertEquals(request.amount, tx.net)
+        assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
+        assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)
+        assertEquals(TransactionType.CASHOUT, tx.type)
+        assertEquals(Status.FAILED, tx.status)
+        assertNull(tx.financialTransactionId)
+        assertNull(tx.description)
+        assertNull(tx.supplierErrorCode)
+        assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, tx.errorCode)
+        assertEquals("", tx.gatewayTransactionId)
 
-        verify(eventStream, never()).publish(any(), any())
+        val payload = argumentCaptor<TransactionEventPayload>()
+        verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
+        assertEquals(USER_ID, payload.firstValue.accountId)
+        assertEquals(TransactionType.CASHOUT.name, payload.firstValue.type)
+        assertNull(payload.firstValue.recipientId)
+        assertEquals(tx.id, payload.firstValue.transactionId)
+        assertEquals(tx.tenantId, payload.firstValue.tenantId)
+        assertEquals(tx.amount, payload.firstValue.amount)
+        assertEquals(tx.currency, payload.firstValue.currency)
+    }
+
+    @Test
+    fun badCurrency() {
+        // WHEN
+        val request = CreateCashoutRequest(
+            paymentMethodToken = "11111",
+            amount = 50000.0,
+            currency = "EUR"
+        )
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateCashinResponse::class.java)
+        }
+
+        // THEN
+        assertEquals(400, ex.rawStatusCode)
+
+        val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.CURRENCY_NOT_SUPPORTED.urn, response.error.code)
     }
 }

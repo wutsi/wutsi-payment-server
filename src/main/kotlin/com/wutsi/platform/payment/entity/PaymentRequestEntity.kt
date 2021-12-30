@@ -6,8 +6,8 @@ import javax.persistence.Id
 import javax.persistence.Table
 
 @Entity
-@Table(name = "T_REQUEST_PAYMENT")
-public data class RequestPaymentEntity(
+@Table(name = "T_PAYMENT_REQUEST")
+public data class PaymentRequestEntity(
     @Id
     val id: String? = null,
     val tenantId: Long = -1,

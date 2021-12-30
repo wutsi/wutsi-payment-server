@@ -1,7 +1,6 @@
 package com.wutsi.platform.payment.`delegate`
 
 import com.wutsi.platform.core.error.Error
-import com.wutsi.platform.core.error.exception.ConflictException
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.core.Status.SUCCESSFUL
@@ -38,6 +37,8 @@ public class CreateTransferDelegate(
 
         val tx = createTransaction(request, tenant)
         try {
+            validateTransaction(tx)
+
             onSuccess(request, tx, tenant)
             return CreateTransferResponse(
                 id = tx.id!!,
@@ -95,17 +96,11 @@ public class CreateTransferDelegate(
 
     private fun validateRequest(request: CreateTransferRequest, tenant: Tenant) {
         validateCurrency(request.currency, tenant)
-        ensureBalanceAbove(securityManager.currentUserId(), request.amount, tenant)
         ensureCurrentUserActive()
+        ensureRecipientActive(request.recipientId)
+    }
 
-        val recipient = accountApi.getAccount(request.recipientId).account
-        if (!recipient.status.equals("ACTIVE", ignoreCase = true)) {
-            throw ConflictException(
-                error = Error(
-                    code = ErrorURN.RECIPIENT_NOT_ACTIVE.urn,
-                    data = mapOf("userId" to request.recipientId)
-                ),
-            )
-        }
+    private fun validateTransaction(tx: TransactionEntity) {
+        ensureBalanceAbove(securityManager.currentUserId(), tx)
     }
 }

@@ -1,6 +1,6 @@
 package com.wutsi.platform.payment.endpoint
 
-import com.wutsi.platform.payment.dao.RequestPaymentRepository
+import com.wutsi.platform.payment.dao.PaymentRequestRepository
 import com.wutsi.platform.payment.dto.RequestPaymentRequest
 import com.wutsi.platform.payment.dto.RequestPaymentResponse
 import org.junit.jupiter.api.BeforeEach
@@ -21,7 +21,7 @@ public class RequestPaymentControllerTest : AbstractSecuredController() {
     public val port: Int = 0
 
     @Autowired
-    private lateinit var dao: RequestPaymentRepository
+    private lateinit var dao: PaymentRequestRepository
 
     private lateinit var url: String
 

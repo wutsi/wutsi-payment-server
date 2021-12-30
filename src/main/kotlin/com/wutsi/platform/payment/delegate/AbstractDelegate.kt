@@ -73,7 +73,19 @@ class AbstractDelegate {
         }
     }
 
-    protected fun ensureBalanceAbove(userId: Long, threshold: Double, tenant: Tenant) {
+    protected fun ensureRecipientActive(recipientId: Long) {
+        val user = accountApi.getAccount(recipientId).account
+        if (!user.status.equals("ACTIVE", ignoreCase = true)) {
+            throw ForbiddenException(
+                error = Error(
+                    code = ErrorURN.RECIPIENT_NOT_ACTIVE.urn,
+                    data = mapOf("userId" to recipientId)
+                ),
+            )
+        }
+    }
+
+    protected fun ensureBalanceAbove(userId: Long, tx: TransactionEntity) {
         val balance = balanceDao.findByAccountId(userId)
             .orElseThrow {
                 ConflictException(
@@ -84,11 +96,10 @@ class AbstractDelegate {
                 )
             }
 
-        if (balance.amount < threshold)
-            throw ConflictException(
-                error = Error(
-                    code = ErrorURN.TRANSACTION_FAILED.urn,
-                    downstreamCode = ErrorCode.NOT_ENOUGH_FUNDS.name
+        if (balance.amount < tx.amount)
+            throw PaymentException(
+                error = com.wutsi.platform.payment.core.Error(
+                    code = ErrorCode.NOT_ENOUGH_FUNDS,
                 )
             )
     }

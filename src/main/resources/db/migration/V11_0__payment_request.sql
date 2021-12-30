@@ -1,4 +1,4 @@
-CREATE TABLE T_REQUEST_PAYMENT(
+CREATE TABLE T_PAYMENT_REQUEST(
     id                          VARCHAR(36) NOT NULL,
     account_id                  BIGINT NOT NULL,
     tenant_id                   BIGINT NOT NULL,
