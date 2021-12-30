@@ -513,6 +513,10 @@ components:
           type: string
           description: Creation data-time
           format: date-time
+        paymentRequestId:
+          type: string
+          description: ID of the payment request
+          nullable: true
 
     GetTransactionResponse:
       type: object
@@ -528,6 +532,7 @@ components:
           type: number
           format: double
           description: Amount requested
+          minimum: 0
         currency:
           type: string
           description: Currency code
@@ -535,13 +540,16 @@ components:
           type: string
           description: Description of the transaction
           nullable: true
+          maxLength: 100
         invoiceId:
           type: string
           description: ID of the invoice associated with the payment
           nullable: true
+          maxLength: 36
         timeToLive:
           type: integer
           description: Life span of this request in seconds. Customer must honor this request within this duration
+          nullable: true
 
     RequestPaymentResponse:
       type: object

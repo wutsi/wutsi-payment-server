@@ -101,7 +101,8 @@ public class CreatePaymentDelegate(
                 currency = request.currency,
                 status = Status.SUCCESSFUL,
                 created = OffsetDateTime.now(),
-                description = request.description
+                description = request.description,
+                paymentRequestId = request.id
             )
         )
 

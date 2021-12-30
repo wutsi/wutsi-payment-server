@@ -99,6 +99,7 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertNull(tx.description)
         assertNull(tx.errorCode)
+        assertNull(tx.paymentRequestId)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(request.amount, 100000 - balance.amount)
@@ -151,6 +152,7 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertNull(tx.description)
         assertNull(tx.errorCode)
+        assertNull(tx.paymentRequestId)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(100000.0 - request.amount, balance.amount)
@@ -207,6 +209,7 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertEquals(e.error.supplierErrorCode, tx.supplierErrorCode)
         assertEquals(e.error.code.name, tx.errorCode)
         assertEquals(e.error.transactionId, tx.gatewayTransactionId)
+        assertNull(tx.paymentRequestId)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(100000.0, balance.amount)
@@ -258,6 +261,7 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, tx.errorCode)
         assertEquals("", tx.gatewayTransactionId)
+        assertNull(tx.paymentRequestId)
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())

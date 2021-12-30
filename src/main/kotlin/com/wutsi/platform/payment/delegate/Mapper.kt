@@ -31,7 +31,8 @@ fun TransactionEntity.toTransaction() = Transaction(
     description = this.description,
     fees = this.fees,
     net = this.net,
-    status = this.status.name
+    status = this.status.name,
+    paymentRequestId = this.paymentRequestId
 )
 
 fun TransactionEntity.toTransactionSummary() = TransactionSummary(

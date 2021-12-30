@@ -3,6 +3,7 @@ package com.wutsi.platform.payment.entity
 import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.core.Status
 import java.time.OffsetDateTime
+import javax.persistence.Column
 import javax.persistence.Entity
 import javax.persistence.Enumerated
 import javax.persistence.Id
@@ -33,4 +34,7 @@ data class TransactionEntity(
     var errorCode: String? = null,
     var supplierErrorCode: String? = null,
     val created: OffsetDateTime = OffsetDateTime.now(),
+
+    @Column(name = "payment_request_fk")
+    val paymentRequestId: String? = null,
 )

@@ -87,6 +87,7 @@ public class CreatePaymentControllerTest : AbstractSecuredController() {
         assertNull(tx.financialTransactionId)
         assertNull(tx.errorCode)
         assertNull(tx.supplierErrorCode)
+        assertEquals(request.requestId, tx.paymentRequestId)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(50000.0, balance.amount)
@@ -141,6 +142,7 @@ public class CreatePaymentControllerTest : AbstractSecuredController() {
         assertNull(tx.financialTransactionId)
         assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, tx.errorCode)
         assertNull(tx.supplierErrorCode)
+        assertEquals(request.requestId, tx.paymentRequestId)
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
@@ -188,6 +190,7 @@ public class CreatePaymentControllerTest : AbstractSecuredController() {
         assertNull(tx.financialTransactionId)
         assertEquals(ErrorCode.EXPIRED.name, tx.errorCode)
         assertNull(tx.supplierErrorCode)
+        assertEquals(request.requestId, tx.paymentRequestId)
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
