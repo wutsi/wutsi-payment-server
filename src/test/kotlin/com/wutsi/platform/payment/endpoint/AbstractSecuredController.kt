@@ -140,7 +140,6 @@ abstract class AbstractSecuredController {
         scope: List<String> = listOf(
             "payment-manage",
             "payment-read",
-            "payment-job-manage",
         ),
         subjectId: Long = USER_ID,
         subjectType: SubjectType = USER,

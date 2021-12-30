@@ -162,6 +162,52 @@ paths:
       security:
         - api_key: [ 'payment-read' ]
 
+  /v1/payments/request:
+    post:
+      operationId: "request-payment"
+      description: |
+        Request a payment. This request is issued by merchants for receiving payment from customers.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestPaymentRequest'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestPaymentResponse'
+      tags:
+        - Transactions
+      security:
+        - api_key: [ 'payment-manage' ]
+
+  /v1/payments:
+    post:
+      operationId: "create-payment"
+      description: |
+        Perform a payment. This request is performed by customers for paying merchants.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentRequest'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatePaymentResponse'
+      tags:
+        - Transactions
+      security:
+        - api_key: [ 'payment-manage' ]
+
 components:
   securitySchemes:
     api_key:
@@ -267,7 +313,7 @@ components:
           format: uuid
           description: ID of the transaction
         status:
-          description: Status of the charge
+          description: Status of the transaction
           type: string
           enum:
             - PENDING
@@ -474,3 +520,55 @@ components:
         transaction:
           type: object
           $ref: "#/components/schemas/Transaction"
+
+    RequestPaymentRequest:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: double
+          description: Amount requested
+        currency:
+          type: string
+          description: Currency code
+        description:
+          type: string
+          description: Description of the transaction
+          nullable: true
+        invoiceId:
+          type: string
+          description: ID of the invoice associated with the payment
+          nullable: true
+        timeToLive:
+          type: integer
+          description: Life span of this request in seconds. Customer must honor this request within this duration
+
+    RequestPaymentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID of the payment request
+
+    CreatePaymentRequest:
+      type: object
+      properties:
+        requestId:
+          type: string
+          format: uuid
+          description: ID of the payment request
+
+    CreatePaymentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID of the transaction
+        status:
+          description: Status of the transaction
+          type: string
+          enum:
+            - PENDING
+            - SUCESS
