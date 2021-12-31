@@ -162,9 +162,9 @@ paths:
       security:
         - api_key: [ 'payment-read' ]
 
-  /v1/payments/request:
+  /v1/payment-requests:
     post:
-      operationId: "request-payment"
+      operationId: "create-payment-request"
       description: |
         Request a payment. This request is issued by merchants for receiving payment from customers.
       requestBody:
@@ -172,18 +172,42 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RequestPaymentRequest'
+              $ref: '#/components/schemas/CreatePaymentRequestRequest'
       responses:
         200:
           description: Success
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RequestPaymentResponse'
+                $ref: '#/components/schemas/CreatePaymentRequestResponse'
       tags:
         - Transactions
       security:
         - api_key: [ 'payment-manage' ]
+
+  /v1/payment-requests/{id}:
+    get:
+      operationId: "get-payment-request"
+      description: Get the information about a payment request
+      parameters:
+        - in: path
+          name: id
+          description: ID of the payment request
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetPaymentRequestResponse'
+      tags:
+        - Transactions
+      security:
+        - api_key: [ 'payment-read' ]
 
   /v1/payments:
     post:
@@ -207,6 +231,7 @@ paths:
         - Transactions
       security:
         - api_key: [ 'payment-manage' ]
+
 
 components:
   securitySchemes:
@@ -525,7 +550,7 @@ components:
           type: object
           $ref: "#/components/schemas/Transaction"
 
-    RequestPaymentRequest:
+    CreatePaymentRequestRequest:
       type: object
       properties:
         amount:
@@ -551,7 +576,7 @@ components:
           description: Life span of this request in seconds. Customer must honor this request within this duration
           nullable: true
 
-    RequestPaymentResponse:
+    CreatePaymentRequestResponse:
       type: object
       properties:
         id:
@@ -573,10 +598,56 @@ components:
         id:
           type: string
           format: uuid
-          description: ID of the transaction
+          description: ID of the payment request
         status:
-          description: Status of the transaction
+          description: Status of the payment request
           type: string
           enum:
             - PENDING
             - SUCESS
+
+    PaymentRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID of the request
+        accountId:
+          type: number
+          format: int64
+          description: ID of the account who created the request
+        amount:
+          type: number
+          format: double
+          description: Amount requested
+          minimum: 0
+        currency:
+          type: string
+          description: Currency code
+        description:
+          type: string
+          description: Description of the transaction
+          nullable: true
+          maxLength: 100
+        invoiceId:
+          type: string
+          description: ID of the invoice associated with the payment
+          nullable: true
+          maxLength: 36
+        created:
+          type: string
+          format: date-time
+          description: Creation time
+        expires:
+          type: string
+          format: date-time
+          description: Expiry date
+          nullable: true
+
+    GetPaymentRequestResponse:
+      type: object
+      properties:
+        paymentRequest:
+          type: object
+          $ref: "#/components/schemas/PaymentRequest"

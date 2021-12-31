@@ -6,7 +6,7 @@ import kotlin.Double
 import kotlin.Int
 import kotlin.String
 
-public data class RequestPaymentRequest(
+public data class CreatePaymentRequestRequest(
     @get:Min(0)
     public val amount: Double = 0.0,
     public val currency: String = "",

@@ -1,8 +1,8 @@
 package com.wutsi.platform.payment.endpoint
 
 import com.wutsi.platform.payment.dao.PaymentRequestRepository
-import com.wutsi.platform.payment.dto.RequestPaymentRequest
-import com.wutsi.platform.payment.dto.RequestPaymentResponse
+import com.wutsi.platform.payment.dto.CreatePaymentRequestRequest
+import com.wutsi.platform.payment.dto.CreatePaymentRequestResponse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -16,7 +16,7 @@ import kotlin.test.assertNull
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(value = ["/db/clean.sql"])
-public class RequestPaymentControllerTest : AbstractSecuredController() {
+public class CreatePaymentRequestControllerTest : AbstractSecuredController() {
     @LocalServerPort
     public val port: Int = 0
 
@@ -28,20 +28,20 @@ public class RequestPaymentControllerTest : AbstractSecuredController() {
     @BeforeEach
     override fun setUp() {
         super.setUp()
-        url = "http://localhost:$port/v1/payments/request"
+        url = "http://localhost:$port/v1/payment-requests"
     }
 
     @Test
     public fun requestWithNoTTL() {
         // WHEN
-        val request = RequestPaymentRequest(
+        val request = CreatePaymentRequestRequest(
             amount = 50000.0,
             currency = "XAF",
             description = "Yo man",
             invoiceId = UUID.randomUUID().toString(),
             timeToLive = 300
         )
-        val response = rest.postForEntity(url, request, RequestPaymentResponse::class.java)
+        val response = rest.postForEntity(url, request, CreatePaymentRequestResponse::class.java)
 
         // THEN
         assertEquals(200, response.statusCodeValue)
@@ -60,14 +60,14 @@ public class RequestPaymentControllerTest : AbstractSecuredController() {
     @Test
     public fun requestWithTTL() {
         // WHEN
-        val request = RequestPaymentRequest(
+        val request = CreatePaymentRequestRequest(
             amount = 50000.0,
             currency = "XAF",
             description = "Yo man",
             invoiceId = UUID.randomUUID().toString(),
             timeToLive = null
         )
-        val response = rest.postForEntity(url, request, RequestPaymentResponse::class.java)
+        val response = rest.postForEntity(url, request, CreatePaymentRequestResponse::class.java)
 
         // THEN
         assertEquals(200, response.statusCodeValue)
