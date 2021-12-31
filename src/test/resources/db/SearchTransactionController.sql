@@ -9,5 +9,5 @@ INSERT INTO public.t_transaction(id, type, payment_method_token, amount, currenc
 	    ('2', 2, 'yyy', 9000, 'XAF', 'sample transaction', 1, 'gw-2', 'fin-2', null, 'ERR-0001', 1, 1, 1, 100, 8900, null, now(), null),
 	    ('11', 1, 'xxx', 1000, 'XAF', 'sample transaction', 1, 'gw-1', 'fin-1', 'NO_ERROR', 'ERR-0001', 1, 1, 11, 100, 900, 11, now(), null),
 	    ('111', 2, 'yyy', 9000, 'XAF', 'sample transaction', 1, 'gw-2', 'fin-2', null, 'ERR-0001', 1, 111, 1, 100, 8900, null, now(), null),
-	    ('30', 4, null, 9000, 'XAF', 'sample payment', 3, null, null, 'NOT_ENOUGH_FUNDS', null, 1, 1, 1, 9, 9000, null, now(), 'REQ-3')
+	    ('30', 4, null, 9000, 'XAF', 'sample payment', 3, null, null, 'NOT_ENOUGH_FUNDS', null, 1, 1, 3, 9, 9000, null, now(), 'REQ-3')
     ;

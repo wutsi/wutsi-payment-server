@@ -19,6 +19,8 @@ public data class TransactionSummary(
     public val net: Double = 0.0,
     public val currency: String = "",
     public val status: String = "",
+    public val errorCode: String? = null,
+    public val supplierErrorCode: String? = null,
     @get:DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
     public val created: OffsetDateTime = OffsetDateTime.now()
 )

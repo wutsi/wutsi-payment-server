@@ -435,6 +435,14 @@ components:
             - PENDING
             - FAILED
           description: Status of the transaction
+        errorCode:
+          type: string
+          description: Error code
+          nullable: true
+        supplierErrorCode:
+          type: string
+          description: Error code from supplier
+          nullable: true
         created:
           type: string
           description: Creation data-time

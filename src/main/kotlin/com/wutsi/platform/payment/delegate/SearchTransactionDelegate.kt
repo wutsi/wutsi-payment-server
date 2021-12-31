@@ -25,7 +25,6 @@ public class SearchTransactionDelegate(
         logger.add("limit", request.limit)
         logger.add("offset", request.offset)
 
-
         val query = em.createQuery(sql(request))
         parameters(request, query)
         val txs = query

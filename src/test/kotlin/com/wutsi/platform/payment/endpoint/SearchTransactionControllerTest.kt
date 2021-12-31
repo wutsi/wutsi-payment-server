@@ -35,7 +35,6 @@ public class SearchTransactionControllerTest : AbstractSecuredController() {
         assertEquals("1", txs[1].id)
     }
 
-
     @Test
     public fun searcbByPaymentRequestId() {
         // WHEN
