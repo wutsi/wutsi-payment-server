@@ -446,6 +446,19 @@ components:
         accountId:
           type: integer
           format: int64
+          nullable: true
+        paymentRequestId:
+          type: string
+          enum:
+            - SUCCESSFULL
+            - PENDING
+            - FAILED
+          description: ID of the payment request
+          nullable: true
+        status:
+          type: string
+          description: Status of the transaction
+          nullable: true
         limit:
           type: integer
           default: 30

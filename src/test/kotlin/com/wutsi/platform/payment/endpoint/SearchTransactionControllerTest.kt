@@ -15,7 +15,7 @@ public class SearchTransactionControllerTest : AbstractSecuredController() {
     public val port: Int = 0
 
     @Test
-    public fun invoke() {
+    public fun searcbByAccountId() {
         // WHEN
         val request = SearchTransactionRequest(
             limit = 30,
@@ -33,5 +33,26 @@ public class SearchTransactionControllerTest : AbstractSecuredController() {
 
         assertEquals("2", txs[0].id)
         assertEquals("1", txs[1].id)
+    }
+
+
+    @Test
+    public fun searcbByPaymentRequestId() {
+        // WHEN
+        val request = SearchTransactionRequest(
+            limit = 30,
+            offset = 0,
+            paymentRequestId = "REQ-3",
+        )
+        val url = "http://localhost:$port/v1/transactions/search"
+        val response = rest.postForEntity(url, request, SearchTransactionResponse::class.java)
+
+        // THEN
+        assertEquals(200, response.statusCodeValue)
+
+        val txs = response.body.transactions
+        assertEquals(1, txs.size)
+
+        assertEquals("30", txs[0].id)
     }
 }
