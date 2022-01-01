@@ -15,7 +15,7 @@ public class SearchTransactionControllerTest : AbstractSecuredController() {
     public val port: Int = 0
 
     @Test
-    public fun searcbByAccountId() {
+    public fun searchByAccountId() {
         // WHEN
         val request = SearchTransactionRequest(
             limit = 30,
@@ -29,14 +29,15 @@ public class SearchTransactionControllerTest : AbstractSecuredController() {
         assertEquals(200, response.statusCodeValue)
 
         val txs = response.body.transactions
-        assertEquals(2, txs.size)
+        assertEquals(3, txs.size)
 
-        assertEquals("2", txs[0].id)
-        assertEquals("1", txs[1].id)
+        assertEquals("3", txs[0].id)
+        assertEquals("2", txs[1].id)
+        assertEquals("1", txs[2].id)
     }
 
     @Test
-    public fun searcbByPaymentRequestId() {
+    public fun searchByPaymentRequestId() {
         // WHEN
         val request = SearchTransactionRequest(
             limit = 30,

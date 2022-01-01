@@ -55,7 +55,7 @@ public class SearchTransactionDelegate(
 
         criteria.add("a.tenantId=:tenant_id")
         if (request.accountId != null)
-            criteria.add("a.accountId = :account_id")
+            criteria.add("(a.accountId=:account_id OR a.recipientId=:account_id)")
         if (request.paymentRequestId != null)
             criteria.add("a.paymentRequestId = :payment_request_id")
         if (request.status != null)
