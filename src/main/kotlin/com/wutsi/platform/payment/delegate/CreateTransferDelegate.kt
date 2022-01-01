@@ -1,6 +1,7 @@
 package com.wutsi.platform.payment.`delegate`
 
 import com.wutsi.platform.core.error.Error
+import com.wutsi.platform.core.error.exception.ForbiddenException
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.core.Status.SUCCESSFUL
@@ -95,6 +96,13 @@ public class CreateTransferDelegate(
     }
 
     private fun validateRequest(request: CreateTransferRequest, tenant: Tenant) {
+        if (request.recipientId == securityManager.currentUserId())
+            throw ForbiddenException(
+                error = Error(
+                    code = ErrorURN.SELF_TRANSACTION_ERROR.urn
+                )
+            )
+
         validateCurrency(request.currency, tenant)
         ensureCurrentUserActive()
         ensureRecipientActive(request.recipientId)

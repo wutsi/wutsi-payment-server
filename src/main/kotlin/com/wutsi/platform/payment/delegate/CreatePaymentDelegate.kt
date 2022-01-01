@@ -118,6 +118,13 @@ public class CreatePaymentDelegate(
                 )
             )
 
+        if (request.accountId == securityManager.currentUserId())
+            throw ForbiddenException(
+                error = Error(
+                    code = ErrorURN.SELF_TRANSACTION_ERROR.urn
+                )
+            )
+
         validateCurrency(request.currency, tenant)
         ensureCurrentUserActive()
         ensureRecipientActive(request.accountId)

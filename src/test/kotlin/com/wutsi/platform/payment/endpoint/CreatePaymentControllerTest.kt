@@ -288,4 +288,23 @@ public class CreatePaymentControllerTest : AbstractSecuredController() {
 
         verify(eventStream, never()).publish(any(), any())
     }
+
+    @Test
+    public fun selfTransaction() {
+        // WHEN
+        val request = CreatePaymentRequest(
+            requestId = "203"
+        )
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreatePaymentResponse::class.java)
+        }
+
+        // THEN
+        assertEquals(403, ex.rawStatusCode)
+
+        val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.SELF_TRANSACTION_ERROR.urn, response.error.code)
+
+        verify(eventStream, never()).publish(any(), any())
+    }
 }

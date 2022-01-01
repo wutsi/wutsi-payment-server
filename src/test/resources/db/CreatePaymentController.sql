@@ -10,6 +10,7 @@ INSERT INTO T_PAYMENT_REQUEST(id, account_id, tenant_id, amount, currency, descr
         ('200', 200, 1, 50000, 'XAF', 'This is description', 'INV-100', now(), CURRENT_TIMESTAMP + (5 * interval '1 minute')),
         ('201', 200, 1, 5000000, 'XAF', 'This is description', 'INV-100', now(), CURRENT_TIMESTAMP + (5 * interval '1 minute')),
         ('202', 200, 1, 1000, 'XAF', 'This is description', 'INV-100', '2020-01-01', '2020-01-02'),
+        ('200', 1, 1, 50000, 'XAF', 'This is description', 'INV-100', now(), CURRENT_TIMESTAMP + (5 * interval '1 minute')),
         ('777', 777, 777, 1000, 'XAF', 'This is description', 'INV-100', now(), CURRENT_TIMESTAMP + (5 * interval '1 minute'))
 
 ;
