@@ -23,8 +23,8 @@ data class TransactionEntity(
     val paymentMethodProvider: PaymentMethodProvider? = null,
     val description: String? = null,
     val amount: Double = 0.0,
-    val fees: Double = 0.0,
-    val net: Double = 0.0,
+    var fees: Double = 0.0,
+    var net: Double = 0.0,
     val currency: String = "",
 
     @Enumerated
@@ -37,4 +37,6 @@ data class TransactionEntity(
 
     @Column(name = "payment_request_fk")
     val paymentRequestId: String? = null,
+
+    var feesToSender: Boolean = false
 )
