@@ -138,6 +138,30 @@ paths:
       security:
         - api_key: [ 'payment-read' ]
 
+  /v1/transactions/fees:
+    post:
+      operationId: "compute-transaction-fees"
+      description: Compute fees
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComputeTransactionFeesRequest'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComputeTransactionFeesResponse'
+        404:
+          description: Transaction not found
+      tags:
+        - Transactions
+      security:
+        - api_key: [ 'payment-read' ]
+
   /v1/accounts/{account-id}/balance:
     get:
       operationId: "get-balance"
@@ -306,6 +330,34 @@ components:
           enum:
             - PENDING
             - SUCESS
+
+    ComputeTransactionFeesRequest:
+      type: object
+      properties:
+        transactionType:
+          type: string
+          description: Type of transaction
+        recipientId:
+          type: integer
+          format: int64
+          description: ID of the recipient of the transfer
+          nullable: true
+        amount:
+          type: number
+          format: double
+          description: Amout to transfer to the user's wallet
+          minimum: 0
+
+    ComputeTransactionFeesResponse:
+      type: object
+      properties:
+        fees:
+          type: number
+          format: double
+          description: Fees amount
+        applyToSender:
+          type: boolean
+          description: Are the fees should be apply to the sender?
 
     CreateTransferRequest:
       type: object
