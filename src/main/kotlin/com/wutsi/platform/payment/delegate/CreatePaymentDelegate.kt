@@ -1,5 +1,7 @@
 package com.wutsi.platform.payment.`delegate`
 
+import com.wutsi.platform.account.dto.AccountSummary
+import com.wutsi.platform.account.dto.SearchAccountRequest
 import com.wutsi.platform.core.error.Error
 import com.wutsi.platform.core.error.Parameter
 import com.wutsi.platform.core.error.ParameterType
@@ -18,6 +20,7 @@ import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.payment.error.ErrorURN
 import com.wutsi.platform.payment.error.TransactionException
 import com.wutsi.platform.payment.event.EventURN
+import com.wutsi.platform.payment.service.FeesCalculator
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.tenant.dto.Tenant
 import org.springframework.stereotype.Service
@@ -29,6 +32,7 @@ public class CreatePaymentDelegate(
     private val dao: PaymentRequestRepository,
     private val transactionDao: TransactionRepository,
     private val tenantProvider: TenantProvider,
+    private val feesCalculator: FeesCalculator,
 ) : AbstractDelegate() {
 
     public fun invoke(request: CreatePaymentRequest): CreatePaymentResponse {
@@ -48,9 +52,14 @@ public class CreatePaymentDelegate(
                 )
             }
         val tenant = tenantProvider.get()
-        validateRequest(paymentRequest, tenant)
+        val accounts = accountApi.searchAccount(
+            request = SearchAccountRequest(
+                ids = listOfNotNull(paymentRequest.accountId, securityManager.currentUserId())
+            )
+        ).accounts.map { it.id to it }.toMap()
+        validateRequest(paymentRequest, tenant, accounts)
 
-        val tx = createTransaction(paymentRequest)
+        val tx = createTransaction(paymentRequest, tenant, accounts)
         try {
             validateTransaction(paymentRequest, tx)
 
@@ -74,8 +83,8 @@ public class CreatePaymentDelegate(
     }
 
     private fun onSuccess(request: PaymentRequestEntity, tx: TransactionEntity, tenant: Tenant) {
-        updateBalance(securityManager.currentUserId(), -request.amount, tenant)
-        updateBalance(request.accountId, request.amount, tenant)
+        updateBalance(securityManager.currentUserId(), -tx.amount, tenant)
+        updateBalance(request.accountId, tx.net, tenant)
 
         publish(EventURN.TRANSACTION_SUCCESSFULL, tx)
     }
@@ -87,7 +96,13 @@ public class CreatePaymentDelegate(
         publish(EventURN.TRANSACTION_FAILED, tx)
     }
 
-    private fun createTransaction(request: PaymentRequestEntity): TransactionEntity {
+    private fun createTransaction(
+        request: PaymentRequestEntity,
+        tenant: Tenant,
+        accounts: Map<Long, AccountSummary?>
+    ): TransactionEntity {
+        val recipient = accounts[request.accountId]
+
         val tx = transactionDao.save(
             TransactionEntity(
                 id = UUID.randomUUID().toString(),
@@ -102,15 +117,18 @@ public class CreatePaymentDelegate(
                 status = Status.SUCCESSFUL,
                 created = OffsetDateTime.now(),
                 description = request.description,
-                paymentRequestId = request.id
+                paymentRequestId = request.id,
+                business = recipient?.business ?: false,
+                retail = recipient?.retail ?: false,
             )
         )
+        feesCalculator.computeFees(tx, tenant, accounts)
 
         logger.add("transaction_id", tx.id)
         return tx
     }
 
-    private fun validateRequest(request: PaymentRequestEntity, tenant: Tenant) {
+    private fun validateRequest(request: PaymentRequestEntity, tenant: Tenant, accounts: Map<Long, AccountSummary>) {
         if (tenant.id != request.tenantId)
             throw ForbiddenException(
                 error = Error(
@@ -125,9 +143,19 @@ public class CreatePaymentDelegate(
                 )
             )
 
+        val recipient = accounts[request.accountId]!!
+        if (!recipient.business)
+            throw ForbiddenException(
+                error = Error(
+                    code = ErrorURN.RESTRICTED_TO_BUSINESS_ACCOUNT.urn
+                )
+            )
+
         validateCurrency(request.currency, tenant)
-        ensureCurrentUserActive()
-        ensureRecipientActive(request.accountId)
+
+        val userId = securityManager.currentUserId()
+        ensureAccountActive(userId, accounts[userId]!!.status, ErrorURN.USER_NOT_ACTIVE)
+        ensureAccountActive(recipient.id, recipient.status, ErrorURN.RECIPIENT_NOT_ACTIVE)
     }
 
     private fun validateTransaction(request: PaymentRequestEntity, tx: TransactionEntity) {

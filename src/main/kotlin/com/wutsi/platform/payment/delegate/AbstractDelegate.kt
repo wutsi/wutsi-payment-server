@@ -63,23 +63,20 @@ class AbstractDelegate {
     protected fun ensureCurrentUserActive() {
         val userId = securityManager.currentUserId()
         val user = accountApi.getAccount(userId).account
-        if (!user.status.equals("ACTIVE", ignoreCase = true)) {
-            throw ForbiddenException(
-                error = Error(
-                    code = ErrorURN.USER_NOT_ACTIVE.urn,
-                    data = mapOf("userId" to userId)
-                ),
-            )
-        }
+        ensureAccountActive(user.id, user.status, ErrorURN.USER_NOT_ACTIVE)
     }
 
     protected fun ensureRecipientActive(recipientId: Long) {
         val user = accountApi.getAccount(recipientId).account
-        if (!user.status.equals("ACTIVE", ignoreCase = true)) {
+        ensureAccountActive(user.id, user.status, ErrorURN.RECIPIENT_NOT_ACTIVE)
+    }
+
+    protected fun ensureAccountActive(id: Long, status: String, error: ErrorURN) {
+        if (!status.equals("ACTIVE", ignoreCase = true)) {
             throw ForbiddenException(
                 error = Error(
-                    code = ErrorURN.RECIPIENT_NOT_ACTIVE.urn,
-                    data = mapOf("userId" to recipientId)
+                    code = error.urn,
+                    data = mapOf("userId" to id)
                 ),
             )
         }
@@ -129,6 +126,7 @@ class AbstractDelegate {
                     transactionId = tx.id!!,
                     type = tx.type.name,
                     amount = tx.amount,
+                    net = tx.net,
                     currency = tx.currency,
                     accountId = tx.accountId,
                     recipientId = tx.recipientId

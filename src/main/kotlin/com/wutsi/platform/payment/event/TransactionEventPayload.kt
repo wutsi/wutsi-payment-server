@@ -7,5 +7,6 @@ data class TransactionEventPayload(
     val accountId: Long = -1,
     val recipientId: Long? = null,
     val amount: Double = 0.0,
+    val net: Double = 0.0,
     val currency: String = "",
 )

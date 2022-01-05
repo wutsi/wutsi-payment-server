@@ -8,8 +8,8 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import com.wutsi.platform.account.dto.Account
-import com.wutsi.platform.account.dto.GetAccountResponse
+import com.wutsi.platform.account.dto.AccountSummary
+import com.wutsi.platform.account.dto.SearchAccountResponse
 import com.wutsi.platform.core.error.ErrorResponse
 import com.wutsi.platform.core.stream.EventStream
 import com.wutsi.platform.payment.core.ErrorCode
@@ -33,7 +33,9 @@ import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.web.client.HttpClientErrorException
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(value = ["/db/clean.sql", "/db/CreatePaymentController.sql"])
@@ -56,6 +58,11 @@ public class CreatePaymentControllerTest : AbstractSecuredController() {
         super.setUp()
 
         url = "http://localhost:$port/v1/payments"
+
+        // GIVEN
+        val account = AccountSummary(id = USER_ID, status = "ACTIVE")
+        val recipient = AccountSummary(id = 200, business = true, status = "ACTIVE")
+        doReturn(SearchAccountResponse(listOf(account, recipient))).whenever(accountApi).searchAccount(any())
     }
 
     @Test
@@ -71,13 +78,15 @@ public class CreatePaymentControllerTest : AbstractSecuredController() {
 
         assertEquals(Status.SUCCESSFUL.name, response.body!!.status)
 
+        val fees = 2000.0
         val tx = txDao.findById(response.body!!.id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
+        assertEquals(200L, tx.recipientId)
         assertEquals("XAF", tx.currency)
         assertEquals(50000.0, tx.amount)
-        assertEquals(0.0, tx.fees)
-        assertEquals(50000.0, tx.net)
+        assertEquals(fees, tx.fees)
+        assertEquals(50000.0 - fees, tx.net)
         assertNull(tx.paymentMethodToken)
         assertNull(tx.paymentMethodProvider)
         assertEquals(TransactionType.PAYMENT, tx.type)
@@ -88,13 +97,15 @@ public class CreatePaymentControllerTest : AbstractSecuredController() {
         assertNull(tx.errorCode)
         assertNull(tx.supplierErrorCode)
         assertEquals(request.requestId, tx.paymentRequestId)
+        assertTrue(tx.business)
+        assertFalse(tx.retail)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(50000.0, balance.amount)
         assertEquals("XAF", balance.currency)
 
         val balance2 = balanceDao.findByAccountId(200).get()
-        assertEquals(250000.0, balance2.amount)
+        assertEquals(250000.0 - fees, balance2.amount)
         assertEquals("XAF", balance2.currency)
 
         val payload = argumentCaptor<TransactionEventPayload>()
@@ -105,6 +116,7 @@ public class CreatePaymentControllerTest : AbstractSecuredController() {
         assertEquals(tx.id, payload.firstValue.transactionId)
         assertEquals(tx.tenantId, payload.firstValue.tenantId)
         assertEquals(tx.amount, payload.firstValue.amount)
+        assertEquals(tx.net, payload.firstValue.net)
         assertEquals(tx.currency, payload.firstValue.currency)
     }
 
@@ -125,14 +137,16 @@ public class CreatePaymentControllerTest : AbstractSecuredController() {
         assertEquals(ErrorURN.TRANSACTION_FAILED.urn, response.error.code)
         assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, response.error.downstreamCode)
 
+        val fees = 200000.0
         val id = response.error.data?.get("id").toString()
         val tx = txDao.findById(id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
+        assertEquals(200L, tx.recipientId)
         assertEquals("XAF", tx.currency)
         assertEquals(5000000.0, tx.amount)
-        assertEquals(0.0, tx.fees)
-        assertEquals(5000000.0, tx.net)
+        assertEquals(fees, tx.fees)
+        assertEquals(5000000.0 - fees, tx.net)
         assertNull(tx.paymentMethodToken)
         assertNull(tx.paymentMethodProvider)
         assertEquals(TransactionType.PAYMENT, tx.type)
@@ -143,6 +157,8 @@ public class CreatePaymentControllerTest : AbstractSecuredController() {
         assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, tx.errorCode)
         assertNull(tx.supplierErrorCode)
         assertEquals(request.requestId, tx.paymentRequestId)
+        assertTrue(tx.business)
+        assertFalse(tx.retail)
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
@@ -152,6 +168,7 @@ public class CreatePaymentControllerTest : AbstractSecuredController() {
         assertEquals(tx.id, payload.firstValue.transactionId)
         assertEquals(tx.tenantId, payload.firstValue.tenantId)
         assertEquals(tx.amount, payload.firstValue.amount)
+        assertEquals(tx.net, payload.firstValue.net)
         assertEquals(tx.currency, payload.firstValue.currency)
     }
 
@@ -173,14 +190,16 @@ public class CreatePaymentControllerTest : AbstractSecuredController() {
         assertEquals(ErrorURN.TRANSACTION_FAILED.urn, response.error.code)
         assertEquals(ErrorCode.EXPIRED.name, response.error.downstreamCode)
 
+        val fees = 40.0
         val id = response.error.data?.get("id").toString()
         val tx = txDao.findById(id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
+        assertEquals(200L, tx.recipientId)
         assertEquals("XAF", tx.currency)
         assertEquals(1000.0, tx.amount)
-        assertEquals(0.0, tx.fees)
-        assertEquals(1000.0, tx.net)
+        assertEquals(fees, tx.fees)
+        assertEquals(1000.0 - fees, tx.net)
         assertNull(tx.paymentMethodToken)
         assertNull(tx.paymentMethodProvider)
         assertEquals(TransactionType.PAYMENT, tx.type)
@@ -191,6 +210,8 @@ public class CreatePaymentControllerTest : AbstractSecuredController() {
         assertEquals(ErrorCode.EXPIRED.name, tx.errorCode)
         assertNull(tx.supplierErrorCode)
         assertEquals(request.requestId, tx.paymentRequestId)
+        assertTrue(tx.business)
+        assertFalse(tx.retail)
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
@@ -200,15 +221,16 @@ public class CreatePaymentControllerTest : AbstractSecuredController() {
         assertEquals(tx.id, payload.firstValue.transactionId)
         assertEquals(tx.tenantId, payload.firstValue.tenantId)
         assertEquals(tx.amount, payload.firstValue.amount)
+        assertEquals(tx.net, payload.firstValue.net)
         assertEquals(tx.currency, payload.firstValue.currency)
     }
 
     @Test
-    @Sql(value = ["/db/clean.sql", "/db/CreatePaymentController.sql"])
     public fun merchantNotActive() {
         // GIVEN
-        val account = Account(status = "SUSPENDED")
-        doReturn(GetAccountResponse(account)).whenever(accountApi).getAccount(200L)
+        val account = AccountSummary(id = USER_ID, status = "ACTIVE")
+        val recipient = AccountSummary(id = 200, business = true, status = "SUSPENDED")
+        doReturn(SearchAccountResponse(listOf(account, recipient))).whenever(accountApi).searchAccount(any())
 
         // WHEN
         val request = CreatePaymentRequest(
@@ -231,8 +253,9 @@ public class CreatePaymentControllerTest : AbstractSecuredController() {
     @Sql(value = ["/db/clean.sql", "/db/CreatePaymentController.sql"])
     public fun customerNotActive() {
         // GIVEN
-        val account = Account(status = "SUSPENDED")
-        doReturn(GetAccountResponse(account)).whenever(accountApi).getAccount(USER_ID)
+        val account = AccountSummary(id = USER_ID, status = "SUSPENDED")
+        val recipient = AccountSummary(id = 200, business = true, status = "ACTIVE")
+        doReturn(SearchAccountResponse(listOf(account, recipient))).whenever(accountApi).searchAccount(any())
 
         // WHEN
         val request = CreatePaymentRequest(
@@ -304,6 +327,30 @@ public class CreatePaymentControllerTest : AbstractSecuredController() {
 
         val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
         assertEquals(ErrorURN.SELF_TRANSACTION_ERROR.urn, response.error.code)
+
+        verify(eventStream, never()).publish(any(), any())
+    }
+
+    @Test
+    public fun restrictedToBusinessAccount() {
+        // GIVEN
+        val account = AccountSummary(id = USER_ID, status = "ACTIVE")
+        val recipient = AccountSummary(id = 200, business = false, status = "ACTIVE")
+        doReturn(SearchAccountResponse(listOf(account, recipient))).whenever(accountApi).searchAccount(any())
+
+        // WHEN
+        val request = CreatePaymentRequest(
+            requestId = "200"
+        )
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreatePaymentResponse::class.java)
+        }
+
+        // THEN
+        assertEquals(403, ex.rawStatusCode)
+
+        val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.RESTRICTED_TO_BUSINESS_ACCOUNT.urn, response.error.code)
 
         verify(eventStream, never()).publish(any(), any())
     }

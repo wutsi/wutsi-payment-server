@@ -11,4 +11,5 @@ enum class ErrorURN(val urn: String) {
     ILLEGAL_TRANSACTION_ACCESS("urn:wutsi:error:payment:illegal-transaction-access"),
     ILLEGAL_TENANT_ACCESS("urn:wutsi:error:account:illegal-tenant-access"),
     SELF_TRANSACTION_ERROR("urn:wutsi:error:account:self-transaction-error"),
+    RESTRICTED_TO_BUSINESS_ACCOUNT("urn:wutsi:error:account:restricted-to-business-account"),
 }

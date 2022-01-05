@@ -38,5 +38,7 @@ data class TransactionEntity(
     @Column(name = "payment_request_fk")
     val paymentRequestId: String? = null,
 
-    var feesToSender: Boolean = false
+    var feesToSender: Boolean = false,
+    var business: Boolean = false,
+    var retail: Boolean = false,
 )

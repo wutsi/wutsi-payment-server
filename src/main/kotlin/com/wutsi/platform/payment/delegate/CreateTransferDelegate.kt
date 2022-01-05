@@ -1,5 +1,7 @@
 package com.wutsi.platform.payment.`delegate`
 
+import com.wutsi.platform.account.dto.AccountSummary
+import com.wutsi.platform.account.dto.SearchAccountRequest
 import com.wutsi.platform.core.error.Error
 import com.wutsi.platform.core.error.exception.ForbiddenException
 import com.wutsi.platform.payment.PaymentException
@@ -14,6 +16,7 @@ import com.wutsi.platform.payment.error.ErrorURN
 import com.wutsi.platform.payment.error.TransactionException
 import com.wutsi.platform.payment.event.EventURN.TRANSACTION_FAILED
 import com.wutsi.platform.payment.event.EventURN.TRANSACTION_SUCCESSFULL
+import com.wutsi.platform.payment.service.FeesCalculator
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.tenant.dto.Tenant
 import org.springframework.stereotype.Service
@@ -25,6 +28,7 @@ import java.util.UUID
 public class CreateTransferDelegate(
     private val transactionDao: TransactionRepository,
     private val tenantProvider: TenantProvider,
+    private val feesCalculator: FeesCalculator,
 ) : AbstractDelegate() {
     @Transactional(noRollbackFor = [TransactionException::class])
     public fun invoke(request: CreateTransferRequest): CreateTransferResponse {
@@ -36,7 +40,13 @@ public class CreateTransferDelegate(
         val tenant = tenantProvider.get()
         validateRequest(request, tenant)
 
-        val tx = createTransaction(request, tenant)
+        val accounts = accountApi.searchAccount(
+            request = SearchAccountRequest(
+                ids = listOfNotNull(request.recipientId, securityManager.currentUserId())
+            )
+        ).accounts.map { it.id to it }.toMap()
+
+        val tx = createTransaction(request, tenant, accounts)
         try {
             validateTransaction(tx)
 
@@ -60,8 +70,8 @@ public class CreateTransferDelegate(
     }
 
     private fun onSuccess(request: CreateTransferRequest, tx: TransactionEntity, tenant: Tenant) {
-        updateBalance(securityManager.currentUserId(), -request.amount, tenant)
-        updateBalance(request.recipientId, request.amount, tenant)
+        updateBalance(securityManager.currentUserId(), -tx.amount, tenant)
+        updateBalance(request.recipientId, tx.net, tenant)
 
         publish(TRANSACTION_SUCCESSFULL, tx)
     }
@@ -73,7 +83,12 @@ public class CreateTransferDelegate(
         publish(TRANSACTION_FAILED, tx)
     }
 
-    private fun createTransaction(request: CreateTransferRequest, tenant: Tenant): TransactionEntity {
+    private fun createTransaction(
+        request: CreateTransferRequest,
+        tenant: Tenant,
+        accounts: Map<Long, AccountSummary?>
+    ): TransactionEntity {
+        val recipient = accounts[request.recipientId]
         val tx = transactionDao.save(
             TransactionEntity(
                 id = UUID.randomUUID().toString(),
@@ -87,10 +102,12 @@ public class CreateTransferDelegate(
                 currency = tenant.currency,
                 status = SUCCESSFUL,
                 created = OffsetDateTime.now(),
-                description = request.description
+                description = request.description,
+                business = recipient?.business ?: false,
+                retail = recipient?.retail ?: false
             )
         )
-
+        feesCalculator.computeFees(tx, tenant, accounts)
         logger.add("transaction_id", tx.id)
         return tx
     }
