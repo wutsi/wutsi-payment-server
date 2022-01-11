@@ -89,9 +89,9 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount, tx.amount)
+        assertEquals(request.amount + fees, tx.amount)
         assertEquals(fees, tx.fees)
-        assertEquals(request.amount - fees, tx.net)
+        assertEquals(request.amount, tx.net)
         assertNull(tx.paymentMethodToken)
         assertNull(tx.paymentMethodProvider)
         assertEquals(TransactionType.TRANSFER, tx.type)
@@ -189,69 +189,6 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
     }
 
     @Test
-    @Sql(value = ["/db/clean.sql", "/db/CreateTransferController.sql"])
-    public fun transferToRetail() {
-        // GIVEN
-        val account = AccountSummary(id = USER_ID)
-        val recipient = AccountSummary(id = 200, business = true, retail = true)
-        doReturn(SearchAccountResponse(listOf(account, recipient))).whenever(accountApi).searchAccount(any())
-
-        // WHEN
-        val request = CreateTransferRequest(
-            amount = 50000.0,
-            currency = "XAF",
-            recipientId = 200,
-            description = "Yo man"
-        )
-        val response = rest.postForEntity(url, request, CreateTransferResponse::class.java)
-
-        // THEN
-        assertEquals(200, response.statusCodeValue)
-
-        assertEquals(Status.SUCCESSFUL.name, response.body.status)
-
-        val fees = 1000.0
-        val tx = txDao.findById(response.body.id).get()
-        assertEquals(1L, tx.tenantId)
-        assertEquals(USER_ID, tx.accountId)
-        assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount, tx.amount)
-        assertEquals(fees, tx.fees)
-        assertEquals(request.amount - fees, tx.net)
-        assertNull(tx.paymentMethodToken)
-        assertNull(tx.paymentMethodProvider)
-        assertEquals(TransactionType.TRANSFER, tx.type)
-        assertEquals(Status.SUCCESSFUL, tx.status)
-        assertEquals(request.description, tx.description)
-        assertNull(tx.gatewayTransactionId)
-        assertNull(tx.financialTransactionId)
-        assertNull(tx.errorCode)
-        assertNull(tx.supplierErrorCode)
-        assertNull(tx.paymentRequestId)
-        assertTrue(tx.business)
-        assertTrue(tx.retail)
-
-        val balance = balanceDao.findByAccountId(USER_ID).get()
-        assertEquals(100000 - tx.amount, balance.amount)
-        assertEquals(request.currency, balance.currency)
-
-        val balance2 = balanceDao.findByAccountId(request.recipientId).get()
-        assertEquals(200000 + tx.net, balance2.amount)
-        assertEquals(request.currency, balance2.currency)
-
-        val payload = argumentCaptor<TransactionEventPayload>()
-        verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFULL.urn), payload.capture())
-        assertEquals(USER_ID, payload.firstValue.accountId)
-        assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
-        assertEquals(request.recipientId, payload.firstValue.recipientId)
-        assertEquals(tx.id, payload.firstValue.transactionId)
-        assertEquals(tx.tenantId, payload.firstValue.tenantId)
-        assertEquals(tx.amount, payload.firstValue.amount)
-        assertEquals(tx.net, payload.firstValue.net)
-        assertEquals(tx.currency, payload.firstValue.currency)
-    }
-
-    @Test
     public fun notEnoughFunds() {
         // WHEN
         val request = CreateTransferRequest(
@@ -277,9 +214,9 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount, tx.amount)
+        assertEquals(request.amount + fees, tx.amount)
         assertEquals(fees, tx.fees)
-        assertEquals(request.amount - fees, tx.net)
+        assertEquals(request.amount, tx.net)
         assertNull(tx.paymentMethodToken)
         assertNull(tx.paymentMethodProvider)
         assertEquals(TransactionType.TRANSFER, tx.type)

@@ -19,9 +19,17 @@ class FeesCalculator {
         )
         val response = computeFees(request, tenant, accounts)
 
-        tx.fees = response.fees
-        tx.net = request.amount - response.fees
+        val base = tx.amount
         tx.feesToSender = response.applyToSender
+        if (response.applyToSender) {
+            tx.amount = base + response.fees
+            tx.fees = response.fees
+            tx.net = base
+        } else {
+            tx.amount = base
+            tx.fees = response.fees
+            tx.net = base - response.fees
+        }
         return tx.fees
     }
 

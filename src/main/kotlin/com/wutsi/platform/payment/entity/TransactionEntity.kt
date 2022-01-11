@@ -22,7 +22,7 @@ data class TransactionEntity(
     val paymentMethodToken: String? = null,
     val paymentMethodProvider: PaymentMethodProvider? = null,
     val description: String? = null,
-    val amount: Double = 0.0,
+    var amount: Double = 0.0,
     var fees: Double = 0.0,
     var net: Double = 0.0,
     val currency: String = "",

@@ -26,7 +26,7 @@ internal class FeesCalculatorTest {
             fees = listOf(
                 Fee(
                     transactionType = "transfer",
-                    applyToSender = true,
+                    applyToSender = false,
                     business = true,
                     amount = 0.0,
                     percent = 0.02
@@ -70,7 +70,7 @@ internal class FeesCalculatorTest {
         assertEquals(50000.0, tx.amount)
         assertEquals(1000.0, tx.fees)
         assertEquals(49000.0, tx.net)
-        assertEquals(true, tx.feesToSender)
+        assertEquals(false, tx.feesToSender)
     }
 
     @Test
@@ -91,9 +91,9 @@ internal class FeesCalculatorTest {
 
         // THEN
         assertEquals(100.0, fees)
-        assertEquals(50000.0, tx.amount)
+        assertEquals(50100.0, tx.amount)
         assertEquals(100.0, tx.fees)
-        assertEquals(49900.0, tx.net)
+        assertEquals(50000.0, tx.net)
         assertEquals(true, tx.feesToSender)
     }
 

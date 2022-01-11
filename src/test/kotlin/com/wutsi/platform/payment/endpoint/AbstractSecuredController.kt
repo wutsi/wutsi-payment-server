@@ -110,7 +110,7 @@ abstract class AbstractSecuredController {
             fees = listOf(
                 Fee(
                     transactionType = "transfer",
-                    applyToSender = true,
+                    applyToSender = false,
                     business = true,
                     amount = 0.0,
                     percent = 0.02
