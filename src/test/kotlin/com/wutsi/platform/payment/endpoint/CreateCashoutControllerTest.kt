@@ -92,12 +92,13 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
 
         assertEquals(Status.SUCCESSFUL.name, response.body.status)
 
+        val fees = 1000.0
         val tx = txDao.findById(response.body.id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount, tx.amount)
-        assertEquals(0.0, tx.fees)
+        assertEquals(request.amount + fees, tx.amount)
+        assertEquals(fees, tx.fees)
         assertEquals(request.amount, tx.net)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
         assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)
@@ -111,7 +112,7 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertNull(tx.paymentRequestId)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
-        assertEquals(request.amount, 100000 - balance.amount)
+        assertEquals(100000 - tx.amount, balance.amount)
         assertEquals(request.currency, balance.currency)
 
         val payload = argumentCaptor<TransactionEventPayload>()
@@ -145,12 +146,13 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
 
         assertEquals(Status.PENDING.name, response.body.status)
 
+        val fees = 1000.0
         val tx = txDao.findById(response.body.id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount, tx.amount)
-        assertEquals(0.0, tx.fees)
+        assertEquals(request.amount + fees, tx.amount)
+        assertEquals(fees, tx.fees)
         assertEquals(request.amount, tx.net)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
         assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)
@@ -164,7 +166,7 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertNull(tx.paymentRequestId)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
-        assertEquals(100000.0 - request.amount, balance.amount)
+        assertEquals(100000.0 - tx.amount, balance.amount)
         assertEquals(request.currency, balance.currency)
 
         val payload = argumentCaptor<TransactionEventPayload>()
@@ -204,10 +206,11 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
 
         val txId = response.error.data?.get("id").toString()
         val tx = txDao.findById(txId).get()
+        val fees = 1000.0
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount, tx.amount)
-        assertEquals(0.0, tx.fees)
+        assertEquals(request.amount + fees, tx.amount)
+        assertEquals(fees, tx.fees)
         assertEquals(request.amount, tx.net)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
         assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)
@@ -256,10 +259,11 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
 
         val txId = response.error.data?.get("id").toString()
         val tx = txDao.findById(txId).get()
+        val fees = 1000000.0
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount, tx.amount)
-        assertEquals(0.0, tx.fees)
+        assertEquals(request.amount + fees, tx.amount)
+        assertEquals(fees, tx.fees)
         assertEquals(request.amount, tx.net)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
         assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)

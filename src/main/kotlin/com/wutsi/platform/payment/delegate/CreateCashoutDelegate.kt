@@ -61,7 +61,7 @@ class CreateCashoutDelegate(
         try {
             // Update balance
             validateTransaction(tx)
-            updateBalance(tx.accountId, -tx.net, tenant)
+            updateBalance(tx.accountId, -tx.amount, tenant)
 
             val response = cashout(tx, paymentMethod)
             logger.add("gateway_status", response.status)
@@ -154,7 +154,7 @@ class CreateCashoutDelegate(
     @Transactional
     fun onError(tx: TransactionEntity, ex: PaymentException, tenant: Tenant) {
         // Revert balance
-        updateBalance(tx.accountId, tx.net, tenant)
+        updateBalance(tx.accountId, tx.amount, tenant)
 
         // Update the transaction
         tx.status = Status.FAILED

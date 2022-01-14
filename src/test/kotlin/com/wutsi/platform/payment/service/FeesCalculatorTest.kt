@@ -52,6 +52,12 @@ internal class FeesCalculatorTest {
                     amount = 0.0,
                     percent = 0.02
                 ),
+                Fee(
+                    transactionType = "cashout",
+                    applyToSender = true,
+                    amount = 0.0,
+                    percent = 0.02
+                ),
             )
         )
     }
@@ -132,13 +138,13 @@ internal class FeesCalculatorTest {
     fun cashout() {
         // GIVEN
         val accounts =
-            listOf(AccountSummary(id = ACCOUNT_ID), AccountSummary(id = RECIPIENT_ID, business = true, retail = false))
+            listOf(AccountSummary(id = ACCOUNT_ID))
                 .map { it.id to it }.toMap()
 
         val tx = TransactionEntity(
             type = TransactionType.CASHOUT,
             accountId = ACCOUNT_ID,
-            recipientId = RECIPIENT_ID,
+            recipientId = null,
             amount = 50000.0,
         )
 
@@ -146,9 +152,9 @@ internal class FeesCalculatorTest {
         val fees = calculator.computeFees(tx, tenant, accounts)
 
         // THEN
-        assertEquals(500.0, fees)
-        assertEquals(50500.0, tx.amount)
-        assertEquals(500.0, tx.fees)
+        assertEquals(1000.0, fees)
+        assertEquals(51000.0, tx.amount)
+        assertEquals(1000.0, tx.fees)
         assertEquals(50000.0, tx.net)
         assertEquals(true, tx.feesToSender)
     }

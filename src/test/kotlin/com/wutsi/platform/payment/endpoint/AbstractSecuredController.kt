@@ -129,6 +129,12 @@ abstract class AbstractSecuredController {
                     amount = 0.0,
                     percent = 0.04
                 ),
+                Fee(
+                    transactionType = "cashout",
+                    applyToSender = true,
+                    amount = 0.0,
+                    percent = 0.02
+                ),
             )
         )
         doReturn(GetTenantResponse(tenant)).whenever(tenantApi).getTenant(any())
