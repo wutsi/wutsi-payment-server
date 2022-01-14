@@ -14,7 +14,7 @@ public class ComputeTransactionFeesController(
     private val `delegate`: ComputeTransactionFeesDelegate
 ) {
     @PostMapping("/v1/transactions/fees")
-    @PreAuthorize(value = "hasAuthority('payment-read')")
+    @PreAuthorize(value = "hasAuthority('payment-manage')")
     public fun invoke(@Valid @RequestBody request: ComputeTransactionFeesRequest):
         ComputeTransactionFeesResponse = delegate.invoke(request)
 }

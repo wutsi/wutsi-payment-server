@@ -160,7 +160,7 @@ paths:
       tags:
         - Transactions
       security:
-        - api_key: [ 'payment-read' ]
+        - api_key: [ 'payment-manage' ]
 
   /v1/accounts/{account-id}/balance:
     get:
@@ -452,6 +452,7 @@ components:
             - CASHIN
             - CASHOUT
             - TRANSFER
+            - PAYMENT
           description: Type of transaction
         paymentMethodToken:
           type: string
@@ -514,6 +515,14 @@ components:
             - PENDING
             - FAILED
           description: ID of the payment request
+          nullable: true
+        type:
+          type: string
+          enum:
+            - CASHIN
+            - CASHOUT
+            - TRANSFER
+          description: Type of transaction
           nullable: true
         status:
           type: string

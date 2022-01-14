@@ -38,13 +38,12 @@ public class CreateTransferDelegate(
         logger.add("description", request.description)
 
         val tenant = tenantProvider.get()
-        validateRequest(request, tenant)
-
         val accounts = accountApi.searchAccount(
             request = SearchAccountRequest(
                 ids = listOfNotNull(request.recipientId, securityManager.currentUserId())
             )
         ).accounts.map { it.id to it }.toMap()
+        validateRequest(request, tenant, accounts)
 
         val tx = createTransaction(request, tenant, accounts)
         try {
@@ -107,12 +106,16 @@ public class CreateTransferDelegate(
                 retail = recipient?.retail ?: false
             )
         )
+
         feesCalculator.computeFees(tx, tenant, accounts)
         logger.add("transaction_id", tx.id)
+        logger.add("transaction_fees", tx.fees)
+        logger.add("transaction_amount", tx.amount)
+        logger.add("transaction_net", tx.net)
         return tx
     }
 
-    private fun validateRequest(request: CreateTransferRequest, tenant: Tenant) {
+    private fun validateRequest(request: CreateTransferRequest, tenant: Tenant, accounts: Map<Long, AccountSummary>) {
         if (request.recipientId == securityManager.currentUserId())
             throw ForbiddenException(
                 error = Error(
@@ -121,8 +124,8 @@ public class CreateTransferDelegate(
             )
 
         validateCurrency(request.currency, tenant)
-        ensureCurrentUserActive()
-        ensureRecipientActive(request.recipientId)
+        ensureCurrentUserActive(accounts)
+        ensureRecipientActive(request.recipientId, accounts)
     }
 
     private fun validateTransaction(tx: TransactionEntity) {

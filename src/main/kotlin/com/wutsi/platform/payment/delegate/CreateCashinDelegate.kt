@@ -1,6 +1,8 @@
 package com.wutsi.platform.payment.`delegate`
 
+import com.wutsi.platform.account.dto.AccountSummary
 import com.wutsi.platform.account.dto.PaymentMethod
+import com.wutsi.platform.account.dto.SearchAccountRequest
 import com.wutsi.platform.core.error.Error
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentException
@@ -18,6 +20,7 @@ import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.model.CreatePaymentRequest
 import com.wutsi.platform.payment.model.CreatePaymentResponse
 import com.wutsi.platform.payment.model.Party
+import com.wutsi.platform.payment.service.FeesCalculator
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.tenant.dto.Tenant
 import org.springframework.stereotype.Service
@@ -30,6 +33,7 @@ class CreateCashinDelegate(
     private val transactionDao: TransactionRepository,
     private val tenantProvider: TenantProvider,
     private val gatewayProvider: GatewayProvider,
+    private val feesCalculator: FeesCalculator,
 ) : AbstractDelegate() {
     @Transactional(noRollbackFor = [TransactionException::class])
     fun invoke(request: CreateCashinRequest): CreateCashinResponse {
@@ -39,7 +43,12 @@ class CreateCashinDelegate(
 
         // Tenant
         val tenant = tenantProvider.get()
-        validateRequest(request, tenant)
+        val accounts = accountApi.searchAccount(
+            request = SearchAccountRequest(
+                ids = listOfNotNull(securityManager.currentUserId())
+            )
+        ).accounts.map { it.id to it }.toMap()
+        validateRequest(request, tenant, accounts)
 
         // Gateway
         val paymentMethod = accountApi.getPaymentMethod(
@@ -48,7 +57,7 @@ class CreateCashinDelegate(
         ).paymentMethod
 
         // Create transaction
-        val tx = createTransaction(request, paymentMethod, tenant)
+        val tx = createTransaction(request, paymentMethod, tenant, accounts)
 
         // Perform the transfer
         try {
@@ -83,15 +92,16 @@ class CreateCashinDelegate(
         }
     }
 
-    private fun validateRequest(request: CreateCashinRequest, tenant: Tenant) {
-        ensureCurrentUserActive()
+    private fun validateRequest(request: CreateCashinRequest, tenant: Tenant, accounts: Map<Long, AccountSummary>) {
+        ensureCurrentUserActive(accounts)
         validateCurrency(request.currency, tenant)
     }
 
     private fun createTransaction(
         request: CreateCashinRequest,
         paymentMethod: PaymentMethod,
-        tenant: Tenant
+        tenant: Tenant,
+        accounts: Map<Long, AccountSummary>
     ): TransactionEntity {
         val tx = transactionDao.save(
             TransactionEntity(
@@ -110,7 +120,11 @@ class CreateCashinDelegate(
             )
         )
 
+        feesCalculator.computeFees(tx, tenant, accounts)
         logger.add("transaction_id", tx.id)
+        logger.add("transaction_fees", tx.fees)
+        logger.add("transaction_amount", tx.amount)
+        logger.add("transaction_net", tx.net)
         return tx
     }
 

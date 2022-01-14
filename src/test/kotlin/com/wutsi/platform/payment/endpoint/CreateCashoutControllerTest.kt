@@ -8,6 +8,8 @@ import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
+import com.wutsi.platform.account.dto.AccountSummary
+import com.wutsi.platform.account.dto.SearchAccountResponse
 import com.wutsi.platform.core.error.ErrorResponse
 import com.wutsi.platform.core.stream.EventStream
 import com.wutsi.platform.payment.PaymentException
@@ -61,6 +63,13 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         super.setUp()
 
         url = "http://localhost:$port/v1/transactions/cashouts"
+
+        val account = AccountSummary(
+            id = USER_ID,
+            displayName = user.displayName,
+            status = user.status,
+        )
+        doReturn(SearchAccountResponse(listOf(account))).whenever(accountApi).searchAccount(any())
     }
 
     @Test
@@ -291,5 +300,32 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
 
         val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
         assertEquals(ErrorURN.CURRENCY_NOT_SUPPORTED.urn, response.error.code)
+    }
+
+    @Test
+    fun userNotActive() {
+        // GIVEN
+        val account = AccountSummary(
+            id = USER_ID,
+            displayName = user.displayName,
+            status = "SUSPENDED",
+        )
+        doReturn(SearchAccountResponse(listOf(account))).whenever(accountApi).searchAccount(any())
+
+        // WHEN
+        val request = CreateCashoutRequest(
+            paymentMethodToken = "11111",
+            amount = 50000.0,
+            currency = "EUR"
+        )
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateCashinResponse::class.java)
+        }
+
+        // THEN
+        assertEquals(403, ex.rawStatusCode)
+
+        val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.USER_NOT_ACTIVE.urn, response.error.code)
     }
 }

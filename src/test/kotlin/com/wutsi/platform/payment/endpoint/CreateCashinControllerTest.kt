@@ -9,8 +9,8 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import com.wutsi.platform.account.dto.Account
-import com.wutsi.platform.account.dto.GetAccountResponse
+import com.wutsi.platform.account.dto.AccountSummary
+import com.wutsi.platform.account.dto.SearchAccountResponse
 import com.wutsi.platform.core.error.ErrorResponse
 import com.wutsi.platform.core.stream.EventStream
 import com.wutsi.platform.payment.PaymentException
@@ -62,6 +62,13 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         super.setUp()
 
         url = "http://localhost:$port/v1/transactions/cashins"
+
+        val account = AccountSummary(
+            id = USER_ID,
+            displayName = user.displayName,
+            status = user.status,
+        )
+        doReturn(SearchAccountResponse(listOf(account))).whenever(accountApi).searchAccount(any())
     }
 
     @Test
@@ -109,69 +116,6 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFULL.urn), payload.capture())
         assertEquals(USER_ID, payload.firstValue.accountId)
-        assertEquals(TransactionType.CASHIN.name, payload.firstValue.type)
-        assertNull(payload.firstValue.recipientId)
-        assertEquals(tx.id, payload.firstValue.transactionId)
-        assertEquals(tx.tenantId, payload.firstValue.tenantId)
-        assertEquals(tx.amount, payload.firstValue.amount)
-        assertEquals(tx.currency, payload.firstValue.currency)
-    }
-
-    @Test
-    @Sql(value = ["/db/clean.sql", "/db/CreateCashinController.sql"])
-    fun successWithExistingAccount() {
-        // GIVEN
-        user = Account(
-            id = 100,
-            displayName = "Ray Sponsible",
-            language = "en",
-            status = "ACTIVE",
-        )
-        doReturn(GetAccountResponse(user)).whenever(accountApi).getAccount(any())
-
-        rest = createResTemplate(subjectId = user.id)
-
-        val paymentResponse = CreatePaymentResponse("111", "222", Status.SUCCESSFUL)
-        doReturn(paymentResponse).whenever(mtnGateway).createPayment(any())
-
-        // WHEN
-        val request = CreateCashinRequest(
-            paymentMethodToken = "11111",
-            amount = 50000.0,
-            currency = "XAF"
-        )
-        val response = rest.postForEntity(url, request, CreateCashinResponse::class.java)
-
-        // THEN
-        assertEquals(200, response.statusCodeValue)
-
-        assertEquals(Status.SUCCESSFUL.name, response.body.status)
-
-        val tx = txDao.findById(response.body.id).get()
-        assertEquals(1L, tx.tenantId)
-        assertEquals(user.id, tx.accountId)
-        assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount, tx.amount)
-        assertEquals(0.0, tx.fees)
-        assertEquals(request.amount, tx.net)
-        assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
-        assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)
-        assertEquals(TransactionType.CASHIN, tx.type)
-        assertEquals(Status.SUCCESSFUL, tx.status)
-        assertEquals(paymentResponse.transactionId, tx.gatewayTransactionId)
-        assertEquals(paymentResponse.financialTransactionId, tx.financialTransactionId)
-        assertNull(tx.supplierErrorCode)
-        assertNull(tx.description)
-        assertNull(tx.errorCode)
-        assertNull(tx.paymentRequestId)
-
-        val balance = balanceDao.findByAccountId(user.id).get()
-        assertEquals(100000.0 + request.amount, balance.amount)
-        assertEquals(request.currency, balance.currency)
-
-        val payload = argumentCaptor<TransactionEventPayload>()
-        verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFULL.urn), payload.capture())
-        assertEquals(user.id, payload.firstValue.accountId)
         assertEquals(TransactionType.CASHIN.name, payload.firstValue.type)
         assertNull(payload.firstValue.recipientId)
         assertEquals(tx.id, payload.firstValue.transactionId)
@@ -309,13 +253,13 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
     @Test
     fun suspendedUser() {
         // GIVEN
-        user = Account(
+
+        val account = AccountSummary(
             id = USER_ID,
-            displayName = "Ray Sponsible",
-            language = "en",
+            displayName = user.displayName,
             status = "SUSPENDED",
         )
-        doReturn(GetAccountResponse(user)).whenever(accountApi).getAccount(any())
+        doReturn(SearchAccountResponse(listOf(account))).whenever(accountApi).searchAccount(any())
 
         // WHEN
         val request = CreateCashinRequest(

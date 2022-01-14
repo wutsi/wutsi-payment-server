@@ -1,6 +1,7 @@
 package com.wutsi.platform.payment.delegate
 
 import com.wutsi.platform.account.WutsiAccountApi
+import com.wutsi.platform.account.dto.AccountSummary
 import com.wutsi.platform.core.error.Error
 import com.wutsi.platform.core.error.Parameter
 import com.wutsi.platform.core.error.ParameterType.PARAMETER_TYPE_PAYLOAD
@@ -60,12 +61,24 @@ class AbstractDelegate {
         }
     }
 
+    protected fun ensureCurrentUserActive(accounts: Map<Long, AccountSummary>) {
+        val user = accounts[securityManager.currentUserId()]!!
+        ensureAccountActive(user.id, user.status, ErrorURN.USER_NOT_ACTIVE)
+    }
+
+    protected fun ensureRecipientActive(recipientId: Long, accounts: Map<Long, AccountSummary>) {
+        val user = accounts[recipientId]!!
+        ensureAccountActive(user.id, user.status, ErrorURN.RECIPIENT_NOT_ACTIVE)
+    }
+
+    @Deprecated("")
     protected fun ensureCurrentUserActive() {
         val userId = securityManager.currentUserId()
         val user = accountApi.getAccount(userId).account
         ensureAccountActive(user.id, user.status, ErrorURN.USER_NOT_ACTIVE)
     }
 
+    @Deprecated("")
     protected fun ensureRecipientActive(recipientId: Long) {
         val user = accountApi.getAccount(recipientId).account
         ensureAccountActive(user.id, user.status, ErrorURN.RECIPIENT_NOT_ACTIVE)

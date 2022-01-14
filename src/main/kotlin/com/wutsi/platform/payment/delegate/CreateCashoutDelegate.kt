@@ -1,6 +1,8 @@
 package com.wutsi.platform.payment.delegate
 
+import com.wutsi.platform.account.dto.AccountSummary
 import com.wutsi.platform.account.dto.PaymentMethod
+import com.wutsi.platform.account.dto.SearchAccountRequest
 import com.wutsi.platform.core.error.Error
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentException
@@ -18,6 +20,7 @@ import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.model.CreateTransferRequest
 import com.wutsi.platform.payment.model.CreateTransferResponse
 import com.wutsi.platform.payment.model.Party
+import com.wutsi.platform.payment.service.FeesCalculator
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.tenant.dto.Tenant
 import org.springframework.stereotype.Service
@@ -30,6 +33,7 @@ class CreateCashoutDelegate(
     private val transactionDao: TransactionRepository,
     private val tenantProvider: TenantProvider,
     private val gatewayProvider: GatewayProvider,
+    private val feesCalculator: FeesCalculator,
 ) : AbstractDelegate() {
     @Transactional(noRollbackFor = [TransactionException::class])
     fun invoke(request: CreateCashoutRequest): CreateCashoutResponse {
@@ -39,7 +43,12 @@ class CreateCashoutDelegate(
 
         // Tenant
         val tenant = tenantProvider.get()
-        validateRequest(request, tenant)
+        val accounts = accountApi.searchAccount(
+            request = SearchAccountRequest(
+                ids = listOfNotNull(securityManager.currentUserId())
+            )
+        ).accounts.map { it.id to it }.toMap()
+        validateRequest(request, tenant, accounts)
 
         // Gateway
         val paymentMethod = accountApi.getPaymentMethod(
@@ -48,7 +57,7 @@ class CreateCashoutDelegate(
         ).paymentMethod
 
         // Create transaction
-        val tx = createTransaction(request, paymentMethod, tenant)
+        val tx = createTransaction(request, paymentMethod, tenant, accounts)
         try {
             // Update balance
             validateTransaction(tx)
@@ -86,8 +95,8 @@ class CreateCashoutDelegate(
         }
     }
 
-    private fun validateRequest(request: CreateCashoutRequest, tenant: Tenant) {
-        ensureCurrentUserActive()
+    private fun validateRequest(request: CreateCashoutRequest, tenant: Tenant, accounts: Map<Long, AccountSummary>) {
+        ensureCurrentUserActive(accounts)
         validateCurrency(request.currency, tenant)
     }
 
@@ -98,7 +107,8 @@ class CreateCashoutDelegate(
     private fun createTransaction(
         request: CreateCashoutRequest,
         paymentMethod: PaymentMethod,
-        tenant: Tenant
+        tenant: Tenant,
+        accounts: Map<Long, AccountSummary>
     ): TransactionEntity {
         val tx = transactionDao.save(
             TransactionEntity(
@@ -117,7 +127,11 @@ class CreateCashoutDelegate(
             )
         )
 
+        feesCalculator.computeFees(tx, tenant, accounts)
         logger.add("transaction_id", tx.id)
+        logger.add("transaction_fees", tx.fees)
+        logger.add("transaction_amount", tx.amount)
+        logger.add("transaction_net", tx.net)
         return tx
     }
 

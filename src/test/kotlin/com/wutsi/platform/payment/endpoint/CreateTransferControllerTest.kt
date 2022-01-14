@@ -8,9 +8,7 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
-import com.wutsi.platform.account.dto.Account
 import com.wutsi.platform.account.dto.AccountSummary
-import com.wutsi.platform.account.dto.GetAccountResponse
 import com.wutsi.platform.account.dto.SearchAccountResponse
 import com.wutsi.platform.core.error.ErrorResponse
 import com.wutsi.platform.core.stream.EventStream
@@ -37,7 +35,6 @@ import org.springframework.web.client.HttpClientErrorException
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(value = ["/db/clean.sql", "/db/CreateTransferController.sql"])
@@ -62,8 +59,8 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         url = "http://localhost:$port/v1/transactions/transfers"
 
         // GIVEN
-        val account = AccountSummary(id = USER_ID)
-        val recipient = AccountSummary(id = 200)
+        val account = AccountSummary(id = USER_ID, status = "ACTIVE")
+        val recipient = AccountSummary(id = 200, status = "ACTIVE")
         doReturn(SearchAccountResponse(listOf(account, recipient))).whenever(accountApi).searchAccount(any())
     }
 
@@ -103,69 +100,6 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertNull(tx.paymentRequestId)
         assertFalse(tx.business)
-        assertFalse(tx.retail)
-
-        val balance = balanceDao.findByAccountId(USER_ID).get()
-        assertEquals(100000 - tx.amount, balance.amount)
-        assertEquals(request.currency, balance.currency)
-
-        val balance2 = balanceDao.findByAccountId(request.recipientId).get()
-        assertEquals(200000 + tx.net, balance2.amount)
-        assertEquals(request.currency, balance2.currency)
-
-        val payload = argumentCaptor<TransactionEventPayload>()
-        verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFULL.urn), payload.capture())
-        assertEquals(USER_ID, payload.firstValue.accountId)
-        assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
-        assertEquals(request.recipientId, payload.firstValue.recipientId)
-        assertEquals(tx.id, payload.firstValue.transactionId)
-        assertEquals(tx.tenantId, payload.firstValue.tenantId)
-        assertEquals(tx.amount, payload.firstValue.amount)
-        assertEquals(tx.net, payload.firstValue.net)
-        assertEquals(tx.currency, payload.firstValue.currency)
-    }
-
-    @Test
-    @Sql(value = ["/db/clean.sql", "/db/CreateTransferController.sql"])
-    public fun transferToBusiness() {
-        // GIVEN
-        val account = AccountSummary(id = USER_ID)
-        val recipient = AccountSummary(id = 200, business = true, retail = false)
-        doReturn(SearchAccountResponse(listOf(account, recipient))).whenever(accountApi).searchAccount(any())
-
-        // WHEN
-        val request = CreateTransferRequest(
-            amount = 50000.0,
-            currency = "XAF",
-            recipientId = 200,
-            description = "Yo man"
-        )
-        val response = rest.postForEntity(url, request, CreateTransferResponse::class.java)
-
-        // THEN
-        assertEquals(200, response.statusCodeValue)
-
-        assertEquals(Status.SUCCESSFUL.name, response.body.status)
-
-        val fees = 1000.0
-        val tx = txDao.findById(response.body.id).get()
-        assertEquals(1L, tx.tenantId)
-        assertEquals(USER_ID, tx.accountId)
-        assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount, tx.amount)
-        assertEquals(fees, tx.fees)
-        assertEquals(request.amount - fees, tx.net)
-        assertNull(tx.paymentMethodToken)
-        assertNull(tx.paymentMethodProvider)
-        assertEquals(TransactionType.TRANSFER, tx.type)
-        assertEquals(Status.SUCCESSFUL, tx.status)
-        assertEquals(request.description, tx.description)
-        assertNull(tx.gatewayTransactionId)
-        assertNull(tx.financialTransactionId)
-        assertNull(tx.errorCode)
-        assertNull(tx.supplierErrorCode)
-        assertNull(tx.paymentRequestId)
-        assertTrue(tx.business)
         assertFalse(tx.retail)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
@@ -245,8 +179,9 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
     @Test
     public fun recipientNotActive() {
         // GIVEN
-        val account = Account(status = "SUSPENDED")
-        doReturn(GetAccountResponse(account)).whenever(accountApi).getAccount(200L)
+        val account = AccountSummary(id = USER_ID, status = "ACTIVE")
+        val recipient = AccountSummary(id = 200, status = "SUSPENDED")
+        doReturn(SearchAccountResponse(listOf(account, recipient))).whenever(accountApi).searchAccount(any())
 
         // WHEN
         val request = CreateTransferRequest(
@@ -273,8 +208,9 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
     @Test
     public fun userNotActive() {
         // GIVEN
-        val account = Account(status = "SUSPENDED")
-        doReturn(GetAccountResponse(account)).whenever(accountApi).getAccount(USER_ID)
+        val account = AccountSummary(id = USER_ID, status = "SUSPENDED")
+        val recipient = AccountSummary(id = 200, status = "ACTIVE")
+        doReturn(SearchAccountResponse(listOf(account, recipient))).whenever(accountApi).searchAccount(any())
 
         // WHEN
         val request = CreateTransferRequest(

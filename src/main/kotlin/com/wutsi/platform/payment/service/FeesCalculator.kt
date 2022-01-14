@@ -39,12 +39,13 @@ class FeesCalculator {
         accounts: Map<Long, AccountSummary?>
     ): ComputeTransactionFeesResponse {
         // Get the fee
-        val fee = tenant.fees.find { canApply(request, it, accounts) }
+        val fee = tenant.fees.filter { canApply(request, it, accounts) }
+            .sortedByDescending { score(it) }
+            .firstOrNull()
             ?: return ComputeTransactionFeesResponse()
 
         // Compute the fees
         val baseAmount = request.amount
-
         return ComputeTransactionFeesResponse(
             fees = min(baseAmount, fee.amount + baseAmount * fee.percent),
             applyToSender = fee.applyToSender
@@ -56,10 +57,26 @@ class FeesCalculator {
         fee: Fee,
         accounts: Map<Long, AccountSummary?>
     ): Boolean {
-        if (request.transactionType.equals(fee.transactionType, true)) {
+        if (request.transactionType.equals(fee.transactionType, true) && request.amount >= fee.threshold) {
             val recipient = accounts[request.recipientId]
-            return recipient?.business == fee.business
+                ?: return false
+
+            return if (recipient.business) {
+                (fee.business == true || fee.business == null) && (recipient.retail == fee.retail || fee.retail == null)
+            } else {
+                fee.business == false || fee.business == null
+            }
         }
         return false
+    }
+
+    private fun score(fee: Fee): Int {
+        var value = 0
+        if (fee.business != null)
+            value += 10
+        if (fee.business == true && fee.retail != null)
+            value += 1
+
+        return value
     }
 }
