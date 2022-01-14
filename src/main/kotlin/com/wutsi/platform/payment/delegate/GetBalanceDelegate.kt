@@ -26,6 +26,8 @@ class GetBalanceDelegate : AbstractDelegate() {
             }
         securityManager.checkTenant(balance)
 
+        logger.add("account_id", accountId)
+        logger.add("balance", balance.amount)
         return GetBalanceResponse(
             balance = balance.toBalance()
         )
