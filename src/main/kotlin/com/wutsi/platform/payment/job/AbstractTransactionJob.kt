@@ -27,8 +27,9 @@ abstract class AbstractTransactionJob : AbstractCronJob() {
             DefaultTracingContext(
                 tenantId = tx.tenantId.toString(),
                 traceId = tc?.traceId() ?: UUID.randomUUID().toString(),
-                deviceId = tc?.deviceId() ?: getJobName(),
+                deviceId = tc?.deviceId() ?: "NONE",
                 clientId = tc?.clientId() ?: getJobName(),
+                clientInfo = tc?.clientInfo() ?: getJobName()
             )
         )
         return tc
