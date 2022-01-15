@@ -4,7 +4,6 @@ import com.wutsi.platform.account.dto.AccountSummary
 import com.wutsi.platform.payment.dto.ComputeTransactionFeesRequest
 import com.wutsi.platform.payment.dto.ComputeTransactionFeesResponse
 import com.wutsi.platform.payment.entity.TransactionEntity
-import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.tenant.dto.Fee
 import com.wutsi.platform.tenant.dto.Tenant
 import org.springframework.stereotype.Service
@@ -15,7 +14,7 @@ class FeesCalculator {
     fun computeFees(tx: TransactionEntity, tenant: Tenant, accounts: Map<Long, AccountSummary?>): Double {
         val request = ComputeTransactionFeesRequest(
             transactionType = tx.type.name,
-            recipientId = if (tx.type == TransactionType.CASHOUT) tx.accountId else tx.recipientId,
+            recipientId = tx.recipientId,
             amount = tx.amount
         )
         val response = computeFees(request, tenant, accounts)
@@ -60,9 +59,8 @@ class FeesCalculator {
     ): Boolean {
         if (request.transactionType.equals(fee.transactionType, true) && request.amount >= fee.threshold) {
             val recipient = accounts[request.recipientId]
-                ?: return false
 
-            return if (recipient.business) {
+            return if (recipient?.business == true) {
                 (fee.business == true || fee.business == null) && (recipient.retail == fee.retail || fee.retail == null)
             } else {
                 fee.business == false || fee.business == null

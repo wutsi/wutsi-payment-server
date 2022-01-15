@@ -35,28 +35,20 @@ internal class FeesCalculatorTest {
                     transactionType = "payment",
                     applyToSender = false,
                     amount = 0.0,
-                    percent = 0.02
+                    percent = 0.04
                 ),
                 Fee(
                     transactionType = "cashout",
                     applyToSender = true,
                     business = true,
+                    amount = 0.0,
+                    percent = 0.02
+                ),
+                Fee(
+                    transactionType = "cashout",
+                    applyToSender = true,
                     amount = 0.0,
                     percent = 0.01
-                ),
-                Fee(
-                    transactionType = "cashout",
-                    applyToSender = true,
-                    business = true,
-                    retail = true,
-                    amount = 0.0,
-                    percent = 0.02
-                ),
-                Fee(
-                    transactionType = "cashout",
-                    applyToSender = true,
-                    amount = 0.0,
-                    percent = 0.02
                 ),
             )
         )
@@ -127,10 +119,10 @@ internal class FeesCalculatorTest {
         val fees = calculator.computeFees(tx, tenant, accounts)
 
         // THEN
-        assertEquals(1000.0, fees)
+        assertEquals(2000.0, fees)
         assertEquals(50000.0, tx.amount)
-        assertEquals(1000.0, tx.fees)
-        assertEquals(49000.0, tx.net)
+        assertEquals(2000.0, tx.fees)
+        assertEquals(48000.0, tx.net)
         assertEquals(false, tx.feesToSender)
     }
 
@@ -152,9 +144,9 @@ internal class FeesCalculatorTest {
         val fees = calculator.computeFees(tx, tenant, accounts)
 
         // THEN
-        assertEquals(1000.0, fees)
-        assertEquals(51000.0, tx.amount)
-        assertEquals(1000.0, tx.fees)
+        assertEquals(500.0, fees)
+        assertEquals(50500.0, tx.amount)
+        assertEquals(500.0, tx.fees)
         assertEquals(50000.0, tx.net)
         assertEquals(true, tx.feesToSender)
     }
