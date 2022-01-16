@@ -13,7 +13,7 @@ import javax.validation.Valid
 public class CreatePaymentController(
     private val `delegate`: CreatePaymentDelegate
 ) {
-    @PostMapping("/v1/payments")
+    @PostMapping("/v1/transactions/payments")
     @PreAuthorize(value = "hasAuthority('payment-manage')")
     public fun invoke(@Valid @RequestBody request: CreatePaymentRequest): CreatePaymentResponse =
         delegate.invoke(request)

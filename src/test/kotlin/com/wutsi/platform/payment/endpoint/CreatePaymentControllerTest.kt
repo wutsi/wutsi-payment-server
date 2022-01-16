@@ -57,7 +57,7 @@ public class CreatePaymentControllerTest : AbstractSecuredController() {
     override fun setUp() {
         super.setUp()
 
-        url = "http://localhost:$port/v1/payments"
+        url = "http://localhost:$port/v1/transactions/payments"
 
         // GIVEN
         val account = AccountSummary(id = USER_ID, status = "ACTIVE")
