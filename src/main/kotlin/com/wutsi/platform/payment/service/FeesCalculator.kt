@@ -14,6 +14,7 @@ class FeesCalculator {
     fun computeFees(tx: TransactionEntity, tenant: Tenant, accounts: Map<Long, AccountSummary?>): Double {
         val request = ComputeTransactionFeesRequest(
             transactionType = tx.type.name,
+            senderId = tx.accountId,
             recipientId = tx.recipientId,
             amount = tx.amount
         )
@@ -39,9 +40,9 @@ class FeesCalculator {
         accounts: Map<Long, AccountSummary?>
     ): ComputeTransactionFeesResponse {
         // Get the fee
-        val fee = tenant.fees.filter { canApply(request, it, accounts) }
+        val fees = tenant.fees.filter { canApply(request, it, accounts) }
             .sortedByDescending { score(it) }
-            .firstOrNull()
+        val fee = fees.firstOrNull()
             ?: return ComputeTransactionFeesResponse()
 
         // Compute the fees
@@ -57,24 +58,35 @@ class FeesCalculator {
         fee: Fee,
         accounts: Map<Long, AccountSummary?>
     ): Boolean {
-        if (request.transactionType.equals(fee.transactionType, true) && request.amount >= fee.threshold) {
-            val recipient = accounts[request.recipientId]
+        if (!request.transactionType.equals(fee.transactionType, true))
+            return false
 
-            return if (recipient?.business == true) {
-                (fee.business == true || fee.business == null) && (recipient.retail == fee.retail || fee.retail == null)
-            } else {
-                fee.business == false || fee.business == null
-            }
-        }
-        return false
+        if (request.amount < fee.threshold)
+            return false
+
+        if (!canApplyToSender(fee, request.senderId?.let { accounts[it] } ?: null))
+            return false
+
+        if (!canApplyToRecipient(fee, request.recipientId?.let { accounts[it] } ?: null))
+            return false
+
+        return true
     }
+
+    private fun canApplyToSender(fee: Fee, sender: AccountSummary?): Boolean =
+        fee.fromRetail == null || fee.fromRetail == sender?.retail
+
+    private fun canApplyToRecipient(fee: Fee, recipient: AccountSummary?): Boolean =
+        fee.toRetail == null || fee.toRetail == recipient?.retail
 
     private fun score(fee: Fee): Int {
         var value = 0
-        if (fee.business != null)
+
+        if (fee.fromRetail != null)
             value += 10
-        if (fee.business == true && fee.retail != null)
-            value += 1
+
+        if (fee.toRetail != null)
+            value += 10
 
         return value
     }

@@ -336,10 +336,15 @@ components:
         transactionType:
           type: string
           description: Type of transaction
+        senderId:
+          type: integer
+          format: int64
+          description: ID of the sender
+          nullable: true
         recipientId:
           type: integer
           format: int64
-          description: ID of the recipient of the transfer
+          description: ID of the recipient
           nullable: true
         amount:
           type: number
