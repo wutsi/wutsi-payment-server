@@ -234,7 +234,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertNull(tx.paymentRequestId)
         assertTrue(tx.business)
         assertTrue(tx.retail)
-        assertEquals(tx.created.plusMinutes(1), tx.expires)
+        assertEquals(tx.created.plusMinutes(5), tx.expires)
         assertTrue(tx.requiresApproval)
         assertNull(tx.approved)
 
