@@ -57,7 +57,7 @@ public class CreateTransferDelegate(
             }
             return CreateTransferResponse(
                 id = tx.id!!,
-                status = Status.SUCCESSFUL.name
+                status = tx.status.name
             )
         } catch (ex: PaymentException) {
             log(ex)

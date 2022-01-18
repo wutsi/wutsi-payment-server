@@ -146,7 +146,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         // THEN
         assertEquals(200, response.statusCodeValue)
 
-        assertEquals(Status.SUCCESSFUL.name, response.body.status)
+        assertEquals(Status.PENDING.name, response.body.status)
 
         val fees = 0.0
         val tx = txDao.findById(response.body.id).get()
@@ -212,7 +212,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         // THEN
         assertEquals(200, response.statusCodeValue)
 
-        assertEquals(Status.SUCCESSFUL.name, response.body.status)
+        assertEquals(Status.PENDING.name, response.body.status)
 
         val fees = 1000.0
         val tx = txDao.findById(response.body.id).get()
