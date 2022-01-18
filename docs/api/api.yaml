@@ -137,6 +137,27 @@ paths:
       security:
         - api_key: [ 'payment-read' ]
 
+  /v1/transactions/{id}/approve:
+    get:
+      operationId: "approve-transaction"
+      description: Approve a pending transaction
+      parameters:
+        - in: path
+          name: id
+          description: ID of the transaction
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Success
+        404:
+          description: Transaction not found
+      tags:
+        - Transactions
+      security:
+        - api_key: [ 'payment-manage' ]
+
   /v1/transactions/search:
     post:
       operationId: "search-transaction"
@@ -629,6 +650,19 @@ components:
           type: string
           description: ID of the payment request
           nullable: true
+        expires:
+          type: string
+          format: date-time
+          description: Expiry date
+          nullable: true
+        approved:
+          type: string
+          format: date-time
+          description: Approval date/time
+          nullable: true
+        requiresApproval:
+          type: boolean
+          description: Is this transaction should be approved by the receiver?
 
     GetTransactionResponse:
       type: object

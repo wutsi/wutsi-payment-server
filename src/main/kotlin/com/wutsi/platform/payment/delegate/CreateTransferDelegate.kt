@@ -6,6 +6,7 @@ import com.wutsi.platform.core.error.Error
 import com.wutsi.platform.core.error.exception.ForbiddenException
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.core.Status
+import com.wutsi.platform.payment.core.Status.PENDING
 import com.wutsi.platform.payment.core.Status.SUCCESSFUL
 import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.dto.CreateTransferRequest
@@ -87,7 +88,9 @@ public class CreateTransferDelegate(
         tenant: Tenant,
         accounts: Map<Long, AccountSummary?>
     ): TransactionEntity {
-        val recipient = accounts[request.recipientId]
+        val retail = isRetailTransaction(request, accounts)
+        val business = isBusinessTransaction(request, accounts)
+        val now = OffsetDateTime.now()
         val tx = transactionDao.save(
             TransactionEntity(
                 id = UUID.randomUUID().toString(),
@@ -99,11 +102,14 @@ public class CreateTransferDelegate(
                 fees = 0.0,
                 net = request.amount,
                 currency = tenant.currency,
-                status = SUCCESSFUL,
-                created = OffsetDateTime.now(),
+                status = if (retail) PENDING else SUCCESSFUL,
+                created = now,
+                expires = if (retail) now.plusMinutes(1) else null, // Expires in 1 minute
                 description = request.description,
-                business = recipient?.business ?: false,
-                retail = recipient?.retail ?: false
+                business = business,
+                retail = retail,
+                requiresApproval = retail,
+                approved = null
             )
         )
 
@@ -114,6 +120,12 @@ public class CreateTransferDelegate(
         logger.add("transaction_net", tx.net)
         return tx
     }
+
+    private fun isRetailTransaction(request: CreateTransferRequest, accounts: Map<Long, AccountSummary?>): Boolean =
+        accounts[request.recipientId]?.retail == true || accounts[securityManager.currentUserId()]?.retail == true
+
+    private fun isBusinessTransaction(request: CreateTransferRequest, accounts: Map<Long, AccountSummary?>): Boolean =
+        accounts[request.recipientId]?.business == true || accounts[securityManager.currentUserId()]?.business == true
 
     private fun validateRequest(request: CreateTransferRequest, tenant: Tenant, accounts: Map<Long, AccountSummary>) {
         if (request.recipientId == securityManager.currentUserId())

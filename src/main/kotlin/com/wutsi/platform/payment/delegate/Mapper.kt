@@ -34,7 +34,10 @@ fun TransactionEntity.toTransaction() = Transaction(
     fees = this.fees,
     net = this.net,
     status = this.status.name,
-    paymentRequestId = this.paymentRequestId
+    paymentRequestId = this.paymentRequestId,
+    expires = this.expires,
+    requiresApproval = this.requiresApproval,
+    approved = this.approved
 )
 
 fun TransactionEntity.toTransactionSummary() = TransactionSummary(

@@ -41,4 +41,7 @@ data class TransactionEntity(
     var feesToSender: Boolean = false,
     var business: Boolean = false,
     var retail: Boolean = false,
+    val expires: OffsetDateTime? = null,
+    val requiresApproval: Boolean = false,
+    val approved: OffsetDateTime? = null,
 )
