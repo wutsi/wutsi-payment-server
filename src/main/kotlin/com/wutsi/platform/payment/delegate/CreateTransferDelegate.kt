@@ -15,6 +15,7 @@ import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.entity.TransactionType.TRANSFER
 import com.wutsi.platform.payment.error.ErrorURN
 import com.wutsi.platform.payment.error.TransactionException
+import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.event.EventURN.TRANSACTION_FAILED
 import com.wutsi.platform.payment.event.EventURN.TRANSACTION_SUCCESSFULL
 import com.wutsi.platform.payment.service.FeesCalculator
@@ -49,8 +50,11 @@ public class CreateTransferDelegate(
         val tx = createTransaction(request, tenant, accounts)
         try {
             validateTransaction(tx)
-
-            onSuccess(request, tx, tenant)
+            if (tx.status == Status.PENDING) {
+                onPending(tx)
+            } else if (tx.status == Status.SUCCESSFUL) {
+                onSuccess(tx, tenant)
+            }
             return CreateTransferResponse(
                 id = tx.id!!,
                 status = Status.SUCCESSFUL.name
@@ -69,14 +73,18 @@ public class CreateTransferDelegate(
         }
     }
 
-    private fun onSuccess(request: CreateTransferRequest, tx: TransactionEntity, tenant: Tenant) {
-        updateBalance(securityManager.currentUserId(), -tx.amount, tenant)
-        updateBalance(request.recipientId, tx.net, tenant)
+    private fun onPending(tx: TransactionEntity) {
+        publish(EventURN.TRANSACTION_PENDING, tx)
+    }
+
+    public fun onSuccess(tx: TransactionEntity, tenant: Tenant) {
+        updateBalance(tx.accountId, -tx.amount, tenant)
+        updateBalance(tx.recipientId!!, tx.net, tenant)
 
         publish(TRANSACTION_SUCCESSFULL, tx)
     }
 
-    private fun onFailure(tx: TransactionEntity, ex: PaymentException) {
+    public fun onFailure(tx: TransactionEntity, ex: PaymentException) {
         tx.status = Status.FAILED
         tx.errorCode = ex.error.code.name
         transactionDao.save(tx)

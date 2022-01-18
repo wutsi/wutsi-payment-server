@@ -173,15 +173,15 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertNull(tx.approved)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
-        assertEquals(100000 - tx.amount, balance.amount)
+        assertEquals(100000.0, balance.amount)
         assertEquals(request.currency, balance.currency)
 
         val balance2 = balanceDao.findByAccountId(request.recipientId).get()
-        assertEquals(200000 + tx.net, balance2.amount)
+        assertEquals(200000.0, balance2.amount)
         assertEquals(request.currency, balance2.currency)
 
         val payload = argumentCaptor<TransactionEventPayload>()
-        verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFULL.urn), payload.capture())
+        verify(eventStream).publish(eq(EventURN.TRANSACTION_PENDING.urn), payload.capture())
         assertEquals(USER_ID, payload.firstValue.accountId)
         assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
         assertEquals(request.recipientId, payload.firstValue.recipientId)
@@ -239,15 +239,13 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertNull(tx.approved)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
-        assertEquals(100000 - tx.amount, balance.amount)
-        assertEquals(request.currency, balance.currency)
+        assertEquals(100000.0, balance.amount)
 
         val balance2 = balanceDao.findByAccountId(request.recipientId).get()
-        assertEquals(200000 + tx.net, balance2.amount)
-        assertEquals(request.currency, balance2.currency)
+        assertEquals(200000.0, balance2.amount)
 
         val payload = argumentCaptor<TransactionEventPayload>()
-        verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFULL.urn), payload.capture())
+        verify(eventStream).publish(eq(EventURN.TRANSACTION_PENDING.urn), payload.capture())
         assertEquals(USER_ID, payload.firstValue.accountId)
         assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
         assertEquals(request.recipientId, payload.firstValue.recipientId)

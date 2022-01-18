@@ -42,6 +42,6 @@ data class TransactionEntity(
     var business: Boolean = false,
     var retail: Boolean = false,
     val expires: OffsetDateTime? = null,
-    val requiresApproval: Boolean = false,
-    val approved: OffsetDateTime? = null,
+    var requiresApproval: Boolean = false,
+    var approved: OffsetDateTime? = null,
 )
