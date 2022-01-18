@@ -112,7 +112,7 @@ public class CreateTransferDelegate(
                 currency = tenant.currency,
                 status = if (retail) PENDING else SUCCESSFUL,
                 created = now,
-                expires = if (retail) now.plusMinutes(1) else null, // Expires in 1 minute
+                expires = if (retail) now.plusMinutes(5) else null, // Expires in 1 minute
                 description = request.description,
                 business = business,
                 retail = retail,
