@@ -211,7 +211,7 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertEquals(ErrorURN.TRANSACTION_FAILED.urn, response.error.code)
         assertEquals(e.error.code.name, response.error.downstreamCode)
 
-        val txId = response.error.data?.get("id").toString()
+        val txId = response.error.data?.get("transaction-id").toString()
         val tx = txDao.findById(txId).get()
         val fees = 1000.0
         assertEquals(USER_ID, tx.accountId)
@@ -267,7 +267,7 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertEquals(ErrorURN.TRANSACTION_FAILED.urn, response.error.code)
         assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, response.error.downstreamCode)
 
-        val txId = response.error.data?.get("id").toString()
+        val txId = response.error.data?.get("transaction-id").toString()
         val tx = txDao.findById(txId).get()
         val fees = 1000000.0
         assertEquals(USER_ID, tx.accountId)

@@ -18,7 +18,6 @@ import com.wutsi.platform.payment.entity.PaymentRequestEntity
 import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.payment.error.ErrorURN
-import com.wutsi.platform.payment.error.TransactionException
 import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.service.FeesCalculator
 import com.wutsi.platform.payment.service.TenantProvider
@@ -72,13 +71,7 @@ public class CreatePaymentDelegate(
             log(ex)
 
             onFailure(tx, ex)
-            throw TransactionException(
-                error = Error(
-                    code = ErrorURN.TRANSACTION_FAILED.urn,
-                    downstreamCode = tx.errorCode,
-                    data = mapOf("id" to tx.id!!)
-                )
-            )
+            throw createTransactionException(tx, ErrorURN.TRANSACTION_FAILED, ex)
         }
     }
 

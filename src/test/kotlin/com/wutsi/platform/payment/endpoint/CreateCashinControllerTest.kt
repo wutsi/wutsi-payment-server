@@ -204,7 +204,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertEquals(ErrorURN.TRANSACTION_FAILED.urn, response.error.code)
         assertEquals(e.error.code.name, response.error.downstreamCode)
 
-        val txId = response.error.data?.get("id").toString()
+        val txId = response.error.data?.get("transaction-id").toString()
         val tx = txDao.findById(txId).get()
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)

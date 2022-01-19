@@ -3,7 +3,6 @@ package com.wutsi.platform.payment.`delegate`
 import com.wutsi.platform.account.dto.AccountSummary
 import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.account.dto.SearchAccountRequest
-import com.wutsi.platform.core.error.Error
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
@@ -80,15 +79,7 @@ class CreateCashinDelegate(
             log(ex)
 
             onError(tx, ex)
-            throw TransactionException(
-                error = Error(
-                    code = ErrorURN.TRANSACTION_FAILED.urn,
-                    downstreamCode = ex.error.code.name,
-                    data = mapOf(
-                        "id" to tx.id!!
-                    )
-                )
-            )
+            throw createTransactionException(tx, ErrorURN.TRANSACTION_FAILED, ex)
         }
     }
 

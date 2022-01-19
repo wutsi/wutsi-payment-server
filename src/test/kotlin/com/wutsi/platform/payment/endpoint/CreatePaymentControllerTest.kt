@@ -141,7 +141,7 @@ public class CreatePaymentControllerTest : AbstractSecuredController() {
         assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, response.error.downstreamCode)
 
         val fees = 200000.0
-        val id = response.error.data?.get("id").toString()
+        val id = response.error.data?.get("transaction-id").toString()
         val tx = txDao.findById(id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
@@ -197,7 +197,7 @@ public class CreatePaymentControllerTest : AbstractSecuredController() {
         assertEquals(ErrorCode.EXPIRED.name, response.error.downstreamCode)
 
         val fees = 40.0
-        val id = response.error.data?.get("id").toString()
+        val id = response.error.data?.get("transaction-id").toString()
         val tx = txDao.findById(id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)

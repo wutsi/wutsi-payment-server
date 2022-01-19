@@ -69,14 +69,7 @@ public class ApproveTransactionDelegate(
             delegate.onSuccess(tx, tenant)
         } catch (ex: PaymentException) {
             delegate.onFailure(tx, ex)
-
-            throw TransactionException(
-                error = Error(
-                    code = ErrorURN.TRANSACTION_FAILED.urn,
-                    downstreamCode = tx.errorCode,
-                    data = mapOf("id" to tx.id!!)
-                )
-            )
+            throw createTransactionException(tx, ErrorURN.TRANSACTION_FAILED, ex)
         }
     }
 

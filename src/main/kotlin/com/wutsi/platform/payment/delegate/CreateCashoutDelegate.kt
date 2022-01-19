@@ -3,7 +3,6 @@ package com.wutsi.platform.payment.delegate
 import com.wutsi.platform.account.dto.AccountSummary
 import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.account.dto.SearchAccountRequest
-import com.wutsi.platform.core.error.Error
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
@@ -78,20 +77,12 @@ class CreateCashoutDelegate(
                 id = tx.id!!,
                 status = tx.status.name
             )
-        } catch (paymentEx: PaymentException) {
-            logger.add("gateway_error_code", paymentEx.error.code)
-            logger.add("gateway_supplier_error_code", paymentEx.error.supplierErrorCode)
+        } catch (ex: PaymentException) {
+            logger.add("gateway_error_code", ex.error.code)
+            logger.add("gateway_supplier_error_code", ex.error.supplierErrorCode)
 
-            onError(tx, paymentEx, tenant)
-            throw TransactionException(
-                error = Error(
-                    code = ErrorURN.TRANSACTION_FAILED.urn,
-                    downstreamCode = paymentEx.error.code.name,
-                    data = mapOf(
-                        "id" to tx.id!!
-                    )
-                )
-            )
+            onError(tx, ex, tenant)
+            throw createTransactionException(tx, ErrorURN.TRANSACTION_FAILED, ex)
         }
     }
 

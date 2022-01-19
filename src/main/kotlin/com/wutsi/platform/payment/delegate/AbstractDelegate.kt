@@ -16,6 +16,7 @@ import com.wutsi.platform.payment.dao.BalanceRepository
 import com.wutsi.platform.payment.entity.BalanceEntity
 import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.error.ErrorURN
+import com.wutsi.platform.payment.error.TransactionException
 import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.event.TransactionEventPayload
 import com.wutsi.platform.payment.service.SecurityManager
@@ -40,6 +41,21 @@ class AbstractDelegate {
 
     @Autowired
     protected lateinit var eventStream: EventStream
+
+    protected fun createTransactionException(
+        tx: TransactionEntity,
+        error: ErrorURN,
+        ex: PaymentException
+    ): TransactionException =
+        TransactionException(
+            error = Error(
+                code = error.urn,
+                downstreamCode = ex.error.code.name,
+                data = mapOf(
+                    "transaction-id" to tx.id!!
+                )
+            )
+        )
 
     protected fun log(ex: PaymentException) {
         logger.add("gateway_error_code", ex.error.code)
