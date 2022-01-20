@@ -50,6 +50,33 @@ public class GetTransactionControllerTest : AbstractSecuredController() {
     }
 
     @Test
+    public fun recipientCanAccessTransaction() {
+        // WHEN
+        val url = "http://localhost:$port/v1/transactions/200"
+        val response = rest.getForEntity(url, GetTransactionResponse::class.java)
+
+        // THEN
+        assertEquals(200, response.statusCodeValue)
+
+        val tx = response.body.transaction
+        assertEquals("XAF", tx.currency)
+        assertEquals("TRANSFER", tx.type)
+        assertEquals("SUCCESSFUL", tx.status)
+        assertEquals("sample transaction", tx.description)
+        assertEquals("NO_ERROR", tx.errorCode)
+        assertEquals("fin-1", tx.financialTransactionId)
+        assertEquals("gw-1", tx.gatewayTransactionId)
+        assertEquals("MTN", tx.paymentMethodProvider)
+        assertEquals("ERR-0001", tx.supplierErrorCode)
+        assertEquals("xxx", tx.paymentMethodToken)
+        assertEquals(1000.0, tx.amount)
+        assertEquals(100.0, tx.fees)
+        assertEquals(900.0, tx.net)
+        assertEquals(1L, tx.recipientId)
+        assertEquals(200L, tx.accountId)
+    }
+
+    @Test
     public fun notFound() {
         // WHEN
         val url = "http://localhost:$port/v1/transactions/9999"
