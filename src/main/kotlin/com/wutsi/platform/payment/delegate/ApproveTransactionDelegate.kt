@@ -68,7 +68,7 @@ public class ApproveTransactionDelegate(
             dao.save(tx)
             delegate.onSuccess(tx, tenant)
         } catch (ex: PaymentException) {
-            delegate.onFailure(tx, ex)
+            delegate.onError(tx, ex)
             throw createTransactionException(tx, ErrorURN.TRANSACTION_FAILED, ex)
         }
     }

@@ -62,7 +62,7 @@ public class CreateTransferDelegate(
         } catch (ex: PaymentException) {
             log(ex)
 
-            onFailure(tx, ex)
+            onError(tx, ex)
             throw createTransactionException(tx, ErrorURN.TRANSACTION_FAILED, ex)
         }
     }
@@ -78,7 +78,8 @@ public class CreateTransferDelegate(
         publish(TRANSACTION_SUCCESSFULL, tx)
     }
 
-    public fun onFailure(tx: TransactionEntity, ex: PaymentException) {
+    @Transactional
+    public fun onError(tx: TransactionEntity, ex: PaymentException) {
         tx.status = Status.FAILED
         tx.errorCode = ex.error.code.name
         transactionDao.save(tx)

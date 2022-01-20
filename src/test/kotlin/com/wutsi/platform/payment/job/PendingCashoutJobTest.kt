@@ -37,6 +37,11 @@ internal class PendingCashoutJobTest : AbstractSecuredController() {
     private lateinit var eventStream: EventStream
 
     @Test
+    fun getJobName() {
+        Assertions.assertEquals("pending-cashout", job.getJobName())
+    }
+
+    @Test
     fun run() {
         // GIVEN
         val resp = GetTransferResponse(

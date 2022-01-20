@@ -37,6 +37,11 @@ internal class PendingCashinJobTest : AbstractSecuredController() {
     private lateinit var eventStream: EventStream
 
     @Test
+    fun getJobName() {
+        assertEquals("pending-cashin", job.getJobName())
+    }
+
+    @Test
     fun succes() {
         // GIVEN
         val resp = GetPaymentResponse(
