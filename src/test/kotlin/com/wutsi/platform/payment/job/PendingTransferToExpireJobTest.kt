@@ -30,7 +30,6 @@ internal class PendingTransferToExpireJobTest : AbstractSecuredController() {
     @MockBean
     private lateinit var eventStream: EventStream
 
-
     @Test
     fun run() {
         // WHEN
@@ -53,7 +52,6 @@ internal class PendingTransferToExpireJobTest : AbstractSecuredController() {
         verify(eventStream, times(1)).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
         assertEquals("101", payload.firstValue.transactionId)
     }
-
 
     @Test
     fun getJobName() {
