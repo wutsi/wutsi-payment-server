@@ -35,7 +35,7 @@
     <flyway.version>7.15.0</flyway.version>
     <wutsi-platform-core.version>0.0.96</wutsi-platform-core.version>
     <wutsi-platform-payment.version>0.0.67</wutsi-platform-payment.version>
-    <wutsi-account.version>1.0.27</wutsi-account.version>
+    <wutsi-account.version>1.0.29</wutsi-account.version>
     <wutsi-security.version>0.0.16</wutsi-security.version>
     <wutsi-tenant.version>0.0.20</wutsi-tenant.version>
   </properties>
