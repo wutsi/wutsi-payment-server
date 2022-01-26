@@ -31,5 +31,6 @@ public data class Transaction(
     public val expires: OffsetDateTime? = null,
     @get:DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
     public val approved: OffsetDateTime? = null,
-    public val requiresApproval: Boolean = false
+    public val requiresApproval: Boolean = false,
+    public val feesToSender: Boolean = false
 )

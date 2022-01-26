@@ -663,6 +663,9 @@ components:
         requiresApproval:
           type: boolean
           description: Is this transaction should be approved by the receiver?
+        feesToSender:
+          type: boolean
+          description: Fees are applied to sender?
 
     GetTransactionResponse:
       type: object
