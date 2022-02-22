@@ -404,6 +404,10 @@ components:
           type: string
           description: Description of the transfer
           nullable: true
+        orderId:
+          type: string
+          description: ID of the order
+          nullable: true
       required:
         - currency
 
@@ -649,6 +653,10 @@ components:
         paymentRequestId:
           type: string
           description: ID of the payment request
+          nullable: true
+        orderId:
+          type: string
+          description: ID of the order associated with the transaction
           nullable: true
         expires:
           type: string

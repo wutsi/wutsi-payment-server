@@ -44,4 +44,5 @@ data class TransactionEntity(
     val expires: OffsetDateTime? = null,
     var requiresApproval: Boolean = false,
     var approved: OffsetDateTime? = null,
+    var orderId: String? = null,
 )

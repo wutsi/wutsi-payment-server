@@ -38,7 +38,8 @@ fun TransactionEntity.toTransaction() = Transaction(
     expires = this.expires,
     requiresApproval = this.requiresApproval,
     approved = this.approved,
-    feesToSender = this.feesToSender
+    feesToSender = this.feesToSender,
+    orderId = this.orderId
 )
 
 fun TransactionEntity.toTransactionSummary() = TransactionSummary(

@@ -32,6 +32,7 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.web.client.HttpClientErrorException
+import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
@@ -73,7 +74,8 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
             amount = 50000.0,
             currency = "XAF",
             recipientId = 200,
-            description = "Yo man"
+            description = "Yo man",
+            orderId = UUID.randomUUID().toString()
         )
         val response = rest.postForEntity(url, request, CreateTransferResponse::class.java)
 
@@ -105,6 +107,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertNull(tx.expires)
         assertFalse(tx.requiresApproval)
         assertNull(tx.approved)
+        assertEquals(request.orderId, tx.orderId)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(100000 - tx.amount, balance.amount)

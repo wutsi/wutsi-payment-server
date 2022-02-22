@@ -38,6 +38,7 @@ public class CreateTransferDelegate(
         logger.add("amount", request.amount)
         logger.add("recipient_id", request.recipientId)
         logger.add("description", request.description)
+        logger.add("order_id", request.orderId)
 
         val tenant = tenantProvider.get()
         val accounts = accountApi.searchAccount(
@@ -112,7 +113,8 @@ public class CreateTransferDelegate(
                 business = business,
                 retail = retail,
                 requiresApproval = retail,
-                approved = null
+                approved = null,
+                orderId = request.orderId
             )
         )
 
