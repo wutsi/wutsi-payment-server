@@ -2,6 +2,8 @@ package com.wutsi.platform.payment.`delegate`
 
 import com.wutsi.platform.account.dto.AccountSummary
 import com.wutsi.platform.account.dto.SearchAccountRequest
+import com.wutsi.platform.core.error.Error
+import com.wutsi.platform.core.error.exception.ForbiddenException
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.core.Status.PENDING
@@ -131,6 +133,13 @@ public class CreateTransferDelegate(
         accounts[request.recipientId]?.business == true || accounts[securityManager.currentUserId()]?.business == true
 
     private fun validateRequest(request: CreateTransferRequest, tenant: Tenant, accounts: Map<Long, AccountSummary>) {
+        if (request.recipientId == securityManager.currentUserId())
+            throw ForbiddenException(
+                error = Error(
+                    code = ErrorURN.SELF_TRANSACTION_ERROR.urn
+                )
+            )
+
         validateCurrency(request.currency, tenant)
         ensureCurrentUserActive(accounts)
         ensureRecipientActive(request.recipientId, accounts)

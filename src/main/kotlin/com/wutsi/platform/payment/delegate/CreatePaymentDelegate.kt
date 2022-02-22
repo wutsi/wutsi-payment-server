@@ -129,6 +129,13 @@ public class CreatePaymentDelegate(
                 )
             )
 
+        if (request.accountId == securityManager.currentUserId())
+            throw ForbiddenException(
+                error = Error(
+                    code = ErrorURN.SELF_TRANSACTION_ERROR.urn
+                )
+            )
+
         val recipient = accounts[request.accountId]!!
         if (!recipient.business)
             throw ForbiddenException(

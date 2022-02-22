@@ -10,6 +10,7 @@ enum class ErrorURN(val urn: String) {
     RECIPIENT_NOT_ACTIVE("urn:wutsi:error:payment:recipient-not-found"),
     ILLEGAL_TRANSACTION_ACCESS("urn:wutsi:error:payment:illegal-transaction-access"),
     ILLEGAL_TENANT_ACCESS("urn:wutsi:error:account:illegal-tenant-access"),
+    SELF_TRANSACTION_ERROR("urn:wutsi:error:account:self-transaction-error"),
     RESTRICTED_TO_BUSINESS_ACCOUNT("urn:wutsi:error:account:restricted-to-business-account"),
     ILLEGAL_APPROVER("urn:wutsi:error:account:illegal-approver"),
     TRANSACTION_NOT_PENDING("urn:wutsi:error:account:transaction-not-pending"),

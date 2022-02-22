@@ -371,4 +371,28 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
         verify(eventStream, never()).publish(any(), any())
     }
+
+    @Test
+    public fun selfTransaction() {
+        // WHEN
+        val request = CreateTransferRequest(
+            amount = 100.0,
+            currency = "XAF",
+            recipientId = USER_ID,
+            description = "Yo man"
+        )
+        val e = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateCashinResponse::class.java)
+        }
+
+        // THEN
+        assertEquals(403, e.rawStatusCode)
+
+        val response = ObjectMapper().readValue(e.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.SELF_TRANSACTION_ERROR.urn, response.error.code)
+
+        assertNull(response.error.data?.get("id"))
+
+        verify(eventStream, never()).publish(any(), any())
+    }
 }
