@@ -2,7 +2,6 @@ package com.wutsi.platform.payment.`delegate`
 
 import com.wutsi.platform.core.logging.KVLogger
 import com.wutsi.platform.payment.core.Status
-import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.dto.SearchTransactionRequest
 import com.wutsi.platform.payment.dto.SearchTransactionResponse
 import com.wutsi.platform.payment.entity.TransactionEntity
@@ -14,7 +13,6 @@ import javax.persistence.Query
 
 @Service
 public class SearchTransactionDelegate(
-    private val dao: TransactionRepository,
     private val tenantProvider: TenantProvider,
     private val logger: KVLogger,
     private val em: EntityManager,
@@ -23,6 +21,7 @@ public class SearchTransactionDelegate(
         logger.add("account_id", request.accountId)
         logger.add("status", request.status)
         logger.add("type", request.type)
+        logger.add("order_id", request.orderId)
         logger.add("payment_request_id", request.paymentRequestId)
         logger.add("limit", request.limit)
         logger.add("offset", request.offset)
@@ -64,6 +63,8 @@ public class SearchTransactionDelegate(
             criteria.add("a.status = :status")
         if (request.type != null)
             criteria.add("a.type = :type")
+        if (request.orderId != null)
+            criteria.add("a.orderId = :order_id")
         return criteria.joinToString(separator = " AND ")
     }
 
@@ -77,5 +78,7 @@ public class SearchTransactionDelegate(
             query.setParameter("status", Status.valueOf(request.status.uppercase()))
         if (request.type != null)
             query.setParameter("type", TransactionType.valueOf(request.type.uppercase()))
+        if (request.orderId != null)
+            query.setParameter("order_id", request.orderId)
     }
 }

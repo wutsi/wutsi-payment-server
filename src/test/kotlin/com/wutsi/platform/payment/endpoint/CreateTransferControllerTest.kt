@@ -127,6 +127,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertEquals(tx.amount, payload.firstValue.amount)
         assertEquals(tx.net, payload.firstValue.net)
         assertEquals(tx.currency, payload.firstValue.currency)
+        assertEquals(tx.orderId, payload.firstValue.orderId)
     }
 
     @Test

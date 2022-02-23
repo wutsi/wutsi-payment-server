@@ -55,4 +55,24 @@ public class SearchTransactionControllerTest : AbstractSecuredController() {
 
         assertEquals("30", txs[0].id)
     }
+
+    @Test
+    public fun searchByOrderId() {
+        // WHEN
+        val request = SearchTransactionRequest(
+            limit = 30,
+            offset = 0,
+            orderId = "ORDER-4",
+        )
+        val url = "http://localhost:$port/v1/transactions/search"
+        val response = rest.postForEntity(url, request, SearchTransactionResponse::class.java)
+
+        // THEN
+        assertEquals(200, response.statusCodeValue)
+
+        val txs = response.body.transactions
+        assertEquals(1, txs.size)
+
+        assertEquals("40", txs[0].id)
+    }
 }

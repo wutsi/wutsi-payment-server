@@ -9,6 +9,7 @@ public data class SearchTransactionRequest(
     public val paymentRequestId: String? = null,
     public val type: String? = null,
     public val status: String? = null,
+    public val orderId: String? = null,
     public val limit: Int = 30,
     public val offset: Int = 0
 )

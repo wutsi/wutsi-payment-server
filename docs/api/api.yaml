@@ -557,6 +557,10 @@ components:
           type: string
           description: Status of the transaction
           nullable: true
+        orderId:
+          type: string
+          description: Order ID
+          nullable: true
         limit:
           type: integer
           default: 30
