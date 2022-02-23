@@ -151,14 +151,8 @@ class AbstractDelegate {
             eventStream.publish(
                 type.urn,
                 TransactionEventPayload(
-                    tenantId = tx.tenantId,
                     transactionId = tx.id!!,
                     type = tx.type.name,
-                    amount = tx.amount,
-                    net = tx.net,
-                    currency = tx.currency,
-                    accountId = tx.accountId,
-                    recipientId = tx.recipientId,
                     orderId = tx.orderId
                 )
             )

@@ -119,14 +119,8 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFUL.urn), payload.capture())
-        assertEquals(USER_ID, payload.firstValue.accountId)
         assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
-        assertEquals(request.recipientId, payload.firstValue.recipientId)
         assertEquals(tx.id, payload.firstValue.transactionId)
-        assertEquals(tx.tenantId, payload.firstValue.tenantId)
-        assertEquals(tx.amount, payload.firstValue.amount)
-        assertEquals(tx.net, payload.firstValue.net)
-        assertEquals(tx.currency, payload.firstValue.currency)
         assertEquals(tx.orderId, payload.firstValue.orderId)
     }
 
@@ -186,14 +180,8 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_PENDING.urn), payload.capture())
-        assertEquals(USER_ID, payload.firstValue.accountId)
         assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
-        assertEquals(request.recipientId, payload.firstValue.recipientId)
         assertEquals(tx.id, payload.firstValue.transactionId)
-        assertEquals(tx.tenantId, payload.firstValue.tenantId)
-        assertEquals(tx.amount, payload.firstValue.amount)
-        assertEquals(tx.net, payload.firstValue.net)
-        assertEquals(tx.currency, payload.firstValue.currency)
     }
 
     @Test
@@ -250,14 +238,8 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_PENDING.urn), payload.capture())
-        assertEquals(USER_ID, payload.firstValue.accountId)
         assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
-        assertEquals(request.recipientId, payload.firstValue.recipientId)
         assertEquals(tx.id, payload.firstValue.transactionId)
-        assertEquals(tx.tenantId, payload.firstValue.tenantId)
-        assertEquals(tx.amount, payload.firstValue.amount)
-        assertEquals(tx.net, payload.firstValue.net)
-        assertEquals(tx.currency, payload.firstValue.currency)
     }
 
     @Test
@@ -305,14 +287,8 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
-        assertEquals(USER_ID, payload.firstValue.accountId)
         assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
-        assertEquals(request.recipientId, payload.firstValue.recipientId)
         assertEquals(tx.id, payload.firstValue.transactionId)
-        assertEquals(tx.tenantId, payload.firstValue.tenantId)
-        assertEquals(tx.amount, payload.firstValue.amount)
-        assertEquals(tx.net, payload.firstValue.net)
-        assertEquals(tx.currency, payload.firstValue.currency)
     }
 
     @Test
