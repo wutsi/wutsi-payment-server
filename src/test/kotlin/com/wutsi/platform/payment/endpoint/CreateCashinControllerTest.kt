@@ -115,7 +115,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertEquals(request.currency, balance.currency)
 
         val payload = argumentCaptor<TransactionEventPayload>()
-        verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFULL.urn), payload.capture())
+        verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFUL.urn), payload.capture())
         assertEquals(USER_ID, payload.firstValue.accountId)
         assertEquals(TransactionType.CASHIN.name, payload.firstValue.type)
         assertNull(payload.firstValue.recipientId)

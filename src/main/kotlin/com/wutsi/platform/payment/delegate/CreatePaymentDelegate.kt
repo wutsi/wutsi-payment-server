@@ -79,7 +79,7 @@ public class CreatePaymentDelegate(
         updateBalance(securityManager.currentUserId(), -tx.amount, tenant)
         updateBalance(request.accountId, tx.net, tenant)
 
-        publish(EventURN.TRANSACTION_SUCCESSFULL, tx)
+        publish(EventURN.TRANSACTION_SUCCESSFUL, tx)
     }
 
     private fun onFailure(tx: TransactionEntity, ex: PaymentException) {

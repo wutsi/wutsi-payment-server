@@ -68,7 +68,7 @@ internal class PendingCashinJobTest : AbstractSecuredController() {
         assertEquals("fin-111", tx111.financialTransactionId)
         assertEquals("gw-111", tx111.gatewayTransactionId)
 
-        verify(eventStream, times(2)).publish(eq(EventURN.TRANSACTION_SUCCESSFULL.urn), any())
+        verify(eventStream, times(2)).publish(eq(EventURN.TRANSACTION_SUCCESSFUL.urn), any())
     }
 
     @Test

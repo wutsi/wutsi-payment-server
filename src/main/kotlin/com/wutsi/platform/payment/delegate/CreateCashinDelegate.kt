@@ -170,6 +170,6 @@ class CreateCashinDelegate(
         tx.financialTransactionId = response.financialTransactionId
         transactionDao.save(tx)
 
-        publish(EventURN.TRANSACTION_SUCCESSFULL, tx)
+        publish(EventURN.TRANSACTION_SUCCESSFUL, tx)
     }
 }

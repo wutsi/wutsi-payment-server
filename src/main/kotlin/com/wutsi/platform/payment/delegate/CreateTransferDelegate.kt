@@ -17,7 +17,7 @@ import com.wutsi.platform.payment.error.ErrorURN
 import com.wutsi.platform.payment.error.TransactionException
 import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.event.EventURN.TRANSACTION_FAILED
-import com.wutsi.platform.payment.event.EventURN.TRANSACTION_SUCCESSFULL
+import com.wutsi.platform.payment.event.EventURN.TRANSACTION_SUCCESSFUL
 import com.wutsi.platform.payment.service.FeesCalculator
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.tenant.dto.Tenant
@@ -76,7 +76,7 @@ public class CreateTransferDelegate(
         updateBalance(tx.accountId, -tx.amount, tenant)
         updateBalance(tx.recipientId!!, tx.net, tenant)
 
-        publish(TRANSACTION_SUCCESSFULL, tx)
+        publish(TRANSACTION_SUCCESSFUL, tx)
     }
 
     @Transactional

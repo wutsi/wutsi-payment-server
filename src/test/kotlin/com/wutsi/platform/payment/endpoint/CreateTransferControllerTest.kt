@@ -118,7 +118,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertEquals(request.currency, balance2.currency)
 
         val payload = argumentCaptor<TransactionEventPayload>()
-        verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFULL.urn), payload.capture())
+        verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFUL.urn), payload.capture())
         assertEquals(USER_ID, payload.firstValue.accountId)
         assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
         assertEquals(request.recipientId, payload.firstValue.recipientId)
