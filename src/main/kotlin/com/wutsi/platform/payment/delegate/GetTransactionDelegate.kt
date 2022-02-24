@@ -30,7 +30,7 @@ public class GetTransactionDelegate(
                 )
             }
 
-        securityManager.checkOwnership(tx) && securityManager.checkTenant(tx)
+        securityManager.checkTenant(tx)
 
         return GetTransactionResponse(
             transaction = tx.toTransaction()

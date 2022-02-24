@@ -106,19 +106,4 @@ public class GetTransactionControllerTest : AbstractSecuredController() {
         val response = objectMapper.readValue(ex.responseBodyAsString, ErrorResponse::class.java)
         assertEquals(ErrorURN.ILLEGAL_TRANSACTION_ACCESS.urn, response.error.code)
     }
-
-    @Test
-    public fun invalidTenant() {
-        // WHEN
-        val url = "http://localhost:$port/v1/transactions/5"
-        val ex = assertThrows<HttpClientErrorException> {
-            rest.getForEntity(url, GetTransactionResponse::class.java)
-        }
-
-        // THEN
-        assertEquals(403, ex.rawStatusCode)
-
-        val response = objectMapper.readValue(ex.responseBodyAsString, ErrorResponse::class.java)
-        assertEquals(ErrorURN.ILLEGAL_TENANT_ACCESS.urn, response.error.code)
-    }
 }

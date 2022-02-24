@@ -49,15 +49,4 @@ class SecurityManager(
             )
         return true
     }
-
-    fun checkOwnership(tx: TransactionEntity): Boolean {
-        val userId = currentUserId()
-        if (tx.accountId != userId && tx.recipientId != userId)
-            throw ForbiddenException(
-                error = Error(
-                    code = ErrorURN.ILLEGAL_TRANSACTION_ACCESS.urn
-                )
-            )
-        return true
-    }
 }
