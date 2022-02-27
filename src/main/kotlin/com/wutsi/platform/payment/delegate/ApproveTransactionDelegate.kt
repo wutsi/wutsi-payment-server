@@ -16,6 +16,7 @@ import com.wutsi.platform.payment.error.ErrorURN
 import com.wutsi.platform.payment.error.TransactionException
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.tenant.dto.Tenant
+import org.springframework.data.jpa.domain.AbstractPersistable_.id
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.OffsetDateTime
@@ -50,20 +51,9 @@ public class ApproveTransactionDelegate(
         try {
             checkApprovalRules(tx)
 
-            // Check expiry
-            val now = OffsetDateTime.now()
-            if (tx.expires != null && now.isAfter(tx.expires)) {
-                throw PaymentException(
-                    error = com.wutsi.platform.payment.core.Error(
-                        code = ErrorCode.EXPIRED,
-                        transactionId = id
-                    )
-                )
-            }
-
             // Approve
             tx.status = Status.SUCCESSFUL
-            tx.approved = now
+            tx.approved = OffsetDateTime.now()
             tx.requiresApproval = false
             dao.save(tx)
             delegate.onSuccess(tx, tenant)
@@ -95,6 +85,17 @@ public class ApproveTransactionDelegate(
                     message = "You are not authorize to approve ${tx.type}"
                 )
             )
+
+        // Check expiry
+        val now = OffsetDateTime.now()
+        if (tx.expires != null && now.isAfter(tx.expires)) {
+            throw PaymentException(
+                error = com.wutsi.platform.payment.core.Error(
+                    code = ErrorCode.EXPIRED,
+                    transactionId = tx.id!!
+                )
+            )
+        }
     }
 
     private fun checkPermission(tx: TransactionEntity, tenant: Tenant) {

@@ -1,0 +1,14 @@
+# Transfer
+
+## Transfer Flow
+This operation transfers funds between 2 wallets
+
+![](https://www.plantuml.com/plantuml/png/hPB1pjem48JlVWg_W5-0GmKDeK92QKNWNBdE12mvThfUH-Bjwm0LhMYYIlalEKnsvijaTnrP4wVE2M6SXMUfFic2e1adqZwse29ufk0SQ2NvgOcfaNVx5WuNpVZ3BBHZIVYP45aDsjb6imrUo0dhTAXSIVYO22h2Do2b3Ti1Yv881dPOcFLi1MKI4Rov2VX6YEcakpOIWyzsSv-R6Ty1iT3E9ASvqEW8NPyohmNY_s6Ew4EqsNtBzgW7FFR2huaFtiqrCnHyI9UhQfDleiZwExJFglKNCOii1tYkcQ2xp1a12gCaJyTDLM-Aq_vhzVrRMMttrHSXu2B-OiHa369iavl7VDPEUuFNhrh9rD_t-kFnHeNsMMzvpk_3MrwyFXT5MTUxy-4VtLjj7PgvtlDdea0KI3NW71INV-nkip-KM_4uXdL-fixz0W00)
+
+## Transfer Approval
+When a transfer requires approval
+- Its created with a status PENDING
+- Then it requires the receiver to approve it in order to complete the transaction
+
+
+![](https:////www.plantuml.com/plantuml/png/hT51Ri8m50JGlK_X2_W2B2fG21LIbLO4rjLNCbIMZEr-VqVbzeth1InQr4MsySnJnbud8PPySKeDpiABDazw4oE72KScdsWG6tmJl71m3hpIL4_LezJloXOE7oIu6OgSw8GXivMhcS3sR0SgMQKV08zvlTBmAJDCJc1Zas4CDfPrYwWJEJiQWQSPX1_hYZg9dE7iiFmKkKQKASV3fkjtxM4HD0b9JeLzQxljldjUHBtT13wpPOoBg3w8mLSiNhtqXa5IEsVmFNVdpFqSHvAxlwgZ_rS_88Pa9V1rXX9DcAVyNMmdUEbbFh-KEFneK3xfdqVRDCVzQ_VUdvgcxVlTwKKfjPup-UA-0G00)
