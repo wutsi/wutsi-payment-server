@@ -77,7 +77,8 @@ class FeesCalculator {
         fee.fromRetail == null || fee.fromRetail == sender?.retail
 
     private fun canApplyToRecipient(fee: Fee, recipient: AccountSummary?): Boolean =
-        fee.toRetail == null || fee.toRetail == recipient?.retail
+        ((fee.toRetail == null && fee.toBusinees == null) || fee.toRetail == recipient?.retail) ||
+        (fee.toBusinees == true && recipient?.business == true)
 
     private fun score(fee: Fee): Int {
         var value = 0
@@ -87,6 +88,9 @@ class FeesCalculator {
 
         if (fee.toRetail != null)
             value += 10
+
+        if (fee.toBusinees != null)
+            value += 5
 
         return value
     }

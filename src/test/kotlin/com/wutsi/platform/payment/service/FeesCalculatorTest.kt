@@ -46,16 +46,24 @@ internal class FeesCalculatorTest {
                     percent = 0.00
                 ),
                 Fee(
-                    transactionType = "payment",
+                    transactionType = "transfer",
                     applyToSender = false,
+                    toBusinees = true,
                     amount = 0.0,
-                    percent = 0.04
+                    percent = 0.05
                 ),
                 Fee(
                     transactionType = "cashout",
                     applyToSender = true,
                     amount = 0.0,
                     percent = 0.01
+                ),
+                Fee(
+                    transactionType = "payment",
+                    applyToSender = false,
+                    toBusinees = true,
+                    amount = 0.0,
+                    percent = 0.05
                 ),
             )
         )
@@ -112,9 +120,33 @@ internal class FeesCalculatorTest {
     }
 
     @Test
+    fun transferToBusiness() {
+        // GIVEN
+        val accounts =
+            listOf(AccountSummary(id = ACCOUNT_ID), AccountSummary(id = RECIPIENT_ID, business = true))
+                .map { it.id to it }.toMap()
+
+        val tx = TransactionEntity(
+            type = TransactionType.TRANSFER,
+            accountId = ACCOUNT_ID,
+            recipientId = RECIPIENT_ID,
+            amount = 50000.0,
+        )
+
+        // WHEN
+        val fees = calculator.computeFees(tx, tenant, accounts)
+
+        // THEN
+        assertEquals(2500.0, fees)
+        assertEquals(50000.0, tx.amount)
+        assertEquals(2500.0, tx.fees)
+        assertEquals(47500.0, tx.net)
+        assertEquals(false, tx.feesToSender)
+    }
+    @Test
     fun transferBelowThreshold() {
         // GIVEN
-        val accounts = listOf(AccountSummary(id = ACCOUNT_ID), AccountSummary(id = RECIPIENT_ID, business = true))
+        val accounts = listOf(AccountSummary(id = ACCOUNT_ID), AccountSummary(id = RECIPIENT_ID, business = false))
             .map { it.id to it }.toMap()
 
         val tx = TransactionEntity(
@@ -138,7 +170,7 @@ internal class FeesCalculatorTest {
     @Test
     fun transferAboveThreshold() {
         // GIVEN
-        val accounts = listOf(AccountSummary(id = ACCOUNT_ID), AccountSummary(id = RECIPIENT_ID, business = true))
+        val accounts = listOf(AccountSummary(id = ACCOUNT_ID), AccountSummary(id = RECIPIENT_ID, business = false))
             .map { it.id to it }.toMap()
 
         val tx = TransactionEntity(
@@ -176,10 +208,10 @@ internal class FeesCalculatorTest {
         val fees = calculator.computeFees(tx, tenant, accounts)
 
         // THEN
-        assertEquals(2000.0, fees)
+        assertEquals(2500.0, fees)
         assertEquals(50000.0, tx.amount)
-        assertEquals(2000.0, tx.fees)
-        assertEquals(48000.0, tx.net)
+        assertEquals(2500.0, tx.fees)
+        assertEquals(47500.0, tx.net)
         assertEquals(false, tx.feesToSender)
     }
 
