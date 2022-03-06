@@ -1,5 +1,6 @@
 package com.wutsi.platform.payment.endpoint
 
+import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dto.SearchTransactionRequest
 import com.wutsi.platform.payment.dto.SearchTransactionResponse
 import org.junit.jupiter.api.Test
@@ -74,5 +75,22 @@ public class SearchTransactionControllerTest : AbstractSecuredController() {
         assertEquals(1, txs.size)
 
         assertEquals("40", txs[0].id)
+    }
+
+    @Test
+    public fun searchByStatus() {
+        // WHEN
+        val request = SearchTransactionRequest(
+            limit = 30,
+            status = listOf(Status.PENDING.name, Status.SUCCESSFUL.name)
+        )
+        val url = "http://localhost:$port/v1/transactions/search"
+        val response = rest.postForEntity(url, request, SearchTransactionResponse::class.java)
+
+        // THEN
+        assertEquals(200, response.statusCodeValue)
+
+        val txs = response.body.transactions
+        assertEquals(4, txs.size)
     }
 }

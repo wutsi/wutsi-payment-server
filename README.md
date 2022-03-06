@@ -6,14 +6,59 @@
 
 API for managing payments.&#10;This API allows to&#10;- Cash in: Move money from owner&#39;s account into the wallet&#10;- Cash out: Move monet from wallet to owner&#39;s account&#10;- Transfer: Transfer money between wallets&#10;- Search transactions&#10;
 
-# Architecture
+# Installation Prerequisites
+## Database Setup
+- Install postgres
+- Create account with username/password: `postgres`/`postgres`
+- Create a database named `wutsi-payment`
 
-![](https://www.plantuml.com/plantuml/png/SoWkIImgAStDuU9ApiyjoCzBpIjHA4Yip0NHrLmAqUMb9SMPkb2HM0NboDISdFnohbekhi3IrD9K1LqC9Lne0a0bhXN96ObvwQbSc7AwTZ034fEJyqk1ObnS3gbvAK0d0G00)
+## Configure Github
+- Generate a Github token for accessing packages from GibHub
+  - Goto [https://github.com/settings/tokens](https://github.com/settings/tokens)
+  - Click on `Generate New Token`
+  - Give a value to your token
+  - Select the permissions `read:packages`
+  - Generate the token
+- Set your GitHub environment variables on your machine:
+  - `GITHUB_TOKEN = your-token-value`
+  - `GITHUB_USER = your-github-user-name`
+
+## Maven Setup
+- Download Instance [Maven 3.6+](https://maven.apache.org/download.cgi)
+- Add into `~/m2/settings.xml`
+```
+    <settings>
+        ...
+        <servers>
+            ...
+            <server>
+              <id>github</id>
+              <username>${env.GITHUB_USER}</username>
+              <password>${env.GITHUB_TOKEN}</password>
+            </server>
+        </servers>
+    </settings>
+```
+
+## Usage
+- Install
+```
+$ git clone git@github.com:wutsi/wutsi-payment-server.git
+```
+
+- Build
+```
+$ cd wutsi-payment-server
+$ mvn clean install
+```
+
+- Launch the API
+```
+$ mvn spring-boot:run
+```
+
+That's it... the API is up and running! Start sending requests :-)
 
 # Links
 - [API](https://wutsi.github.io/wutsi-payment-server/api/)
-- [Event](docs/Event.md)
-- Payment Operations
-  - [Cashin](docs/Cashin.md)
-  - [Cashout](docs/Cashout.md)
-  - [Transfer](docs/Transfer.md)
+- [Documentation](docs/)

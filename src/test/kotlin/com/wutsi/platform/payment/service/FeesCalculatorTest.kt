@@ -48,7 +48,7 @@ internal class FeesCalculatorTest {
                 Fee(
                     transactionType = "transfer",
                     applyToSender = false,
-                    toBusinees = true,
+                    toBusiness = true,
                     amount = 0.0,
                     percent = 0.05
                 ),
@@ -61,7 +61,7 @@ internal class FeesCalculatorTest {
                 Fee(
                     transactionType = "payment",
                     applyToSender = false,
-                    toBusinees = true,
+                    toBusiness = true,
                     amount = 0.0,
                     percent = 0.05
                 ),
