@@ -18,7 +18,7 @@ public class CreatePaymentRequestDelegate(
     public fun invoke(request: CreatePaymentRequestRequest): CreatePaymentRequestResponse {
         logger.add("currency", request.currency)
         logger.add("amount", request.amount)
-        logger.add("invoice_id", request.invoiceId)
+        logger.add("order_id", request.orderId)
         logger.add("description", request.description)
         logger.add("time_to_live", request.timeToLive)
 
@@ -34,7 +34,7 @@ public class CreatePaymentRequestDelegate(
                 amount = request.amount,
                 currency = request.currency,
                 description = request.description,
-                invoiceId = request.invoiceId,
+                orderId = request.orderId,
                 created = now,
                 expires = request.timeToLive?.let { now.plusSeconds(it.toLong()) }
             )

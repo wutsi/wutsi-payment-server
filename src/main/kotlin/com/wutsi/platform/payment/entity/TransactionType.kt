@@ -5,5 +5,4 @@ enum class TransactionType {
     CASHIN,
     CASHOUT,
     TRANSFER,
-    PAYMENT,
 }

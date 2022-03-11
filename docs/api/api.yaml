@@ -89,29 +89,6 @@ paths:
       security:
         - api_key: [ 'payment-manage' ]
 
-  /v1/transactions/payments:
-    post:
-      operationId: "create-payment"
-      description: |
-        Perform a payment. This request is performed by customers for paying merchants.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreatePaymentRequest'
-      responses:
-        200:
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CreatePaymentResponse'
-      tags:
-        - Transactions
-      security:
-        - api_key: [ 'payment-manage' ]
-
   /v1/transactions/{id}:
     get:
       operationId: "get-transaction"
@@ -407,6 +384,10 @@ components:
         orderId:
           type: string
           description: ID of the order
+          nullable: true
+        paymentRequestId:
+          type: string
+          description: ID of the payment request
           nullable: true
       required:
         - currency
@@ -708,9 +689,9 @@ components:
           description: Description of the transaction
           nullable: true
           maxLength: 100
-        invoiceId:
+        orderId:
           type: string
-          description: ID of the invoice associated with the payment
+          description: ID of the order associated with the payment
           nullable: true
           maxLength: 36
         timeToLive:
@@ -725,28 +706,6 @@ components:
           type: string
           format: uuid
           description: ID of the payment request
-
-    CreatePaymentRequest:
-      type: object
-      properties:
-        requestId:
-          type: string
-          format: uuid
-          description: ID of the payment request
-
-    CreatePaymentResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          description: ID of the payment request
-        status:
-          description: Status of the payment request
-          type: string
-          enum:
-            - PENDING
-            - SUCESS
 
     PaymentRequest:
       type: object

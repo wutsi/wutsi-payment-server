@@ -13,6 +13,6 @@ public data class CreatePaymentRequestRequest(
     @get:Size(max = 100)
     public val description: String? = null,
     @get:Size(max = 36)
-    public val invoiceId: String? = null,
+    public val orderId: String? = null,
     public val timeToLive: Int? = null
 )

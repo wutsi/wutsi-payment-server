@@ -15,7 +15,7 @@ public data class PaymentRequestEntity(
     val amount: Double = 0.0,
     val currency: String = "",
     val description: String? = null,
-    val invoiceId: String? = null,
+    val orderId: String? = null,
     val expires: OffsetDateTime? = null,
     val created: OffsetDateTime = OffsetDateTime.now(),
 )

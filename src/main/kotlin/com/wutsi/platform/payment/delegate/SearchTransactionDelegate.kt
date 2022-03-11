@@ -26,7 +26,10 @@ public class SearchTransactionDelegate(
         logger.add("limit", request.limit)
         logger.add("offset", request.offset)
 
-        val query = em.createQuery(sql(request))
+        val sql = sql(request)
+        logger.add("sql", sql)
+
+        val query = em.createQuery(sql)
         parameters(request, query)
         val txs = query
             .setFirstResult(request.offset)
@@ -62,9 +65,9 @@ public class SearchTransactionDelegate(
         if (request.status.isNotEmpty())
             criteria.add("a.status IN :status")
         if (request.type != null)
-            criteria.add("a.type = :type")
+            criteria.add("a.type=:type")
         if (request.orderId != null)
-            criteria.add("a.orderId = :order_id")
+            criteria.add("a.orderId=:order_id")
         return criteria.joinToString(separator = " AND ")
     }
 

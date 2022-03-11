@@ -30,7 +30,7 @@ public class GetPaymentRequestControllerTest : AbstractSecuredController() {
         assertEquals(50000.0, req.amount)
         assertEquals("XAF", req.currency)
         assertEquals("This is description", req.description)
-        assertEquals("INV-200", req.invoiceId)
+        assertEquals("INV-200", req.orderId)
         assertNotNull(req.created)
         assertNotNull(req.expires)
     }

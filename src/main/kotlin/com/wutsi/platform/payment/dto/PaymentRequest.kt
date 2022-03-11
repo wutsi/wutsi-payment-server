@@ -17,7 +17,7 @@ public data class PaymentRequest(
     @get:Size(max = 100)
     public val description: String? = null,
     @get:Size(max = 36)
-    public val invoiceId: String? = null,
+    public val orderId: String? = null,
     @get:DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
     public val created: OffsetDateTime = OffsetDateTime.now(),
     @get:DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")

@@ -69,7 +69,7 @@ fun PaymentRequestEntity.toPaymentRequest() = PaymentRequest(
     amount = this.amount,
     currency = this.currency,
     description = this.description,
-    invoiceId = this.invoiceId,
+    orderId = this.orderId,
     created = this.created,
     expires = this.expires,
 )

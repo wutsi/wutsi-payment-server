@@ -129,6 +129,13 @@ abstract class AbstractSecuredController {
                     percent = 0.0
                 ),
                 Fee(
+                    transactionType = "transfer",
+                    applyToSender = false,
+                    amount = 0.0,
+                    percent = 0.04,
+                    toBusiness = true,
+                ),
+                Fee(
                     transactionType = "payment",
                     applyToSender = false,
                     amount = 0.0,

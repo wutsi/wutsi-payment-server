@@ -38,7 +38,7 @@ public class CreatePaymentRequestControllerTest : AbstractSecuredController() {
             amount = 50000.0,
             currency = "XAF",
             description = "Yo man",
-            invoiceId = UUID.randomUUID().toString(),
+            orderId = UUID.randomUUID().toString(),
             timeToLive = 300
         )
         val response = rest.postForEntity(url, request, CreatePaymentRequestResponse::class.java)
@@ -51,7 +51,7 @@ public class CreatePaymentRequestControllerTest : AbstractSecuredController() {
         assertEquals(request.amount, req.amount)
         assertEquals(request.currency, req.currency)
         assertEquals(request.description, req.description)
-        assertEquals(request.invoiceId, req.invoiceId)
+        assertEquals(request.orderId, req.orderId)
         assertNotNull(req.created)
         assertNotNull(req.expires)
         assertEquals(req.created, req.expires!!.minusSeconds(request.timeToLive!!.toLong()))
@@ -64,7 +64,7 @@ public class CreatePaymentRequestControllerTest : AbstractSecuredController() {
             amount = 50000.0,
             currency = "XAF",
             description = "Yo man",
-            invoiceId = UUID.randomUUID().toString(),
+            orderId = UUID.randomUUID().toString(),
             timeToLive = null
         )
         val response = rest.postForEntity(url, request, CreatePaymentRequestResponse::class.java)
@@ -77,7 +77,7 @@ public class CreatePaymentRequestControllerTest : AbstractSecuredController() {
         assertEquals(request.amount, req.amount)
         assertEquals(request.currency, req.currency)
         assertEquals(request.description, req.description)
-        assertEquals(request.invoiceId, req.invoiceId)
+        assertEquals(request.orderId, req.orderId)
         assertNotNull(req.created)
         assertNull(req.expires)
     }

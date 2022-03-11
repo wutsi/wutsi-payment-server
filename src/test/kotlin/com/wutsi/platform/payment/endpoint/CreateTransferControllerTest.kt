@@ -186,10 +186,10 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
     @Test
     @Sql(value = ["/db/clean.sql", "/db/CreateTransferController.sql"])
-    public fun transferFromRetail() {
+    public fun transferToBusiness() {
         // GIVEN
-        val account = AccountSummary(id = USER_ID, status = "ACTIVE", retail = true, business = true)
-        val recipient = AccountSummary(id = 200, status = "ACTIVE")
+        val account = AccountSummary(id = USER_ID, status = "ACTIVE")
+        val recipient = AccountSummary(id = 200, status = "ACTIVE", business = true)
         doReturn(SearchAccountResponse(listOf(account, recipient))).whenever(accountApi).searchAccount(any())
 
         // WHEN
@@ -204,20 +204,20 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         // THEN
         assertEquals(200, response.statusCodeValue)
 
-        assertEquals(Status.PENDING.name, response.body.status)
+        assertEquals(Status.SUCCESSFUL.name, response.body.status)
 
-        val fees = 1000.0
+        val fees = 2000.0
         val tx = txDao.findById(response.body.id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount + fees, tx.amount)
+        assertEquals(request.amount, tx.amount)
         assertEquals(fees, tx.fees)
-        assertEquals(request.amount, tx.net)
+        assertEquals(request.amount - fees, tx.net)
         assertNull(tx.paymentMethodToken)
         assertNull(tx.paymentMethodProvider)
         assertEquals(TransactionType.TRANSFER, tx.type)
-        assertEquals(Status.PENDING, tx.status)
+        assertEquals(Status.SUCCESSFUL, tx.status)
         assertEquals(request.description, tx.description)
         assertNull(tx.gatewayTransactionId)
         assertNull(tx.financialTransactionId)
@@ -225,19 +225,81 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertNull(tx.paymentRequestId)
         assertTrue(tx.business)
-        assertTrue(tx.retail)
-        assertEquals(tx.created.plusMinutes(5), tx.expires)
-        assertTrue(tx.requiresApproval)
+        assertFalse(tx.retail)
+        assertNull(tx.expires)
+        assertFalse(tx.requiresApproval)
         assertNull(tx.approved)
+        assertNull(tx.orderId)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
-        assertEquals(100000.0, balance.amount)
+        assertEquals(50000.0, balance.amount)
 
         val balance2 = balanceDao.findByAccountId(request.recipientId).get()
-        assertEquals(200000.0, balance2.amount)
+        assertEquals(248000.0, balance2.amount)
 
         val payload = argumentCaptor<TransactionEventPayload>()
-        verify(eventStream).publish(eq(EventURN.TRANSACTION_PENDING.urn), payload.capture())
+        verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFUL.urn), payload.capture())
+        assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
+        assertEquals(tx.id, payload.firstValue.transactionId)
+    }
+
+    @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateTransferController.sql"])
+    public fun transferWithPaymentRequest() {
+        // GIVEN
+        val account = AccountSummary(id = USER_ID, status = "ACTIVE")
+        val recipient = AccountSummary(id = 200, status = "ACTIVE", business = true)
+        doReturn(SearchAccountResponse(listOf(account, recipient))).whenever(accountApi).searchAccount(any())
+
+        // WHEN
+        val request = CreateTransferRequest(
+            amount = 50000.0,
+            currency = "XAF",
+            recipientId = 200,
+            description = "Yo man",
+            paymentRequestId = "100",
+            orderId = "ORDER-100"
+        )
+        val response = rest.postForEntity(url, request, CreateTransferResponse::class.java)
+
+        // THEN
+        assertEquals(200, response.statusCodeValue)
+
+        assertEquals(Status.SUCCESSFUL.name, response.body.status)
+
+        val fees = 2000.0
+        val tx = txDao.findById(response.body.id).get()
+        assertEquals(1L, tx.tenantId)
+        assertEquals(USER_ID, tx.accountId)
+        assertEquals(request.currency, tx.currency)
+        assertEquals(request.amount, tx.amount)
+        assertEquals(fees, tx.fees)
+        assertEquals(request.amount - fees, tx.net)
+        assertNull(tx.paymentMethodToken)
+        assertNull(tx.paymentMethodProvider)
+        assertEquals(TransactionType.TRANSFER, tx.type)
+        assertEquals(Status.SUCCESSFUL, tx.status)
+        assertEquals(request.description, tx.description)
+        assertNull(tx.gatewayTransactionId)
+        assertNull(tx.financialTransactionId)
+        assertNull(tx.errorCode)
+        assertNull(tx.supplierErrorCode)
+        assertEquals("100", tx.paymentRequestId)
+        assertTrue(tx.business)
+        assertFalse(tx.retail)
+        assertNull(tx.expires)
+        assertFalse(tx.requiresApproval)
+        assertNull(tx.approved)
+        assertEquals("ORDER-100", tx.orderId)
+
+        val balance = balanceDao.findByAccountId(USER_ID).get()
+        assertEquals(50000.0, balance.amount)
+
+        val balance2 = balanceDao.findByAccountId(request.recipientId).get()
+        assertEquals(248000.0, balance2.amount)
+
+        val payload = argumentCaptor<TransactionEventPayload>()
+        verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFUL.urn), payload.capture())
         assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
         assertEquals(tx.id, payload.firstValue.transactionId)
     }
@@ -371,5 +433,141 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertNull(response.error.data?.get("id"))
 
         verify(eventStream, never()).publish(any(), any())
+    }
+
+    @Test
+    public fun invalidPaymentAmount() {
+        // WHEN
+        val request = CreateTransferRequest(
+            amount = 1.0,
+            currency = "XAF",
+            recipientId = 200,
+            description = "Yo man",
+            paymentRequestId = "100",
+            orderId = "ORDER-100"
+        )
+        val e = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateCashinResponse::class.java)
+        }
+
+        // THEN
+        assertEquals(400, e.rawStatusCode)
+
+        val response = ObjectMapper().readValue(e.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.AMOUNT_NOT_VALID.urn, response.error.code)
+
+        assertNull(response.error.data?.get("id"))
+
+        verify(eventStream, never()).publish(any(), any())
+    }
+
+    @Test
+    public fun invalidRecipient() {
+        // WHEN
+        val request = CreateTransferRequest(
+            amount = 50000.0,
+            currency = "XAF",
+            recipientId = 444,
+            description = "Yo man",
+            paymentRequestId = "100",
+            orderId = "ORDER-100"
+        )
+        val e = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateCashinResponse::class.java)
+        }
+
+        // THEN
+        assertEquals(400, e.rawStatusCode)
+
+        val response = ObjectMapper().readValue(e.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.RECIPIENT_NOT_VALID.urn, response.error.code)
+
+        assertNull(response.error.data?.get("id"))
+
+        verify(eventStream, never()).publish(any(), any())
+    }
+
+    @Test
+    public fun invalidOrder() {
+        // WHEN
+        val request = CreateTransferRequest(
+            amount = 50000.0,
+            currency = "XAF",
+            recipientId = 200,
+            description = "Yo man",
+            paymentRequestId = "100",
+            orderId = "xxx"
+        )
+        val e = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateCashinResponse::class.java)
+        }
+
+        // THEN
+        assertEquals(400, e.rawStatusCode)
+
+        val response = ObjectMapper().readValue(e.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.ORDER_NOT_VALID.urn, response.error.code)
+
+        assertNull(response.error.data?.get("id"))
+
+        verify(eventStream, never()).publish(any(), any())
+    }
+
+    @Test
+    public fun invalidTenant() {
+        // WHEN
+        val request = CreateTransferRequest(
+            amount = 50000.0,
+            currency = "XAF",
+            recipientId = 200,
+            description = "Yo man",
+            paymentRequestId = "200",
+            orderId = "ORDER-100"
+        )
+        val e = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateCashinResponse::class.java)
+        }
+
+        // THEN
+        assertEquals(403, e.rawStatusCode)
+
+        val response = ObjectMapper().readValue(e.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.ILLEGAL_PAYMENT_REQUEST_ACCESS.urn, response.error.code)
+
+        assertNull(response.error.data?.get("id"))
+
+        verify(eventStream, never()).publish(any(), any())
+    }
+
+    @Test
+    public fun expiredPayment() {
+        // WHEN
+        val request = CreateTransferRequest(
+            amount = 50000.0,
+            currency = "XAF",
+            recipientId = 200,
+            description = "Yo man",
+            paymentRequestId = "101",
+        )
+        val e = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateCashinResponse::class.java)
+        }
+
+        // THEN
+        assertEquals(409, e.rawStatusCode)
+
+        val response = ObjectMapper().readValue(e.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.TRANSACTION_FAILED.urn, response.error.code)
+        assertEquals(ErrorCode.EXPIRED.name, response.error.downstreamCode)
+
+        val id = response.error.data?.get("transaction-id").toString()
+        val tx = txDao.findById(id).get()
+        assertEquals(Status.FAILED, tx.status)
+        assertEquals(ErrorCode.EXPIRED.name, tx.errorCode)
+
+        val payload = argumentCaptor<TransactionEventPayload>()
+        verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
+        assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
+        assertEquals(tx.id, payload.firstValue.transactionId)
     }
 }

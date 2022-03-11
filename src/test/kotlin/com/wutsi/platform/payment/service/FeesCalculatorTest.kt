@@ -58,13 +58,6 @@ internal class FeesCalculatorTest {
                     amount = 0.0,
                     percent = 0.01
                 ),
-                Fee(
-                    transactionType = "payment",
-                    applyToSender = false,
-                    toBusiness = true,
-                    amount = 0.0,
-                    percent = 0.05
-                ),
             )
         )
     }
@@ -143,6 +136,7 @@ internal class FeesCalculatorTest {
         assertEquals(47500.0, tx.net)
         assertEquals(false, tx.feesToSender)
     }
+
     @Test
     fun transferBelowThreshold() {
         // GIVEN
@@ -189,30 +183,6 @@ internal class FeesCalculatorTest {
         assertEquals(100.0, tx.fees)
         assertEquals(50000.0, tx.net)
         assertEquals(true, tx.feesToSender)
-    }
-
-    @Test
-    fun payment() {
-        // GIVEN
-        val accounts = listOf(AccountSummary(id = ACCOUNT_ID), AccountSummary(id = RECIPIENT_ID, business = true))
-            .map { it.id to it }.toMap()
-
-        val tx = TransactionEntity(
-            type = TransactionType.PAYMENT,
-            accountId = ACCOUNT_ID,
-            recipientId = RECIPIENT_ID,
-            amount = 50000.0,
-        )
-
-        // WHEN
-        val fees = calculator.computeFees(tx, tenant, accounts)
-
-        // THEN
-        assertEquals(2500.0, fees)
-        assertEquals(50000.0, tx.amount)
-        assertEquals(2500.0, tx.fees)
-        assertEquals(47500.0, tx.net)
-        assertEquals(false, tx.feesToSender)
     }
 
     @Test
