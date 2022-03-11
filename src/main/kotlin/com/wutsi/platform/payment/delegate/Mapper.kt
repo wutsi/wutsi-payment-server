@@ -60,6 +60,7 @@ fun TransactionEntity.toTransactionSummary() = TransactionSummary(
     supplierErrorCode = this.supplierErrorCode,
     orderId = this.orderId,
     paymentRequestId = this.paymentRequestId,
+    feesToSender = this.feesToSender
 )
 
 fun PaymentRequestEntity.toPaymentRequest() = PaymentRequest(

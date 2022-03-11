@@ -536,6 +536,9 @@ components:
           type: string
           description: ID of the payment request
           nullable: true
+        feesToSender:
+          type: boolean
+          description: Fees are applied to sender?
 
     SearchTransactionRequest:
       type: object
