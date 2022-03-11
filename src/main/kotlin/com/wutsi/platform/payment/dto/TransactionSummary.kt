@@ -22,5 +22,7 @@ public data class TransactionSummary(
     public val errorCode: String? = null,
     public val supplierErrorCode: String? = null,
     @get:DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
-    public val created: OffsetDateTime = OffsetDateTime.now()
+    public val created: OffsetDateTime = OffsetDateTime.now(),
+    public val orderId: String? = null,
+    public val paymentRequestId: String? = null
 )

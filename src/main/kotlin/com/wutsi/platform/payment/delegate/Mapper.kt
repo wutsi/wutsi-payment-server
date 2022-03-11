@@ -57,7 +57,9 @@ fun TransactionEntity.toTransactionSummary() = TransactionSummary(
     net = this.net,
     status = this.status.name,
     errorCode = this.errorCode,
-    supplierErrorCode = this.supplierErrorCode
+    supplierErrorCode = this.supplierErrorCode,
+    orderId = this.orderId,
+    paymentRequestId = this.paymentRequestId,
 )
 
 fun PaymentRequestEntity.toPaymentRequest() = PaymentRequest(

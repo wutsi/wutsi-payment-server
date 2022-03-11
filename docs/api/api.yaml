@@ -481,7 +481,6 @@ components:
             - CASHIN
             - CASHOUT
             - TRANSFER
-            - PAYMENT
           description: Type of transaction
         paymentMethodToken:
           type: string
@@ -529,6 +528,14 @@ components:
           type: string
           description: Creation data-time
           format: date-time
+        orderId:
+          type: string
+          description: ID of the order associated with the transaction
+          nullable: true
+        paymentRequestId:
+          type: string
+          description: ID of the payment request
+          nullable: true
 
     SearchTransactionRequest:
       type: object
@@ -539,10 +546,6 @@ components:
           nullable: true
         paymentRequestId:
           type: string
-          enum:
-            - SUCCESSFULL
-            - PENDING
-            - FAILED
           description: ID of the payment request
           nullable: true
         type:
@@ -599,7 +602,6 @@ components:
             - CASHIN
             - CASHOUT
             - TRANSFER
-            - PAYMENT
           description: Type of transaction
         paymentMethodToken:
           type: string
