@@ -5,5 +5,6 @@ import kotlin.Double
 
 public data class ComputeTransactionFeesResponse(
     public val fees: Double = 0.0,
+    public val gatewayFees: Double = 0.0,
     public val applyToSender: Boolean = false
 )

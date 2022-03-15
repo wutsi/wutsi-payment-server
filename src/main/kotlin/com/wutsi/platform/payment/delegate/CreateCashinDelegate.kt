@@ -3,6 +3,8 @@ package com.wutsi.platform.payment.`delegate`
 import com.wutsi.platform.account.dto.AccountSummary
 import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.account.dto.SearchAccountRequest
+import com.wutsi.platform.core.error.Error
+import com.wutsi.platform.core.error.exception.ConflictException
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
@@ -64,6 +66,7 @@ class CreateCashinDelegate(
             logger.add("gateway_status", response.status)
             logger.add("gateway_transaction_id", response.transactionId)
             logger.add("gateway_financial_transaction_id", response.financialTransactionId)
+            logger.add("gateway_fees", response.fees)
 
             if (response.status == Status.SUCCESSFUL) {
                 onSuccess(tx, response, tenant)
@@ -111,9 +114,10 @@ class CreateCashinDelegate(
             )
         )
 
-        feesCalculator.computeFees(tx, tenant, accounts)
+        feesCalculator.computeFees(tx, tenant, accounts, paymentMethod)
         logger.add("transaction_id", tx.id)
         logger.add("transaction_fees", tx.fees)
+        logger.add("transaction_gateway_fees", tx.gatewayFees)
         logger.add("transaction_amount", tx.amount)
         logger.add("transaction_net", tx.net)
         return tx
@@ -133,6 +137,18 @@ class CreateCashinDelegate(
                 payerMessage = null
             )
         )
+
+        if (tx.gatewayFees != response.fees)
+            throw ConflictException(
+                error = Error(
+                    code = ErrorURN.GATEWAY_FEES_NOT_VALID.urn,
+                    data = mapOf(
+                        "expected-fees" to tx.gatewayFees,
+                        "actual-fees" to response.fees,
+                    )
+                )
+            )
+
         return response
     }
 

@@ -48,8 +48,7 @@ internal class PendingCashinJobTest : AbstractSecuredController() {
             status = Status.SUCCESSFUL,
             financialTransactionId = "financial-transaction-111",
         )
-        doReturn(resp).whenever(mtnGateway).getPayment(any())
-        doReturn(resp).whenever(omGateway).getPayment(any())
+        doReturn(resp).whenever(gateway).getPayment(any())
 
         // WHEN
         job.run()
@@ -81,7 +80,7 @@ internal class PendingCashinJobTest : AbstractSecuredController() {
                 supplierErrorCode = "yyy"
             )
         )
-        doThrow(ex).whenever(mtnGateway).getPayment(any())
+        doThrow(ex).whenever(gateway).getPayment(any())
 
         // WHEN
         job.run()

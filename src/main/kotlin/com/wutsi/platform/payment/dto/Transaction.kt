@@ -17,6 +17,7 @@ public data class Transaction(
     public val description: String? = null,
     public val amount: Double = 0.0,
     public val fees: Double = 0.0,
+    public val gatewayFees: Double = 0.0,
     public val net: Double = 0.0,
     public val currency: String = "",
     public val status: String = "",

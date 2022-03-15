@@ -349,6 +349,14 @@ components:
           format: double
           description: Amout to transfer to the user's wallet
           minimum: 0
+        currency:
+          type: string
+          format: double
+          description: Currency code
+        paymentMethodToken:
+          type: string
+          description: Token of the payment method
+          nullable: true
 
     ComputeTransactionFeesResponse:
       type: object
@@ -357,6 +365,10 @@ components:
           type: number
           format: double
           description: Fees amount
+        gatewayFees:
+          type: number
+          format: double
+          description: Gateway Fees amount
         applyToSender:
           type: boolean
           description: Are the fees should be apply to the sender?
@@ -483,6 +495,10 @@ components:
           type: number
           format: double
           description: Fees
+        gatewayFees:
+          type: number
+          format: double
+          description: Fees from Payment Gateway
         net:
           type: number
           format: double
@@ -607,6 +623,10 @@ components:
           type: number
           format: double
           description: Fees
+        gatewayFees:
+          type: number
+          format: double
+          description: Fees from Payment Gateway
         net:
           type: number
           format: double
@@ -731,7 +751,7 @@ components:
           description: Description of the transaction
           nullable: true
           maxLength: 100
-        invoiceId:
+        orderId:
           type: string
           description: ID of the invoice associated with the payment
           nullable: true

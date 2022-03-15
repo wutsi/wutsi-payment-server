@@ -32,6 +32,7 @@ fun TransactionEntity.toTransaction() = Transaction(
     financialTransactionId = this.financialTransactionId,
     description = this.description,
     fees = this.fees,
+    gatewayFees = this.gatewayFees,
     net = this.net,
     status = this.status.name,
     paymentRequestId = this.paymentRequestId,
@@ -54,13 +55,14 @@ fun TransactionEntity.toTransactionSummary() = TransactionSummary(
     paymentMethodProvider = this.paymentMethodProvider?.name,
     description = this.description,
     fees = this.fees,
+    gatewayFees = this.gatewayFees,
     net = this.net,
     status = this.status.name,
     errorCode = this.errorCode,
     supplierErrorCode = this.supplierErrorCode,
     orderId = this.orderId,
     paymentRequestId = this.paymentRequestId,
-    feesToSender = this.feesToSender
+    feesToSender = this.feesToSender,
 )
 
 fun PaymentRequestEntity.toPaymentRequest() = PaymentRequest(

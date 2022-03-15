@@ -17,6 +17,7 @@ import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.core.Error
 import com.wutsi.platform.payment.core.ErrorCode
 import com.wutsi.platform.payment.core.ErrorCode.NOT_ENOUGH_FUNDS
+import com.wutsi.platform.payment.core.Money
 import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dao.BalanceRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
@@ -29,6 +30,7 @@ import com.wutsi.platform.payment.error.ErrorURN
 import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.event.TransactionEventPayload
 import com.wutsi.platform.payment.model.CreateTransferResponse
+import com.wutsi.platform.payment.model.GetFeesResponse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -77,8 +79,11 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
     @Sql(value = ["/db/clean.sql", "/db/CreateCashoutController.sql"])
     fun success() {
         // GIVEN
-        val paymentResponse = CreateTransferResponse("111", "222", Status.SUCCESSFUL)
-        doReturn(paymentResponse).whenever(mtnGateway).createTransfer(any())
+        val gwFees = 100.0
+        doReturn(GetFeesResponse(fees = Money(value = gwFees))).whenever(gateway).getFees(any())
+
+        val paymentResponse = CreateTransferResponse("111", "222", Status.SUCCESSFUL, gwFees)
+        doReturn(paymentResponse).whenever(gateway).createTransfer(any())
 
         // WHEN
         val request = CreateCashoutRequest(
@@ -98,8 +103,9 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount + fees, tx.amount)
+        assertEquals(request.amount + gwFees + fees, tx.amount)
         assertEquals(fees, tx.fees)
+        assertEquals(gwFees, tx.gatewayFees)
         assertEquals(request.amount, tx.net)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
         assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)
@@ -129,8 +135,11 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
     @Sql(value = ["/db/clean.sql", "/db/CreateCashoutController.sql"])
     fun pending() {
         // GIVEN
-        val paymentResponse = CreateTransferResponse("111", null, Status.PENDING)
-        doReturn(paymentResponse).whenever(mtnGateway).createTransfer(any())
+        val gwFees = 100.0
+        doReturn(GetFeesResponse(fees = Money(value = gwFees))).whenever(gateway).getFees(any())
+
+        val paymentResponse = CreateTransferResponse("111", "222", Status.PENDING, gwFees)
+        doReturn(paymentResponse).whenever(gateway).createTransfer(any())
 
         // WHEN
         val request = CreateCashinRequest(
@@ -150,7 +159,7 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount + fees, tx.amount)
+        assertEquals(request.amount + fees + gwFees, tx.amount)
         assertEquals(fees, tx.fees)
         assertEquals(request.amount, tx.net)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
@@ -180,9 +189,12 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
     @Test
     fun failure() {
         // GIVEN
+        val gwFees = 100.0
+        doReturn(GetFeesResponse(fees = Money(value = gwFees))).whenever(gateway).getFees(any())
+
         val e =
             PaymentException(error = Error(code = NOT_ENOUGH_FUNDS, transactionId = "111", supplierErrorCode = "xxxx"))
-        doThrow(e).whenever(mtnGateway).createTransfer(any())
+        doThrow(e).whenever(gateway).createTransfer(any())
 
         // WHEN
         val request = CreateCashinRequest(
@@ -206,8 +218,9 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         val fees = 1000.0
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount + fees, tx.amount)
+        assertEquals(request.amount + fees + gwFees, tx.amount)
         assertEquals(fees, tx.fees)
+        assertEquals(gwFees, tx.gatewayFees)
         assertEquals(request.amount, tx.net)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
         assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)

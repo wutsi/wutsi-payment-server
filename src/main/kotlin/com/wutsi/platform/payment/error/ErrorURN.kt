@@ -11,6 +11,7 @@ enum class ErrorURN(val urn: String) {
     RECIPIENT_NOT_VALID("urn:wutsi:error:payment:recipient-not-valid"),
     ORDER_NOT_VALID("urn:wutsi:error:payment:order-not-valid"),
     AMOUNT_NOT_VALID("urn:wutsi:error:payment:amount-not-valid"),
+    GATEWAY_FEES_NOT_VALID("urn:wutsi:error:payment:gateway-fees-not-valid"),
     ILLEGAL_TRANSACTION_ACCESS("urn:wutsi:error:payment:illegal-transaction-access"),
     ILLEGAL_TENANT_ACCESS("urn:wutsi:error:account:illegal-tenant-access"),
     ILLEGAL_PAYMENT_REQUEST_ACCESS("urn:wutsi:error:account:illegal-payment-request-access"),

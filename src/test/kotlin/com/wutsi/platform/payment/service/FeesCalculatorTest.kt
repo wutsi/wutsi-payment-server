@@ -1,8 +1,21 @@
 package com.wutsi.platform.payment.service
 
+import com.nhaarman.mockitokotlin2.any
+import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockitokotlin2.whenever
+import com.wutsi.platform.account.WutsiAccountApi
 import com.wutsi.platform.account.dto.AccountSummary
+import com.wutsi.platform.account.dto.GetPaymentMethodResponse
+import com.wutsi.platform.account.dto.PaymentMethod
+import com.wutsi.platform.payment.Gateway
+import com.wutsi.platform.payment.GatewayProvider
+import com.wutsi.platform.payment.PaymentMethodProvider
+import com.wutsi.platform.payment.PaymentMethodType
+import com.wutsi.platform.payment.core.Money
 import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.entity.TransactionType
+import com.wutsi.platform.payment.model.GetFeesResponse
 import com.wutsi.platform.tenant.dto.Fee
 import com.wutsi.platform.tenant.dto.Tenant
 import org.junit.jupiter.api.BeforeEach
@@ -17,10 +30,32 @@ internal class FeesCalculatorTest {
 
     private lateinit var calculator: FeesCalculator
     private lateinit var tenant: Tenant
+    private lateinit var gateway: Gateway
+    private lateinit var gatewayProvider: GatewayProvider
+    private lateinit var securityManager: SecurityManager
+    private lateinit var accountApi: WutsiAccountApi
+    private val paymentMethod =
+        PaymentMethod(token = "111", provider = PaymentMethodProvider.MTN.name, type = PaymentMethodType.MOBILE.name)
 
     @BeforeEach
     fun setUp() {
-        calculator = FeesCalculator()
+        securityManager = mock()
+        doReturn(111L).whenever(securityManager).currentUserId()
+
+        val payment = PaymentMethod(
+            type = PaymentMethodType.MOBILE.name,
+            provider = PaymentMethodProvider.MTN.name
+        )
+        accountApi = mock()
+        doReturn(GetPaymentMethodResponse(payment)).whenever(accountApi).getPaymentMethod(any(), any())
+
+        gateway = mock()
+        doReturn(GetFeesResponse(fees = Money(100.0))).whenever(gateway).getFees(any())
+
+        gatewayProvider = mock()
+        doReturn(gateway).whenever(gatewayProvider).get(any())
+
+        calculator = FeesCalculator(gatewayProvider, accountApi, securityManager)
 
         tenant = Tenant(
             fees = listOf(
@@ -77,13 +112,13 @@ internal class FeesCalculatorTest {
         )
 
         // WHEN
-        val fees = calculator.computeFees(tx, tenant, accounts)
+        calculator.computeFees(tx, tenant, accounts, null)
 
         // THEN
-        assertEquals(0.0, fees)
         assertEquals(50000.0, tx.amount)
         assertEquals(0.0, tx.fees)
         assertEquals(50000.0, tx.net)
+        assertEquals(0.0, tx.gatewayFees)
         assertEquals(true, tx.feesToSender)
     }
 
@@ -102,13 +137,13 @@ internal class FeesCalculatorTest {
         )
 
         // WHEN
-        val fees = calculator.computeFees(tx, tenant, accounts)
+        calculator.computeFees(tx, tenant, accounts, null)
 
         // THEN
-        assertEquals(1000.0, fees)
         assertEquals(51000.0, tx.amount)
         assertEquals(1000.0, tx.fees)
         assertEquals(50000.0, tx.net)
+        assertEquals(0.0, tx.gatewayFees)
         assertEquals(true, tx.feesToSender)
     }
 
@@ -127,13 +162,13 @@ internal class FeesCalculatorTest {
         )
 
         // WHEN
-        val fees = calculator.computeFees(tx, tenant, accounts)
+        calculator.computeFees(tx, tenant, accounts, null)
 
         // THEN
-        assertEquals(2500.0, fees)
         assertEquals(50000.0, tx.amount)
         assertEquals(2500.0, tx.fees)
         assertEquals(47500.0, tx.net)
+        assertEquals(0.0, tx.gatewayFees)
         assertEquals(false, tx.feesToSender)
     }
 
@@ -151,13 +186,13 @@ internal class FeesCalculatorTest {
         )
 
         // WHEN
-        val fees = calculator.computeFees(tx, tenant, accounts)
+        calculator.computeFees(tx, tenant, accounts, null)
 
         // THEN
-        assertEquals(0.0, fees)
         assertEquals(1000.0, tx.amount)
         assertEquals(0.0, tx.fees)
         assertEquals(1000.0, tx.net)
+        assertEquals(0.0, tx.gatewayFees)
         assertEquals(false, tx.feesToSender)
     }
 
@@ -175,13 +210,13 @@ internal class FeesCalculatorTest {
         )
 
         // WHEN
-        val fees = calculator.computeFees(tx, tenant, accounts)
+        calculator.computeFees(tx, tenant, accounts, null)
 
         // THEN
-        assertEquals(100.0, fees)
         assertEquals(50100.0, tx.amount)
         assertEquals(100.0, tx.fees)
         assertEquals(50000.0, tx.net)
+        assertEquals(0.0, tx.gatewayFees)
         assertEquals(true, tx.feesToSender)
     }
 
@@ -200,12 +235,12 @@ internal class FeesCalculatorTest {
         )
 
         // WHEN
-        val fees = calculator.computeFees(tx, tenant, accounts)
+        calculator.computeFees(tx, tenant, accounts, paymentMethod)
 
         // THEN
-        assertEquals(500.0, fees)
-        assertEquals(50500.0, tx.amount)
+        assertEquals(50600.0, tx.amount)
         assertEquals(500.0, tx.fees)
+        assertEquals(100.0, tx.gatewayFees)
         assertEquals(50000.0, tx.net)
         assertEquals(true, tx.feesToSender)
     }

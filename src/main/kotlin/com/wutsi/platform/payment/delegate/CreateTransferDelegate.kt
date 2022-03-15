@@ -147,7 +147,7 @@ public class CreateTransferDelegate(
             )
         )
 
-        feesCalculator.computeFees(tx, tenant, accounts)
+        feesCalculator.computeFees(tx, tenant, accounts, null)
         logger.add("transaction_id", tx.id)
         logger.add("transaction_fees", tx.fees)
         logger.add("transaction_amount", tx.amount)

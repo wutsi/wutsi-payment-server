@@ -45,4 +45,5 @@ data class TransactionEntity(
     var requiresApproval: Boolean = false,
     var approved: OffsetDateTime? = null,
     var orderId: String? = null,
+    var gatewayFees: Double = 0.0
 )

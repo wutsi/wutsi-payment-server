@@ -2,6 +2,7 @@ package com.wutsi.platform.payment.endpoint
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.doReturn
+import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
 import com.wutsi.platform.account.WutsiAccountApi
 import com.wutsi.platform.account.dto.Account
@@ -21,7 +22,7 @@ import com.wutsi.platform.core.tracing.spring.SpringTracingRequestInterceptor
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.PaymentMethodType
-import com.wutsi.platform.payment.provider.mtn.MTNGateway
+import com.wutsi.platform.payment.model.GetFeesResponse
 import com.wutsi.platform.payment.provider.om.OMGateway
 import com.wutsi.platform.tenant.WutsiTenantApi
 import com.wutsi.platform.tenant.dto.Fee
@@ -31,7 +32,6 @@ import com.wutsi.platform.tenant.dto.MobileCarrier
 import com.wutsi.platform.tenant.dto.PhonePrefix
 import com.wutsi.platform.tenant.dto.Tenant
 import org.junit.jupiter.api.BeforeEach
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.web.client.RestTemplate
 
@@ -49,14 +49,10 @@ abstract class AbstractSecuredController {
     @MockBean
     protected lateinit var tenantApi: WutsiTenantApi
 
-    @Autowired
+    @MockBean
     protected lateinit var gatewayProvider: GatewayProvider
 
-    @MockBean
-    protected lateinit var omGateway: OMGateway
-
-    @MockBean
-    protected lateinit var mtnGateway: MTNGateway
+    protected lateinit var gateway: OMGateway
 
     protected lateinit var user: Account
     protected lateinit var paymentMethod: PaymentMethod
@@ -147,6 +143,12 @@ abstract class AbstractSecuredController {
                     amount = 0.0,
                     percent = 0.02
                 ),
+                Fee(
+                    transactionType = "cashin",
+                    applyToSender = true,
+                    amount = 0.0,
+                    percent = 0.0
+                ),
             )
         )
         doReturn(GetTenantResponse(tenant)).whenever(tenantApi).getTenant(any())
@@ -170,10 +172,10 @@ abstract class AbstractSecuredController {
         )
         doReturn(GetPaymentMethodResponse(paymentMethod)).whenever(accountApi).getPaymentMethod(any(), any())
 
-        doReturn(PaymentMethodProvider.ORANGE).whenever(omGateway).provider()
-        doReturn(PaymentMethodProvider.MTN).whenever(mtnGateway).provider()
-        gatewayProvider.register(mtnGateway)
-        gatewayProvider.register(omGateway)
+        gateway = mock()
+        doReturn(GetFeesResponse()).whenever(gateway).getFees(any())
+
+        doReturn(gateway).whenever(gatewayProvider).get(any())
 
         rest = createResTemplate()
     }

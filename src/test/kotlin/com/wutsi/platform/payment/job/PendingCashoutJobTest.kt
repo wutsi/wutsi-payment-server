@@ -48,8 +48,7 @@ internal class PendingCashoutJobTest : AbstractSecuredController() {
             status = Status.SUCCESSFUL,
             financialTransactionId = "financial-transaction-111",
         )
-        doReturn(resp).whenever(mtnGateway).getTransfer(any())
-        doReturn(resp).whenever(omGateway).getTransfer(any())
+        doReturn(resp).whenever(gateway).getTransfer(any())
 
         // WHEN
         job.run()
@@ -81,7 +80,7 @@ internal class PendingCashoutJobTest : AbstractSecuredController() {
                 supplierErrorCode = "yyy"
             )
         )
-        doThrow(ex).whenever(mtnGateway).getTransfer(any())
+        doThrow(ex).whenever(gateway).getTransfer(any())
 
         // WHEN
         job.run()

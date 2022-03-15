@@ -10,5 +10,7 @@ public data class ComputeTransactionFeesRequest(
     public val senderId: Long? = null,
     public val recipientId: Long? = null,
     @get:Min(0)
-    public val amount: Double = 0.0
+    public val amount: Double = 0.0,
+    public val currency: String = "",
+    public val paymentMethodToken: String? = null
 )

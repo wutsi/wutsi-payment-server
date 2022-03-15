@@ -46,7 +46,7 @@ public class ComputeTransactionFeesControllerTest : AbstractSecuredController() 
             transactionType = TransactionType.TRANSFER.name,
             recipientId = 200
         )
-        val result = ComputeTransactionFeesResponse(100.0, true)
+        val result = ComputeTransactionFeesResponse(100.0, 10.0, true)
         doReturn(result).whenever(feesCalculator).computeFees(eq(request), any(), any())
 
         // WHEN
@@ -55,6 +55,7 @@ public class ComputeTransactionFeesControllerTest : AbstractSecuredController() 
         // THEN
         assertEquals(200, response.statusCodeValue)
         assertEquals(result.fees, response.body?.fees)
+        assertEquals(result.gatewayFees, response.body?.gatewayFees)
         assertEquals(result.applyToSender, response.body?.applyToSender)
     }
 }
