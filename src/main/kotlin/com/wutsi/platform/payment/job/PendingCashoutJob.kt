@@ -36,13 +36,8 @@ class PendingCashoutJob(
             val pagination = PageRequest.of(page, size)
             val txs = dao.findByTypeAndStatus(TransactionType.CASHOUT, Status.PENDING, pagination)
             txs.forEach {
-                val tc = initTracingContext(it)
-                try {
-                    onCashout(it)
-                    count++
-                } finally {
-                    restoreTracingContext(tc)
-                }
+                onCashout(it)
+                count++
             }
 
             if (txs.isEmpty())

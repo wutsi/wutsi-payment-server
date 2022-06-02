@@ -12,7 +12,9 @@ import com.wutsi.platform.core.logging.KVLogger
 import com.wutsi.platform.core.stream.EventStream
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.core.ErrorCode
+import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dao.BalanceRepository
+import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.entity.BalanceEntity
 import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.error.ErrorURN
@@ -24,6 +26,7 @@ import com.wutsi.platform.tenant.dto.Tenant
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class AbstractDelegate {
@@ -34,6 +37,9 @@ class AbstractDelegate {
     protected lateinit var balanceDao: BalanceRepository
 
     @Autowired
+    protected lateinit var transactionDao: TransactionRepository
+
+    @Autowired
     protected lateinit var securityManager: SecurityManager
 
     @Autowired
@@ -41,6 +47,18 @@ class AbstractDelegate {
 
     @Autowired
     protected lateinit var eventStream: EventStream
+
+    @Transactional
+    open fun onError(tx: TransactionEntity, ex: PaymentException) {
+        tx.status = Status.FAILED
+        tx.errorCode = ex.error.code.name
+        tx.supplierErrorCode = ex.error.supplierErrorCode
+        tx.gatewayTransactionId = ex.error.transactionId
+        tx.gatewayFees = 0.0
+        transactionDao.save(tx)
+
+        publish(EventURN.TRANSACTION_FAILED, tx)
+    }
 
     protected fun createTransactionException(
         tx: TransactionEntity,
@@ -159,5 +177,13 @@ class AbstractDelegate {
         } catch (ex: Exception) {
             LoggerFactory.getLogger(this::class.java).error("Unable to publish event $type", ex)
         }
+    }
+
+    protected fun log(tx: TransactionEntity) {
+        logger.add("transaction_id", tx.id)
+        logger.add("transaction_amount", tx.amount)
+        logger.add("transaction_fees", tx.fees)
+        logger.add("transaction_net", tx.net)
+        logger.add("transaction_gateway_fees", tx.gatewayFees)
     }
 }

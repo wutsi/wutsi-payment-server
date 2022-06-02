@@ -28,7 +28,6 @@ import com.wutsi.platform.payment.error.ErrorURN
 import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.event.TransactionEventPayload
 import com.wutsi.platform.payment.model.CreatePaymentResponse
-import com.wutsi.platform.payment.model.GetFeesResponse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -78,9 +77,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
     fun success() {
         // GIVEN
         val gwFees = 100.0
-        doReturn(GetFeesResponse(fees = Money(value = gwFees))).whenever(gateway).getFees(any())
-
-        val paymentResponse = CreatePaymentResponse("111", "222", Status.SUCCESSFUL, gwFees)
+        val paymentResponse = CreatePaymentResponse("111", "222", Status.SUCCESSFUL, Money(gwFees, "XAF"))
         doReturn(paymentResponse).whenever(gateway).createPayment(any())
 
         // WHEN
@@ -94,13 +91,13 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         // THEN
         assertEquals(200, response.statusCodeValue)
 
-        assertEquals(Status.SUCCESSFUL.name, response.body.status)
+        assertEquals(Status.SUCCESSFUL.name, response.body!!.status)
 
-        val tx = txDao.findById(response.body.id).get()
+        val tx = txDao.findById(response.body!!.id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount + gwFees, tx.amount)
+        assertEquals(request.amount, tx.amount)
         assertEquals(0.0, tx.fees)
         assertEquals(gwFees, tx.gatewayFees)
         assertEquals(request.amount, tx.net)
@@ -131,9 +128,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
     fun pending() {
         // GIVEN
         val gwFees = 100.0
-        doReturn(GetFeesResponse(fees = Money(value = gwFees))).whenever(gateway).getFees(any())
-
-        val paymentResponse = CreatePaymentResponse("111", null, Status.PENDING, gwFees)
+        val paymentResponse = CreatePaymentResponse("111", null, Status.PENDING, Money(gwFees, "XAF"))
         doReturn(paymentResponse).whenever(gateway).createPayment(any())
 
         // WHEN
@@ -147,13 +142,13 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         // THEN
         assertEquals(200, response.statusCodeValue)
 
-        assertEquals(Status.PENDING.name, response.body.status)
+        assertEquals(Status.PENDING.name, response.body!!.status)
 
-        val tx = txDao.findById(response.body.id).get()
+        val tx = txDao.findById(response.body!!.id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount + gwFees, tx.amount)
+        assertEquals(request.amount, tx.amount)
         assertEquals(0.0, tx.fees)
         assertEquals(request.amount, tx.net)
         assertEquals(gwFees, tx.gatewayFees)
@@ -184,7 +179,6 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
     fun failure() {
         // GIVEN
         val gwFees = 100.0
-        doReturn(GetFeesResponse(fees = Money(value = gwFees))).whenever(gateway).getFees(any())
 
         val e =
             PaymentException(error = Error(code = NOT_ENOUGH_FUNDS, transactionId = "111", supplierErrorCode = "xxxx"))
@@ -211,9 +205,9 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         val tx = txDao.findById(txId).get()
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount + gwFees, tx.amount)
+        assertEquals(request.amount, tx.amount)
         assertEquals(0.0, tx.fees)
-        assertEquals(gwFees, tx.gatewayFees)
+        assertEquals(0.0, tx.gatewayFees)
         assertEquals(request.amount, tx.net)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
         assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)

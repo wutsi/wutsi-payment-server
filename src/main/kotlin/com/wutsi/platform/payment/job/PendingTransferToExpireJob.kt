@@ -37,13 +37,8 @@ class PendingTransferToExpireJob(
             val txs =
                 dao.findByTypeAndStatusAndExpiresLessThan(TransactionType.TRANSFER, Status.PENDING, now, pagination)
             txs.forEach {
-                val tc = initTracingContext(it)
-                try {
-                    onExpire(it)
-                    count++
-                } finally {
-                    restoreTracingContext(tc)
-                }
+                onExpire(it)
+                count++
             }
 
             if (txs.isEmpty())

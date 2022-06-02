@@ -37,12 +37,12 @@ class PendingCashinJob(
             val pagination = PageRequest.of(page, size)
             val txs = dao.findByTypeAndStatus(TransactionType.CASHIN, Status.PENDING, pagination)
             txs.forEach {
-                val tc = initTracingContext(it)
+//                val tc = initTracingContext(it)
                 try {
                     onCashin(it)
                     count++
                 } finally {
-                    restoreTracingContext(tc)
+//                    restoreTracingContext(tc)
                 }
             }
 

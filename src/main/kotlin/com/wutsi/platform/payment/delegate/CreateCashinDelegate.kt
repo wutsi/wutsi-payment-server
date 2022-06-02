@@ -3,14 +3,11 @@ package com.wutsi.platform.payment.`delegate`
 import com.wutsi.platform.account.dto.AccountSummary
 import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.account.dto.SearchAccountRequest
-import com.wutsi.platform.core.error.Error
-import com.wutsi.platform.core.error.exception.ConflictException
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.core.Money
 import com.wutsi.platform.payment.core.Status
-import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.dto.CreateCashinRequest
 import com.wutsi.platform.payment.dto.CreateCashinResponse
 import com.wutsi.platform.payment.entity.TransactionEntity
@@ -21,7 +18,6 @@ import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.model.CreatePaymentRequest
 import com.wutsi.platform.payment.model.CreatePaymentResponse
 import com.wutsi.platform.payment.model.Party
-import com.wutsi.platform.payment.service.FeesCalculator
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.tenant.dto.Tenant
 import org.springframework.stereotype.Service
@@ -31,10 +27,8 @@ import java.util.UUID
 
 @Service
 class CreateCashinDelegate(
-    private val transactionDao: TransactionRepository,
     private val tenantProvider: TenantProvider,
     private val gatewayProvider: GatewayProvider,
-    private val feesCalculator: FeesCalculator,
 ) : AbstractDelegate() {
     @Transactional(noRollbackFor = [TransactionException::class])
     fun invoke(request: CreateCashinRequest): CreateCashinResponse {
@@ -58,15 +52,13 @@ class CreateCashinDelegate(
         ).paymentMethod
 
         // Create transaction
-        val tx = createTransaction(request, paymentMethod, tenant, accounts)
+        val tx = createTransaction(request, paymentMethod, tenant)
 
         // Perform the transfer
         try {
             val response = cashin(tx, paymentMethod)
             logger.add("gateway_status", response.status)
             logger.add("gateway_transaction_id", response.transactionId)
-            logger.add("gateway_financial_transaction_id", response.financialTransactionId)
-            logger.add("gateway_fees", response.fees)
 
             if (response.status == Status.SUCCESSFUL) {
                 onSuccess(tx, response, tenant)
@@ -80,10 +72,20 @@ class CreateCashinDelegate(
             )
         } catch (ex: PaymentException) {
             log(ex)
-
             onError(tx, ex)
             throw createTransactionException(tx, ErrorURN.TRANSACTION_FAILED, ex)
+        } finally {
+            log(tx)
         }
+    }
+
+    private fun onPending(tx: TransactionEntity, response: CreatePaymentResponse) {
+        tx.status = Status.PENDING
+        tx.gatewayTransactionId = response.transactionId
+        tx.gatewayFees = response.fees.value
+        transactionDao.save(tx)
+
+        publish(EventURN.TRANSACTION_PENDING, tx)
     }
 
     private fun validateRequest(request: CreateCashinRequest, tenant: Tenant, accounts: Map<Long, AccountSummary>) {
@@ -95,7 +97,6 @@ class CreateCashinDelegate(
         request: CreateCashinRequest,
         paymentMethod: PaymentMethod,
         tenant: Tenant,
-        accounts: Map<Long, AccountSummary>
     ): TransactionEntity {
         val tx = transactionDao.save(
             TransactionEntity(
@@ -113,13 +114,6 @@ class CreateCashinDelegate(
                 created = OffsetDateTime.now(),
             )
         )
-
-        feesCalculator.computeFees(tx, tenant, accounts, paymentMethod)
-        logger.add("transaction_id", tx.id)
-        logger.add("transaction_fees", tx.fees)
-        logger.add("transaction_gateway_fees", tx.gatewayFees)
-        logger.add("transaction_amount", tx.amount)
-        logger.add("transaction_net", tx.net)
         return tx
     }
 
@@ -138,37 +132,7 @@ class CreateCashinDelegate(
             )
         )
 
-        if (tx.gatewayFees != response.fees)
-            throw ConflictException(
-                error = Error(
-                    code = ErrorURN.GATEWAY_FEES_NOT_VALID.urn,
-                    data = mapOf(
-                        "expected-fees" to tx.gatewayFees,
-                        "actual-fees" to response.fees,
-                    )
-                )
-            )
-
         return response
-    }
-
-    private fun onPending(tx: TransactionEntity, response: CreatePaymentResponse) {
-        tx.status = Status.PENDING
-        tx.gatewayTransactionId = response.transactionId
-        transactionDao.save(tx)
-
-        publish(EventURN.TRANSACTION_PENDING, tx)
-    }
-
-    @Transactional
-    fun onError(tx: TransactionEntity, ex: PaymentException) {
-        tx.status = Status.FAILED
-        tx.errorCode = ex.error.code.name
-        tx.supplierErrorCode = ex.error.supplierErrorCode
-        tx.gatewayTransactionId = ex.error.transactionId
-        transactionDao.save(tx)
-
-        publish(EventURN.TRANSACTION_FAILED, tx)
     }
 
     @Transactional
@@ -184,6 +148,7 @@ class CreateCashinDelegate(
         tx.status = Status.SUCCESSFUL
         tx.gatewayTransactionId = response.transactionId
         tx.financialTransactionId = response.financialTransactionId
+        tx.gatewayFees = response.fees.value
         transactionDao.save(tx)
 
         publish(EventURN.TRANSACTION_SUCCESSFUL, tx)

@@ -16,7 +16,6 @@ import com.wutsi.platform.payment.error.ErrorURN
 import com.wutsi.platform.payment.error.TransactionException
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.tenant.dto.Tenant
-import org.springframework.data.jpa.domain.AbstractPersistable_.id
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.OffsetDateTime

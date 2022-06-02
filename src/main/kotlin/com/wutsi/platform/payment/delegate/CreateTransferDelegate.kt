@@ -11,10 +11,8 @@ import com.wutsi.platform.core.error.exception.NotFoundException
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.core.ErrorCode
 import com.wutsi.platform.payment.core.Status
-import com.wutsi.platform.payment.core.Status.PENDING
 import com.wutsi.platform.payment.core.Status.SUCCESSFUL
 import com.wutsi.platform.payment.dao.PaymentRequestRepository
-import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.dto.CreateTransferRequest
 import com.wutsi.platform.payment.dto.CreateTransferResponse
 import com.wutsi.platform.payment.entity.PaymentRequestEntity
@@ -23,9 +21,7 @@ import com.wutsi.platform.payment.entity.TransactionType.TRANSFER
 import com.wutsi.platform.payment.error.ErrorURN
 import com.wutsi.platform.payment.error.TransactionException
 import com.wutsi.platform.payment.event.EventURN
-import com.wutsi.platform.payment.event.EventURN.TRANSACTION_FAILED
 import com.wutsi.platform.payment.event.EventURN.TRANSACTION_SUCCESSFUL
-import com.wutsi.platform.payment.service.FeesCalculator
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.tenant.dto.Tenant
 import org.springframework.stereotype.Service
@@ -34,14 +30,12 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 @Service
-public class CreateTransferDelegate(
+class CreateTransferDelegate(
     private val paymentRequestDao: PaymentRequestRepository,
-    private val transactionDao: TransactionRepository,
     private val tenantProvider: TenantProvider,
-    private val feesCalculator: FeesCalculator,
 ) : AbstractDelegate() {
     @Transactional(noRollbackFor = [TransactionException::class])
-    public fun invoke(request: CreateTransferRequest): CreateTransferResponse {
+    fun invoke(request: CreateTransferRequest): CreateTransferResponse {
         logger.add("currency", request.currency)
         logger.add("amount", request.amount)
         logger.add("recipient_id", request.recipientId)
@@ -92,6 +86,8 @@ public class CreateTransferDelegate(
 
             onError(tx, ex)
             throw createTransactionException(tx, ErrorURN.TRANSACTION_FAILED, ex)
+        } finally {
+            log(tx)
         }
     }
 
@@ -99,19 +95,11 @@ public class CreateTransferDelegate(
         publish(EventURN.TRANSACTION_PENDING, tx)
     }
 
-    public fun onSuccess(tx: TransactionEntity, tenant: Tenant) {
+    fun onSuccess(tx: TransactionEntity, tenant: Tenant) {
         updateBalance(tx.accountId, -tx.amount, tenant)
         updateBalance(tx.recipientId!!, tx.net, tenant)
 
         publish(TRANSACTION_SUCCESSFUL, tx)
-    }
-
-    @Transactional
-    public fun onError(tx: TransactionEntity, ex: PaymentException) {
-        tx.status = Status.FAILED
-        tx.errorCode = ex.error.code.name
-        transactionDao.save(tx)
-        publish(TRANSACTION_FAILED, tx)
     }
 
     private fun createTransaction(
@@ -120,7 +108,6 @@ public class CreateTransferDelegate(
         tenant: Tenant,
         accounts: Map<Long, AccountSummary?>
     ): TransactionEntity {
-        val retail = isRetailTransaction(request, accounts)
         val business = isBusinessTransaction(request, accounts)
         val now = OffsetDateTime.now()
         val tx = transactionDao.save(
@@ -134,29 +121,20 @@ public class CreateTransferDelegate(
                 fees = 0.0,
                 net = request.amount,
                 currency = tenant.currency,
-                status = if (retail) PENDING else SUCCESSFUL,
+                status = SUCCESSFUL,
                 created = now,
-                expires = if (retail) now.plusMinutes(5) else null, // Expires in 1 minute
+                expires = null,
                 description = request.description,
                 business = business,
-                retail = retail,
-                requiresApproval = retail,
+                retail = false,
+                requiresApproval = false,
                 approved = null,
                 orderId = payment?.orderId ?: request.orderId,
                 paymentRequestId = payment?.id,
             )
         )
-
-        feesCalculator.computeFees(tx, tenant, accounts, null)
-        logger.add("transaction_id", tx.id)
-        logger.add("transaction_fees", tx.fees)
-        logger.add("transaction_amount", tx.amount)
-        logger.add("transaction_net", tx.net)
         return tx
     }
-
-    private fun isRetailTransaction(request: CreateTransferRequest, accounts: Map<Long, AccountSummary?>): Boolean =
-        accounts[request.recipientId]?.retail == true || accounts[securityManager.currentUserId()]?.retail == true
 
     private fun isBusinessTransaction(request: CreateTransferRequest, accounts: Map<Long, AccountSummary?>): Boolean =
         accounts[request.recipientId]?.business == true || accounts[securityManager.currentUserId()]?.business == true
@@ -175,13 +153,17 @@ public class CreateTransferDelegate(
                 )
             )
 
-        validatePaymentRequest(request, payment, tenant)
+        validateTransferRequest(request, payment, tenant)
         validateCurrency(request.currency, tenant)
         ensureCurrentUserActive(accounts)
         ensureRecipientActive(request.recipientId, accounts)
     }
 
-    private fun validatePaymentRequest(request: CreateTransferRequest, payment: PaymentRequestEntity?, tenant: Tenant) {
+    private fun validateTransferRequest(
+        request: CreateTransferRequest,
+        payment: PaymentRequestEntity?,
+        tenant: Tenant
+    ) {
         if (payment != null) {
             if (tenant.id != payment.tenantId)
                 throw ForbiddenException(

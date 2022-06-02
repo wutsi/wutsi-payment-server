@@ -22,7 +22,6 @@ import com.wutsi.platform.core.tracing.spring.SpringTracingRequestInterceptor
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.PaymentMethodType
-import com.wutsi.platform.payment.model.GetFeesResponse
 import com.wutsi.platform.payment.provider.om.OMGateway
 import com.wutsi.platform.tenant.WutsiTenantApi
 import com.wutsi.platform.tenant.dto.Fee
@@ -173,7 +172,6 @@ abstract class AbstractSecuredController {
         doReturn(GetPaymentMethodResponse(paymentMethod)).whenever(accountApi).getPaymentMethod(any(), any())
 
         gateway = mock()
-        doReturn(GetFeesResponse()).whenever(gateway).getFees(any())
 
         doReturn(gateway).whenever(gatewayProvider).get(any())
 
