@@ -13,8 +13,12 @@ spring:
 wutsi:
   platform:
     payment:
+      mtn:
+        enabled: false
+      orange:
+        enabled: false
       flutterwave:
-        enabled: true
+        enabled: false
         secret-key: ${FLUTTERWAVE_SECRET_KEY}
     security:
       api-key: ${API_KEY}
