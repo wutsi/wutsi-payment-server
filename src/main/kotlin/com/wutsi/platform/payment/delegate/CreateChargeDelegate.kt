@@ -14,10 +14,12 @@ import com.wutsi.platform.payment.dto.CreateChargeResponse
 import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.payment.error.ErrorURN
+import com.wutsi.platform.payment.error.TransactionException
 import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.model.CreatePaymentRequest
 import com.wutsi.platform.payment.model.CreatePaymentResponse
 import com.wutsi.platform.payment.model.Party
+import com.wutsi.platform.payment.service.FeesCalculator
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.tenant.dto.Tenant
 import org.springframework.stereotype.Service
@@ -29,7 +31,9 @@ import java.util.UUID
 public class CreateChargeDelegate(
     private val tenantProvider: TenantProvider,
     private val gatewayProvider: GatewayProvider,
+    private val feesCalculator: FeesCalculator,
 ) : AbstractDelegate() {
+    @Transactional(noRollbackFor = [TransactionException::class])
     fun invoke(request: CreateChargeRequest): CreateChargeResponse {
         logger.add("currency", request.currency)
         logger.add("amount", request.amount)
@@ -131,8 +135,9 @@ public class CreateChargeDelegate(
         request: CreateChargeRequest,
         paymentMethod: PaymentMethod,
         tenant: Tenant,
-    ): TransactionEntity =
-        transactionDao.save(
+    ): TransactionEntity {
+        val fees = feesCalculator.compute(TransactionType.CHARGE, request.amount, tenant)
+        return transactionDao.save(
             TransactionEntity(
                 id = UUID.randomUUID().toString(),
                 accountId = securityManager.currentUserId(),
@@ -142,18 +147,20 @@ public class CreateChargeDelegate(
                 paymentMethodProvider = PaymentMethodProvider.valueOf(paymentMethod.provider),
                 type = TransactionType.CHARGE,
                 amount = request.amount,
-                fees = 0.0,
-                net = request.amount,
+                fees = fees,
+                net = request.amount - fees,
                 currency = tenant.currency,
                 status = Status.PENDING,
                 created = OffsetDateTime.now(),
                 description = request.description
             )
         )
+    }
 
     private fun validateRequest(request: CreateChargeRequest, tenant: Tenant, accounts: Map<Long, AccountSummary>) {
         validateCurrency(request.currency, tenant)
         ensureCurrentUserActive(accounts)
         ensureRecipientActive(request.recipientId, accounts)
+        ensureBusinessAccount(request.recipientId, accounts)
     }
 }

@@ -2,6 +2,7 @@ package com.wutsi.platform.payment.delegate
 
 import com.wutsi.platform.account.WutsiAccountApi
 import com.wutsi.platform.account.dto.AccountSummary
+import com.wutsi.platform.account.entity.AccountStatus
 import com.wutsi.platform.core.error.Error
 import com.wutsi.platform.core.error.Parameter
 import com.wutsi.platform.core.error.ParameterType.PARAMETER_TYPE_PAYLOAD
@@ -116,18 +117,23 @@ class AbstractDelegate {
         ensureAccountActive(user.id, user.status, ErrorURN.USER_NOT_ACTIVE)
     }
 
-    @Deprecated("")
-    protected fun ensureRecipientActive(recipientId: Long) {
-        val user = accountApi.getAccount(recipientId).account
-        ensureAccountActive(user.id, user.status, ErrorURN.RECIPIENT_NOT_ACTIVE)
-    }
-
     protected fun ensureAccountActive(id: Long, status: String, error: ErrorURN) {
-        if (!status.equals("ACTIVE", ignoreCase = true)) {
+        if (!status.equals(AccountStatus.ACTIVE.name, ignoreCase = true)) {
             throw ForbiddenException(
                 error = Error(
                     code = error.urn,
                     data = mapOf("userId" to id)
+                ),
+            )
+        }
+    }
+
+    protected fun ensureBusinessAccount(id: Long, accounts: Map<Long, AccountSummary>) {
+        if (accounts[id]?.business == false) {
+            throw ForbiddenException(
+                error = Error(
+                    code = ErrorURN.RESTRICTED_TO_BUSINESS_ACCOUNT.urn,
+                    data = mapOf("userId" to accounts[id]!!.id)
                 ),
             )
         }

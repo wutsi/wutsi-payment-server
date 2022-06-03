@@ -22,6 +22,7 @@ import com.wutsi.platform.core.tracing.spring.SpringTracingRequestInterceptor
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.PaymentMethodType
+import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.payment.provider.om.OMGateway
 import com.wutsi.platform.tenant.WutsiTenantApi
 import com.wutsi.platform.tenant.dto.Fee
@@ -104,49 +105,9 @@ abstract class AbstractSecuredController {
             ),
             fees = listOf(
                 Fee(
-                    transactionType = "transfer",
-                    applyToSender = false,
-                    toRetail = true,
+                    transactionType = TransactionType.CHARGE.name,
                     amount = 0.0,
-                    percent = 0.0
-                ),
-                Fee(
-                    transactionType = "transfer",
-                    applyToSender = true,
-                    fromRetail = true,
-                    amount = 0.0,
-                    percent = 0.02
-                ),
-                Fee(
-                    transactionType = "transfer",
-                    applyToSender = true,
-                    amount = 100.0,
-                    percent = 0.0
-                ),
-                Fee(
-                    transactionType = "transfer",
-                    applyToSender = false,
-                    amount = 0.0,
-                    percent = 0.04,
-                    toBusiness = true,
-                ),
-                Fee(
-                    transactionType = "payment",
-                    applyToSender = false,
-                    amount = 0.0,
-                    percent = 0.04
-                ),
-                Fee(
-                    transactionType = "cashout",
-                    applyToSender = true,
-                    amount = 0.0,
-                    percent = 0.02
-                ),
-                Fee(
-                    transactionType = "cashin",
-                    applyToSender = true,
-                    amount = 0.0,
-                    percent = 0.0
+                    percent = 0.1
                 ),
             )
         )
