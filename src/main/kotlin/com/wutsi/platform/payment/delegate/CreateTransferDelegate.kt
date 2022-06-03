@@ -20,7 +20,6 @@ import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.entity.TransactionType.TRANSFER
 import com.wutsi.platform.payment.error.ErrorURN
 import com.wutsi.platform.payment.error.TransactionException
-import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.event.EventURN.TRANSACTION_SUCCESSFUL
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.tenant.dto.Tenant
@@ -89,10 +88,6 @@ class CreateTransferDelegate(
         } finally {
             log(tx)
         }
-    }
-
-    private fun onPending(tx: TransactionEntity) {
-        publish(EventURN.TRANSACTION_PENDING, tx)
     }
 
     fun onSuccess(tx: TransactionEntity, tenant: Tenant) {

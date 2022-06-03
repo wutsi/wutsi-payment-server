@@ -48,6 +48,10 @@ class AbstractDelegate {
     @Autowired
     protected lateinit var eventStream: EventStream
 
+    protected fun onPending(tx: TransactionEntity) {
+        publish(EventURN.TRANSACTION_PENDING, tx)
+    }
+
     @Transactional
     open fun onError(tx: TransactionEntity, ex: PaymentException) {
         tx.status = Status.FAILED

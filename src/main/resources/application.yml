@@ -68,7 +68,7 @@ wutsi:
   platform:
     payment:
       mtn:
-        enabled: true
+        enabled: false
         environment: sandbox
         callback-url: https://wutsi-payment-server-test.herokuapp.com/mtn/callback
         collection:
@@ -76,7 +76,10 @@ wutsi:
         disbursement:
           subscription-key: ae3a40f49d0f4c87b44cf62da406dd26  # account: h...@wutsi.com
       om:
+        enabled: false
+      flutterwave:
         enabled: true
+        secret-key: ""
     security:
       type: jwt
       api-key: ba6144d6-6430-11ec-b820-06df65522ffd

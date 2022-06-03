@@ -157,6 +157,7 @@ abstract class AbstractSecuredController {
             displayName = "Ray Sponsible",
             language = "en",
             status = "ACTIVE",
+            email = "ray.sponsible@gmail.com"
         )
         doReturn(GetAccountResponse(user)).whenever(accountApi).getAccount(any())
 

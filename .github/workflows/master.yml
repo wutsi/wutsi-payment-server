@@ -42,12 +42,14 @@ jobs:
         env:
           HEROKU_API_KEY: ${{secrets.HEROKU_API_KEY_TEST}}
           HEROKU_APP: wutsi-payment-server-test
+          API_KEY: ${{secrets.API_KEY_TEST}}
           CLOUDAMQP_URL: ${{secrets.CLOUDAMQP_URL_TEST}}
         run: |
           heroku apps | grep ${HEROKU_APP} && echo 'app: ${HEROKU_APP} exists' ||  heroku apps:create ${HEROKU_APP}
           heroku buildpacks:clear --app ${HEROKU_APP}
           heroku buildpacks:add heroku/jvm --app ${HEROKU_APP}
           heroku config:set --app ${HEROKU_APP} APP_PROFILE=test
+          heroku config:set --app ${HEROKU_APP} API_KEY=${API_KEY}
           heroku config:set --app ${HEROKU_APP} CLOUDAMQP_URL=${CLOUDAMQP_URL}
           heroku addons -a ${HEROKU_APP} | grep papertrail && echo 'addon: papertrail exists' ||  heroku addons:create papertrail -a ${HEROKU_APP}
           heroku addons -a ${HEROKU_APP} | grep heroku-postgresql && echo 'addon: heroku-postgresql exists' ||  heroku addons:create heroku-postgresql -a ${HEROKU_APP}
@@ -60,12 +62,14 @@ jobs:
         env:
           HEROKU_API_KEY: ${{secrets.HEROKU_API_KEY_PROD}}
           HEROKU_APP: wutsi-payment-server-prod
+          API_KEY: ${{secrets.API_KEY_PROD}}
           CLOUDAMQP_URL: ${{secrets.CLOUDAMQP_URL_PROD}}
         run: |
           heroku apps | grep ${HEROKU_APP} && echo 'app: ${HEROKU_APP} exists' ||  heroku apps:create ${HEROKU_APP}
           heroku buildpacks:clear --app ${HEROKU_APP}
           heroku buildpacks:add heroku/jvm --app ${HEROKU_APP}
           heroku config:set --app ${HEROKU_APP} APP_PROFILE=prod
+          heroku config:set --app ${HEROKU_APP} API_KEY=${API_KEY}
           heroku config:set --app ${HEROKU_APP} CLOUDAMQP_URL=${CLOUDAMQP_URL}
           heroku addons -a ${HEROKU_APP} | grep papertrail && echo 'addon: papertrail exists' ||  heroku addons:create papertrail -a ${HEROKU_APP}
           heroku addons -a ${HEROKU_APP} | grep heroku-postgresql && echo 'addon: heroku-postgresql exists' ||  heroku addons:create heroku-postgresql -a ${HEROKU_APP}

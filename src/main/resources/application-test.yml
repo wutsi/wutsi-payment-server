@@ -12,6 +12,10 @@ spring:
 
 wutsi:
   platform:
+    payment:
+      flutterwave:
+        enabled: true
+        secret-key: ${FLUTTERWAVE_SECRET_KEY}
     security:
       api-key: ${API_KEY}
     stream:

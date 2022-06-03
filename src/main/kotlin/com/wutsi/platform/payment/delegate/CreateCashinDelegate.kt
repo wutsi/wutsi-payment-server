@@ -83,6 +83,7 @@ class CreateCashinDelegate(
         tx.status = Status.PENDING
         tx.gatewayTransactionId = response.transactionId
         tx.gatewayFees = response.fees.value
+        tx.financialTransactionId = response.financialTransactionId
         transactionDao.save(tx)
 
         publish(EventURN.TRANSACTION_PENDING, tx)

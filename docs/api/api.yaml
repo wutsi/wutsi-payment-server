@@ -89,6 +89,30 @@ paths:
       security:
         - api_key: [ 'payment-manage' ]
 
+  /v1/transactions/charges:
+    post:
+      operationId: "create-charge"
+      description: Charge a customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChargeRequest'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateChargeResponse'
+        409:
+          description: The operation failed
+      tags:
+        - Transactions
+      security:
+        - api_key: [ 'payment-manage' ]
+
   /v1/transactions/{id}:
     get:
       operationId: "get-transaction"
@@ -158,30 +182,6 @@ paths:
         - Transactions
       security:
         - api_key: [ 'payment-read' ]
-
-  /v1/transactions/fees:
-    post:
-      operationId: "compute-transaction-fees"
-      description: Compute fees
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ComputeTransactionFeesRequest'
-      responses:
-        200:
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ComputeTransactionFeesResponse'
-        404:
-          description: Transaction not found
-      tags:
-        - Transactions
-      security:
-        - api_key: [ 'payment-manage' ]
 
   /v1/accounts/{account-id}/balance:
     get:
@@ -327,51 +327,6 @@ components:
           enum:
             - PENDING
             - SUCESS
-
-    ComputeTransactionFeesRequest:
-      type: object
-      properties:
-        transactionType:
-          type: string
-          description: Type of transaction
-        senderId:
-          type: integer
-          format: int64
-          description: ID of the sender
-          nullable: true
-        recipientId:
-          type: integer
-          format: int64
-          description: ID of the recipient
-          nullable: true
-        amount:
-          type: number
-          format: double
-          description: Amout to transfer to the user's wallet
-          minimum: 0
-        currency:
-          type: string
-          format: double
-          description: Currency code
-        paymentMethodToken:
-          type: string
-          description: Token of the payment method
-          nullable: true
-
-    ComputeTransactionFeesResponse:
-      type: object
-      properties:
-        fees:
-          type: number
-          format: double
-          description: Fees amount
-        gatewayFees:
-          type: number
-          format: double
-          description: Gateway Fees amount
-        applyToSender:
-          type: boolean
-          description: Are the fees should be apply to the sender?
 
     CreateTransferRequest:
       type: object
@@ -772,3 +727,49 @@ components:
         paymentRequest:
           type: object
           $ref: "#/components/schemas/PaymentRequest"
+
+    CreateChargeRequest:
+      type: object
+      properties:
+        paymentMethodToken:
+          type: string
+          description: Token of account from where money will be debitted.
+        recipientId:
+          type: integer
+          format: int64
+          description: ID of the recipient of the charge
+        amount:
+          type: number
+          format: double
+          description: Amount to transfer to the user's wallet
+          minimum: 0
+        currency:
+          type: string
+          description: 3 letter currency code
+          maxLength: 3
+        orderId:
+          type: string
+          description: ID of the order to charge
+          nullable: true
+        description:
+          type: string
+          description: Description of the transaction
+          nullable: true
+          maxLength: 100
+      required:
+        - paymentMethodToken
+        - currency
+
+    CreateChargeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID of the transaction
+        status:
+          description: Status of the charge
+          type: string
+          enum:
+            - PENDING
+            - SUCESS

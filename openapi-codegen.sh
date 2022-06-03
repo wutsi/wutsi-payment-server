@@ -18,7 +18,8 @@ java -jar ${CODEGEN_JAR} server \
     -heroku ${API_NAME}-server \
     -service_logger \
     -service_mqueue \
-    -service_database
+    -service_database \
+    -service_api_key
 
 if [ $? -eq 0 ]
 then
