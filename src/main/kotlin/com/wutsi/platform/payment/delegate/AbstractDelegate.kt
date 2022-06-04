@@ -105,6 +105,16 @@ class AbstractDelegate {
         ensureAccountActive(user.id, user.status, ErrorURN.USER_NOT_ACTIVE)
     }
 
+    protected fun ensureRecipientValid(recipientId: Long, accounts: Map<Long, AccountSummary>) {
+        if (accounts[recipientId] == null)
+            throw ConflictException(
+                error = Error(
+                    code = ErrorURN.RECIPIENT_NOT_FOUND.urn,
+                    data = mapOf("userId" to recipientId)
+                ),
+            )
+    }
+
     protected fun ensureRecipientActive(recipientId: Long, accounts: Map<Long, AccountSummary>) {
         val user = accounts[recipientId]!!
         ensureAccountActive(user.id, user.status, ErrorURN.RECIPIENT_NOT_ACTIVE)

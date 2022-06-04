@@ -160,6 +160,7 @@ public class CreateChargeDelegate(
     private fun validateRequest(request: CreateChargeRequest, tenant: Tenant, accounts: Map<Long, AccountSummary>) {
         validateCurrency(request.currency, tenant)
         ensureCurrentUserActive(accounts)
+        ensureRecipientValid(request.recipientId, accounts)
         ensureRecipientActive(request.recipientId, accounts)
         ensureBusinessAccount(request.recipientId, accounts)
     }

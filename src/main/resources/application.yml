@@ -63,8 +63,6 @@ wutsi:
         cron: "0 */10 * * * *"
       pending-cashout:
         cron: "0 */11 * * * *"
-      pending-transfer-to-expire:
-        cron: "0 */15 * * * *"
   platform:
     payment:
       mtn:

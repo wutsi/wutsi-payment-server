@@ -110,8 +110,6 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertNull(tx.description)
         assertNull(tx.errorCode)
-        assertNull(tx.paymentRequestId)
-        assertNull(tx.expires)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(request.amount, balance.amount)
@@ -161,10 +159,6 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertNull(tx.description)
         assertNull(tx.errorCode)
-        assertNull(tx.paymentRequestId)
-        assertNull(tx.expires)
-        assertFalse(tx.requiresApproval)
-        assertNull(tx.approved)
 
         val balance = balanceDao.findByAccountId(USER_ID)
         assertFalse(balance.isPresent)
@@ -218,10 +212,6 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertEquals(e.error.supplierErrorCode, tx.supplierErrorCode)
         assertEquals(e.error.code.name, tx.errorCode)
         assertEquals(e.error.transactionId, tx.gatewayTransactionId)
-        assertNull(tx.paymentRequestId)
-        assertNull(tx.expires)
-        assertFalse(tx.requiresApproval)
-        assertNull(tx.approved)
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())

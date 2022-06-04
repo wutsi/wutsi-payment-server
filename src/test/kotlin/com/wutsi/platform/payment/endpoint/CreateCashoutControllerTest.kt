@@ -40,7 +40,6 @@ import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.web.client.HttpClientErrorException
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNull
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -113,10 +112,6 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertNull(tx.description)
         assertNull(tx.errorCode)
-        assertNull(tx.paymentRequestId)
-        assertNull(tx.expires)
-        assertFalse(tx.requiresApproval)
-        assertNull(tx.approved)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(100000 - tx.amount, balance.amount)
@@ -166,10 +161,6 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertNull(tx.description)
         assertNull(tx.errorCode)
-        assertNull(tx.paymentRequestId)
-        assertNull(tx.expires)
-        assertFalse(tx.requiresApproval)
-        assertNull(tx.approved)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(100000.0 - tx.amount, balance.amount)
@@ -223,10 +214,6 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertEquals(e.error.supplierErrorCode, tx.supplierErrorCode)
         assertEquals(e.error.code.name, tx.errorCode)
         assertEquals(e.error.transactionId, tx.gatewayTransactionId)
-        assertNull(tx.paymentRequestId)
-        assertNull(tx.expires)
-        assertFalse(tx.requiresApproval)
-        assertNull(tx.approved)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(100000.0, balance.amount)
@@ -274,10 +261,6 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, tx.errorCode)
         assertEquals("", tx.gatewayTransactionId)
-        assertNull(tx.paymentRequestId)
-        assertNull(tx.expires)
-        assertFalse(tx.requiresApproval)
-        assertNull(tx.approved)
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())

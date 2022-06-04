@@ -1,11 +1,9 @@
 package com.wutsi.platform.payment.delegate
 
 import com.wutsi.platform.payment.dto.Balance
-import com.wutsi.platform.payment.dto.PaymentRequest
 import com.wutsi.platform.payment.dto.Transaction
 import com.wutsi.platform.payment.dto.TransactionSummary
 import com.wutsi.platform.payment.entity.BalanceEntity
-import com.wutsi.platform.payment.entity.PaymentRequestEntity
 import com.wutsi.platform.payment.entity.TransactionEntity
 
 fun BalanceEntity.toBalance() = Balance(
@@ -35,11 +33,6 @@ fun TransactionEntity.toTransaction() = Transaction(
     gatewayFees = this.gatewayFees,
     net = this.net,
     status = this.status.name,
-    paymentRequestId = this.paymentRequestId,
-    expires = this.expires,
-    requiresApproval = this.requiresApproval,
-    approved = this.approved,
-    feesToSender = this.feesToSender,
     orderId = this.orderId
 )
 
@@ -61,17 +54,4 @@ fun TransactionEntity.toTransactionSummary() = TransactionSummary(
     errorCode = this.errorCode,
     supplierErrorCode = this.supplierErrorCode,
     orderId = this.orderId,
-    paymentRequestId = this.paymentRequestId,
-    feesToSender = this.feesToSender,
-)
-
-fun PaymentRequestEntity.toPaymentRequest() = PaymentRequest(
-    id = this.id ?: "",
-    accountId = this.accountId,
-    amount = this.amount,
-    currency = this.currency,
-    description = this.description,
-    orderId = this.orderId,
-    created = this.created,
-    expires = this.expires,
 )

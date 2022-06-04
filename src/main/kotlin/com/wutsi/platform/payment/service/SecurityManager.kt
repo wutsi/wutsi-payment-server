@@ -5,7 +5,6 @@ import com.wutsi.platform.core.error.exception.ForbiddenException
 import com.wutsi.platform.core.security.WutsiPrincipal
 import com.wutsi.platform.core.tracing.TracingContext
 import com.wutsi.platform.payment.entity.BalanceEntity
-import com.wutsi.platform.payment.entity.PaymentRequestEntity
 import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.error.ErrorURN
 import org.springframework.security.core.context.SecurityContextHolder
@@ -32,16 +31,6 @@ class SecurityManager(
 
     fun checkTenant(tx: TransactionEntity): Boolean {
         if (tx.tenantId.toString() != tracingContext.tenantId())
-            throw ForbiddenException(
-                error = Error(
-                    code = ErrorURN.ILLEGAL_TENANT_ACCESS.urn
-                )
-            )
-        return true
-    }
-
-    fun checkTenant(paymentRequest: PaymentRequestEntity): Boolean {
-        if (paymentRequest.tenantId.toString() != tracingContext.tenantId())
             throw ForbiddenException(
                 error = Error(
                     code = ErrorURN.ILLEGAL_TENANT_ACCESS.urn

@@ -22,6 +22,7 @@ import com.wutsi.platform.payment.core.Money
 import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dao.BalanceRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
+import com.wutsi.platform.payment.dto.CreateCashinResponse
 import com.wutsi.platform.payment.dto.CreateChargeRequest
 import com.wutsi.platform.payment.dto.CreateChargeResponse
 import com.wutsi.platform.payment.entity.TransactionType
@@ -39,7 +40,6 @@ import org.springframework.boot.web.server.LocalServerPort
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.web.client.HttpClientErrorException
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNull
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -111,10 +111,6 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertEquals(request.description, tx.description)
         assertNull(tx.errorCode)
-        assertNull(tx.paymentRequestId)
-        assertNull(tx.expires)
-        assertFalse(tx.requiresApproval)
-        assertNull(tx.approved)
 
         assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
         assertEquals(100000.0 + tx.net, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
@@ -161,10 +157,6 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertEquals(request.description, tx.description)
         assertNull(tx.errorCode)
-        assertNull(tx.paymentRequestId)
-        assertNull(tx.expires)
-        assertFalse(tx.requiresApproval)
-        assertNull(tx.approved)
 
         assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
         assertEquals(100000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
@@ -218,10 +210,6 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(e.error.supplierErrorCode, tx.supplierErrorCode)
         assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, tx.errorCode)
         assertEquals(e.error.transactionId, tx.gatewayTransactionId)
-        assertNull(tx.paymentRequestId)
-        assertNull(tx.expires)
-        assertFalse(tx.requiresApproval)
-        assertNull(tx.approved)
 
         assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
         assertEquals(100000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
@@ -275,10 +263,6 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(e.error.supplierErrorCode, tx.supplierErrorCode)
         assertEquals(ErrorCode.DECLINED.name, tx.errorCode)
         assertEquals(e.error.transactionId, tx.gatewayTransactionId)
-        assertNull(tx.paymentRequestId)
-        assertNull(tx.expires)
-        assertFalse(tx.requiresApproval)
-        assertNull(tx.approved)
 
         assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
         assertEquals(100000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
@@ -351,6 +335,23 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
     }
 
     @Test
+    public fun invalidRecipient() {
+        // WHEN
+        val request = createRequest(recipientId = 99999)
+        val e = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateCashinResponse::class.java)
+        }
+
+        // THEN
+        assertEquals(409, e.rawStatusCode)
+
+        val response = ObjectMapper().readValue(e.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.RECIPIENT_NOT_FOUND.urn, response.error.code)
+
+        verify(eventStream, never()).publish(any(), any())
+    }
+
+    @Test
     fun userNotActive() {
         // GIVEN
         val account = AccountSummary(id = USER_ID, status = AccountStatus.SUSPENDED.name)
@@ -372,11 +373,12 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         verify(eventStream, never()).publish(any(), any())
     }
 
-    private fun createRequest(amount: Double = 50000.0, currency: String = "XAF") = CreateChargeRequest(
-        paymentMethodToken = "11111",
-        recipientId = RECIPIENT_ID,
-        amount = amount,
-        currency = currency,
-        description = "Hello world"
-    )
+    private fun createRequest(amount: Double = 50000.0, currency: String = "XAF", recipientId: Long = RECIPIENT_ID) =
+        CreateChargeRequest(
+            paymentMethodToken = "11111",
+            recipientId = recipientId,
+            amount = amount,
+            currency = currency,
+            description = "Hello world"
+        )
 }

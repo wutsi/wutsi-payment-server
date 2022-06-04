@@ -3,19 +3,12 @@ package com.wutsi.platform.payment.`delegate`
 import com.wutsi.platform.account.dto.AccountSummary
 import com.wutsi.platform.account.dto.SearchAccountRequest
 import com.wutsi.platform.core.error.Error
-import com.wutsi.platform.core.error.Parameter
-import com.wutsi.platform.core.error.ParameterType
-import com.wutsi.platform.core.error.exception.BadRequestException
 import com.wutsi.platform.core.error.exception.ForbiddenException
-import com.wutsi.platform.core.error.exception.NotFoundException
 import com.wutsi.platform.payment.PaymentException
-import com.wutsi.platform.payment.core.ErrorCode
 import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.core.Status.SUCCESSFUL
-import com.wutsi.platform.payment.dao.PaymentRequestRepository
 import com.wutsi.platform.payment.dto.CreateTransferRequest
 import com.wutsi.platform.payment.dto.CreateTransferResponse
-import com.wutsi.platform.payment.entity.PaymentRequestEntity
 import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.entity.TransactionType.TRANSFER
 import com.wutsi.platform.payment.error.ErrorURN
@@ -30,7 +23,6 @@ import java.util.UUID
 
 @Service
 class CreateTransferDelegate(
-    private val paymentRequestDao: PaymentRequestRepository,
     private val tenantProvider: TenantProvider,
 ) : AbstractDelegate() {
     @Transactional(noRollbackFor = [TransactionException::class])
@@ -39,8 +31,6 @@ class CreateTransferDelegate(
         logger.add("amount", request.amount)
         logger.add("recipient_id", request.recipientId)
         logger.add("description", request.description)
-        logger.add("order_id", request.orderId)
-        logger.add("payment_request_id", request.paymentRequestId)
 
         val tenant = tenantProvider.get()
 
@@ -50,27 +40,11 @@ class CreateTransferDelegate(
             )
         ).accounts.map { it.id to it }.toMap()
 
-        val payment = request.paymentRequestId?.let {
-            paymentRequestDao.findById(it)
-                .orElseThrow {
-                    NotFoundException(
-                        error = Error(
-                            code = ErrorURN.PAYMENT_REQUEST_NOT_FOUND.urn,
-                            parameter = Parameter(
-                                name = "paymentRequestId",
-                                value = it,
-                                type = ParameterType.PARAMETER_TYPE_PAYLOAD
-                            )
-                        )
-                    )
-                }
-        }
+        validateRequest(request, tenant, accounts)
 
-        validateRequest(request, payment, tenant, accounts)
-
-        val tx = createTransaction(request, payment, tenant, accounts)
+        val tx = createTransaction(request, tenant, accounts)
         try {
-            validateTransaction(tx, payment)
+            validateTransaction(tx)
             if (tx.status == Status.PENDING) {
                 onPending(tx)
             } else if (tx.status == Status.SUCCESSFUL) {
@@ -99,7 +73,6 @@ class CreateTransferDelegate(
 
     private fun createTransaction(
         request: CreateTransferRequest,
-        payment: PaymentRequestEntity?,
         tenant: Tenant,
         accounts: Map<Long, AccountSummary?>
     ): TransactionEntity {
@@ -112,20 +85,14 @@ class CreateTransferDelegate(
                 recipientId = request.recipientId,
                 tenantId = tenant.id,
                 type = TRANSFER,
-                amount = payment?.amount ?: request.amount,
+                amount = request.amount,
                 fees = 0.0,
                 net = request.amount,
                 currency = tenant.currency,
                 status = SUCCESSFUL,
                 created = now,
-                expires = null,
                 description = request.description,
                 business = business,
-                retail = false,
-                requiresApproval = false,
-                approved = null,
-                orderId = payment?.orderId ?: request.orderId,
-                paymentRequestId = payment?.id,
             )
         )
         return tx
@@ -136,7 +103,6 @@ class CreateTransferDelegate(
 
     private fun validateRequest(
         request: CreateTransferRequest,
-        payment: PaymentRequestEntity?,
         tenant: Tenant,
         accounts: Map<Long, AccountSummary>
     ) {
@@ -148,57 +114,13 @@ class CreateTransferDelegate(
                 )
             )
 
-        validateTransferRequest(request, payment, tenant)
         validateCurrency(request.currency, tenant)
         ensureCurrentUserActive(accounts)
+        ensureRecipientValid(request.recipientId, accounts)
         ensureRecipientActive(request.recipientId, accounts)
     }
 
-    private fun validateTransferRequest(
-        request: CreateTransferRequest,
-        payment: PaymentRequestEntity?,
-        tenant: Tenant
-    ) {
-        if (payment != null) {
-            if (tenant.id != payment.tenantId)
-                throw ForbiddenException(
-                    error = Error(
-                        code = ErrorURN.ILLEGAL_PAYMENT_REQUEST_ACCESS.urn
-                    )
-                )
-
-            if (request.recipientId != payment.accountId)
-                throw BadRequestException(
-                    error = Error(
-                        code = ErrorURN.RECIPIENT_NOT_VALID.urn
-                    )
-                )
-
-            if (request.orderId != payment.orderId)
-                throw BadRequestException(
-                    error = Error(
-                        code = ErrorURN.ORDER_NOT_VALID.urn
-                    )
-                )
-
-            if (request.amount != payment.amount)
-                throw BadRequestException(
-                    error = Error(
-                        code = ErrorURN.AMOUNT_NOT_VALID.urn
-                    )
-                )
-        }
-    }
-
-    private fun validateTransaction(tx: TransactionEntity, payment: PaymentRequestEntity?) {
+    private fun validateTransaction(tx: TransactionEntity) {
         ensureBalanceAbove(securityManager.currentUserId(), tx)
-
-        if (payment?.expires != null && payment.expires.isBefore(tx.created))
-            throw PaymentException(
-                error = com.wutsi.platform.payment.core.Error(
-                    code = ErrorCode.EXPIRED,
-                    transactionId = tx.id!!
-                )
-            )
     }
 }
