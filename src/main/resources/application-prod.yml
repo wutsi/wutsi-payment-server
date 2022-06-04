@@ -14,9 +14,9 @@ wutsi:
   platform:
     payment:
       mtn:
-        enabled: false
+        enabled: true
       orange:
-        enabled: false
+        enabled: true
       flutterwave:
         enabled: false
         secret-key: ${FLUTTERWAVE_SECRET_KEY}
