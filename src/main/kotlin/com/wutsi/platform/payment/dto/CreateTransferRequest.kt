@@ -3,6 +3,9 @@ package com.wutsi.platform.payment.dto
 import javax.validation.constraints.Min
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Size
+import kotlin.Double
+import kotlin.Long
+import kotlin.String
 
 public data class CreateTransferRequest(
     public val recipientId: Long = 0,
@@ -11,5 +14,5 @@ public data class CreateTransferRequest(
     @get:NotBlank
     @get:Size(max = 3)
     public val currency: String = "",
-    public val description: String? = null,
+    public val description: String? = null
 )

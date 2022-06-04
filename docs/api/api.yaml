@@ -138,27 +138,6 @@ paths:
       security:
         - api_key: [ 'payment-read' ]
 
-  /v1/transactions/{id}/approve:
-    get:
-      operationId: "approve-transaction"
-      description: Approve a pending transaction
-      parameters:
-        - in: path
-          name: id
-          description: ID of the transaction
-          required: true
-          schema:
-            type: string
-      responses:
-        200:
-          description: Success
-        404:
-          description: Transaction not found
-      tags:
-        - Transactions
-      security:
-        - api_key: [ 'payment-manage' ]
-
   /v1/transactions/search:
     post:
       operationId: "search-transaction"
@@ -204,53 +183,6 @@ paths:
                 $ref: '#/components/schemas/GetBalanceResponse'
       tags:
         - Account
-      security:
-        - api_key: [ 'payment-read' ]
-
-  /v1/payment-requests:
-    post:
-      operationId: "create-payment-request"
-      description: |
-        Request a payment. This request is issued by merchants for receiving payment from customers.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreatePaymentRequestRequest'
-      responses:
-        200:
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CreatePaymentRequestResponse'
-      tags:
-        - Transactions
-      security:
-        - api_key: [ 'payment-manage' ]
-
-  /v1/payment-requests/{id}:
-    get:
-      operationId: "get-payment-request"
-      description: Get the information about a payment request
-      parameters:
-        - in: path
-          name: id
-          description: ID of the payment request
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        200:
-          description: Success
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GetPaymentRequestResponse'
-      tags:
-        - Transactions
       security:
         - api_key: [ 'payment-read' ]
 
@@ -347,14 +279,6 @@ components:
         description:
           type: string
           description: Description of the transfer
-          nullable: true
-        orderId:
-          type: string
-          description: ID of the order
-          nullable: true
-        paymentRequestId:
-          type: string
-          description: ID of the payment request
           nullable: true
       required:
         - currency
@@ -484,13 +408,6 @@ components:
           type: string
           description: ID of the order associated with the transaction
           nullable: true
-        paymentRequestId:
-          type: string
-          description: ID of the payment request
-          nullable: true
-        feesToSender:
-          type: boolean
-          description: Fees are applied to sender?
 
     SearchTransactionRequest:
       type: object
@@ -498,10 +415,6 @@ components:
         accountId:
           type: integer
           format: int64
-          nullable: true
-        paymentRequestId:
-          type: string
-          description: ID of the payment request
           nullable: true
         type:
           type: string
@@ -616,30 +529,10 @@ components:
           type: string
           description: Creation data-time
           format: date-time
-        paymentRequestId:
-          type: string
-          description: ID of the payment request
-          nullable: true
         orderId:
           type: string
           description: ID of the order associated with the transaction
           nullable: true
-        expires:
-          type: string
-          format: date-time
-          description: Expiry date
-          nullable: true
-        approved:
-          type: string
-          format: date-time
-          description: Approval date/time
-          nullable: true
-        requiresApproval:
-          type: boolean
-          description: Is this transaction should be approved by the receiver?
-        feesToSender:
-          type: boolean
-          description: Fees are applied to sender?
 
     GetTransactionResponse:
       type: object
@@ -647,40 +540,6 @@ components:
         transaction:
           type: object
           $ref: "#/components/schemas/Transaction"
-
-    CreatePaymentRequestRequest:
-      type: object
-      properties:
-        amount:
-          type: number
-          format: double
-          description: Amount requested
-          minimum: 0
-        currency:
-          type: string
-          description: Currency code
-        description:
-          type: string
-          description: Description of the transaction
-          nullable: true
-          maxLength: 100
-        orderId:
-          type: string
-          description: ID of the order associated with the payment
-          nullable: true
-          maxLength: 36
-        timeToLive:
-          type: integer
-          description: Life span of this request in seconds. Customer must honor this request within this duration
-          nullable: true
-
-    CreatePaymentRequestResponse:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          description: ID of the payment request
 
     PaymentRequest:
       type: object
@@ -715,18 +574,6 @@ components:
           type: string
           format: date-time
           description: Creation time
-        expires:
-          type: string
-          format: date-time
-          description: Expiry date
-          nullable: true
-
-    GetPaymentRequestResponse:
-      type: object
-      properties:
-        paymentRequest:
-          type: object
-          $ref: "#/components/schemas/PaymentRequest"
 
     CreateChargeRequest:
       type: object
