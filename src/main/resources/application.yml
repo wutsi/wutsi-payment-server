@@ -59,6 +59,8 @@ wutsi:
   application:
     name: wutsi-payment
     jobs:
+      pending-charge:
+        cron: "0 */9 * * * *"
       pending-cashin:
         cron: "0 */10 * * * *"
       pending-cashout:
