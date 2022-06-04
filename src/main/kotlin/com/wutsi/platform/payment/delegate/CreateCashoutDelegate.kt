@@ -109,7 +109,6 @@ class CreateCashoutDelegate(
                 fees = 0.0,
                 net = request.amount,
                 currency = tenant.currency,
-                status = Status.PENDING,
                 created = OffsetDateTime.now(),
             )
         )
@@ -134,6 +133,9 @@ class CreateCashoutDelegate(
 
     @Transactional
     fun onError(tx: TransactionEntity, ex: PaymentException, tenant: Tenant) {
+        if (tx.status == Status.FAILED)
+            return
+
         // Revert balance
         updateBalance(tx.accountId, tx.amount, tenant)
 
@@ -147,6 +149,9 @@ class CreateCashoutDelegate(
         response: CreateTransferResponse,
         tenant: Tenant
     ) {
+        if (tx.status == Status.SUCCESSFUL)
+            return
+
         // Update transaction
         tx.status = Status.SUCCESSFUL
         tx.gatewayTransactionId = response.transactionId

@@ -12,7 +12,7 @@ spring:
 
 wutsi:
   platform:
-    payment:
+    payment: # IMPORTANT: FLUTTERWAVE DISABLED IN PROD (FOR NOW)
       mtn:
         enabled: true
       orange:

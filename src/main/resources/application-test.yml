@@ -12,7 +12,11 @@ spring:
 
 wutsi:
   platform:
-    payment:
+    payment: # IMPORTANT: ONLY FLUTTERWAVE USED IN TEST
+      mtn:
+        enabled: false
+      orange:
+        enabled: false
       flutterwave:
         secret-key: ${FLUTTERWAVE_SECRET_KEY}
     security:

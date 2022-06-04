@@ -93,6 +93,9 @@ public class CreateChargeDelegate(
         response: CreatePaymentResponse,
         tenant: Tenant
     ) {
+        if (tx.status == Status.SUCCESSFUL)
+            return
+
         // Update balance
         updateBalance(tx.recipientId!!, tx.net, tenant)
 
@@ -150,7 +153,6 @@ public class CreateChargeDelegate(
                 fees = fees,
                 net = request.amount - fees,
                 currency = tenant.currency,
-                status = Status.PENDING,
                 created = OffsetDateTime.now(),
                 description = request.description
             )

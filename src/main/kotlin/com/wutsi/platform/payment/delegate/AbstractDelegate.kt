@@ -50,11 +50,20 @@ class AbstractDelegate {
     protected lateinit var eventStream: EventStream
 
     protected fun onPending(tx: TransactionEntity) {
+        if (tx.status == Status.PENDING)
+            return
+
+        tx.status = Status.PENDING
+        transactionDao.save(tx)
+
         publish(EventURN.TRANSACTION_PENDING, tx)
     }
 
     @Transactional
     open fun onError(tx: TransactionEntity, ex: PaymentException) {
+        if (tx.status == Status.FAILED)
+            return
+
         tx.status = Status.FAILED
         tx.errorCode = ex.error.code.name
         tx.supplierErrorCode = ex.error.supplierErrorCode

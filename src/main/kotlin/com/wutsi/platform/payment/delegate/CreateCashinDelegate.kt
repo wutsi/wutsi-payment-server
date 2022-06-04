@@ -63,7 +63,7 @@ class CreateCashinDelegate(
             if (response.status == Status.SUCCESSFUL) {
                 onSuccess(tx, response, tenant)
             } else {
-                onPending(tx, response)
+                onPending(tx)
             }
 
             return CreateCashinResponse(
@@ -77,16 +77,6 @@ class CreateCashinDelegate(
         } finally {
             log(tx)
         }
-    }
-
-    private fun onPending(tx: TransactionEntity, response: CreatePaymentResponse) {
-        tx.status = Status.PENDING
-        tx.gatewayTransactionId = response.transactionId
-        tx.gatewayFees = response.fees.value
-        tx.financialTransactionId = response.financialTransactionId
-        transactionDao.save(tx)
-
-        publish(EventURN.TRANSACTION_PENDING, tx)
     }
 
     private fun validateRequest(request: CreateCashinRequest, tenant: Tenant, accounts: Map<Long, AccountSummary>) {
@@ -111,7 +101,6 @@ class CreateCashinDelegate(
                 fees = 0.0,
                 net = request.amount,
                 currency = tenant.currency,
-                status = Status.PENDING,
                 created = OffsetDateTime.now(),
             )
         )
@@ -128,7 +117,7 @@ class CreateCashinDelegate(
                 ),
                 amount = Money(tx.amount, tx.currency),
                 externalId = tx.id!!,
-                description = "Cash-in",
+                description = "",
                 payerMessage = null
             )
         )
@@ -142,6 +131,9 @@ class CreateCashinDelegate(
         response: CreatePaymentResponse,
         tenant: Tenant
     ) {
+        if (tx.status == Status.SUCCESSFUL)
+            return
+
         // Update balance
         updateBalance(tx.accountId, tx.net, tenant)
 
