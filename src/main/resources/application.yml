@@ -74,7 +74,7 @@ wutsi:
         disbursement:
           subscription-key: ae3a40f49d0f4c87b44cf62da406dd26  # account: h...@wutsi.com
       om:
-        enabled: false
+        enabled: true
       flutterwave:
         enabled: false
         secret-key: ""
