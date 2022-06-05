@@ -172,8 +172,6 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
     @Test
     fun failure() {
         // GIVEN
-        val gwFees = 100.0
-
         val e =
             PaymentException(error = Error(code = NOT_ENOUGH_FUNDS, transactionId = "111", supplierErrorCode = "xxxx"))
         doThrow(e).whenever(gateway).createPayment(any())
