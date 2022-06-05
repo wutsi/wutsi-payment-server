@@ -108,8 +108,10 @@ class CreateCashinDelegate(
     }
 
     private fun cashin(tx: TransactionEntity, paymentMethod: PaymentMethod): CreatePaymentResponse {
-        val paymentGateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
-        val response = paymentGateway.createPayment(
+        val gateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
+        logger.add("gateway", gateway::class.java)
+
+        return gateway.createPayment(
             CreatePaymentRequest(
                 payer = Party(
                     fullName = paymentMethod.ownerName,
@@ -121,8 +123,6 @@ class CreateCashinDelegate(
                 payerMessage = null
             )
         )
-
-        return response
     }
 
     @Transactional

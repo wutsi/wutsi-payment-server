@@ -115,8 +115,10 @@ public class CreateChargeDelegate(
         request: CreateChargeRequest,
         payer: Account
     ): CreatePaymentResponse {
-        val paymentGateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
-        val response = paymentGateway.createPayment(
+        val gateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
+        logger.add("gateway", gateway::class.java)
+
+        return gateway.createPayment(
             CreatePaymentRequest(
                 payer = Party(
                     fullName = paymentMethod.ownerName,
@@ -130,8 +132,6 @@ public class CreateChargeDelegate(
                 payerMessage = null
             )
         )
-
-        return response
     }
 
     private fun createTransaction(

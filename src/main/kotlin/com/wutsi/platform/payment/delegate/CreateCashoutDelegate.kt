@@ -116,8 +116,10 @@ class CreateCashoutDelegate(
     }
 
     private fun cashout(tx: TransactionEntity, paymentMethod: PaymentMethod): CreateTransferResponse {
-        val paymentGateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
-        return paymentGateway.createTransfer(
+        val gateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
+        logger.add("gateway", gateway::class.java)
+
+        return gateway.createTransfer(
             CreateTransferRequest(
                 payee = Party(
                     fullName = paymentMethod.ownerName,
