@@ -15,7 +15,7 @@ wutsi:
     payment: # IMPORTANT: ONLY FLUTTERWAVE USED IN TEST
       mtn:
         enabled: false
-      orange:
+      om:
         enabled: false
       flutterwave:
         enabled: true

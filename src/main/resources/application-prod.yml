@@ -15,7 +15,7 @@ wutsi:
     payment: # IMPORTANT: FLUTTERWAVE DISABLED IN PROD (FOR NOW)
       mtn:
         enabled: true
-      orange:
+      om:
         enabled: true
       flutterwave:
         enabled: false
