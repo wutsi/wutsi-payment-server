@@ -109,7 +109,7 @@ class CreateCashinDelegate(
 
     private fun cashin(tx: TransactionEntity, paymentMethod: PaymentMethod): CreatePaymentResponse {
         val gateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
-        logger.add("gateway", gateway::class.java)
+        logger.add("gateway", gateway::class.java.simpleName)
 
         return gateway.createPayment(
             CreatePaymentRequest(

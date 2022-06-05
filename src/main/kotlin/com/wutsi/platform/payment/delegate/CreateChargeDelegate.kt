@@ -116,7 +116,7 @@ public class CreateChargeDelegate(
         payer: Account
     ): CreatePaymentResponse {
         val gateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
-        logger.add("gateway", gateway::class.java)
+        logger.add("gateway", gateway::class.java.simpleName)
 
         return gateway.createPayment(
             CreatePaymentRequest(
