@@ -63,7 +63,7 @@ class CreateCashoutDelegate(
             logger.add("gateway_transaction_id", response.transactionId)
 
             if (response.status == Status.SUCCESSFUL) {
-                onSuccess(tx, response, tenant)
+                onSuccess(tx, response)
             } else {
                 onPending(tx, response.transactionId)
             }
@@ -148,8 +148,7 @@ class CreateCashoutDelegate(
     @Transactional
     fun onSuccess(
         tx: TransactionEntity,
-        response: CreateTransferResponse,
-        tenant: Tenant
+        response: CreateTransferResponse
     ) {
         if (tx.status == Status.SUCCESSFUL)
             return

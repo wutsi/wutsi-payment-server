@@ -59,12 +59,8 @@ wutsi:
   application:
     name: wutsi-payment
     jobs:
-      pending-charge:
-        cron: "0 0 * * * *"
-      pending-cashin:
-        cron: "0 0 * * * *"
-      pending-cashout:
-        cron: "0 0 * * * *"
+      pending-transaction:
+        cron: "0 0 * * * *"  # Runs every hour
   platform:
     payment:
       mtn:
@@ -80,13 +76,12 @@ wutsi:
       flutterwave:
         enabled: false
         secret-key: "-----"
+        secret-hash: "----"
     security:
       type: jwt
       api-key: ba6144d6-6430-11ec-b820-06df65522ffd
       public-endpoints:
-        - "GET /mtn/**"
-        - "POST /mtn/**"
-        - "PUT /mtn/**"
+        - "POST /webhooks/**"
     cache:
       name: ${wutsi.application.name}
       type: none

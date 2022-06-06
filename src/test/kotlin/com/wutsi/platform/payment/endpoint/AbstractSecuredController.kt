@@ -59,58 +59,59 @@ abstract class AbstractSecuredController {
 
     protected lateinit var rest: RestTemplate
 
+    val tenant = Tenant(
+        id = 1,
+        name = "test",
+        logos = listOf(
+            Logo(type = "PICTORIAL", url = "http://www.goole.com/images/1.png")
+        ),
+        countries = listOf("CM"),
+        languages = listOf("en", "fr"),
+        currency = "XAF",
+        domainName = "www.wutsi.com",
+        mobileCarriers = listOf(
+            MobileCarrier(
+                code = "mtn",
+                name = "MTN",
+                countries = listOf("CM", "CD"),
+                phonePrefixes = listOf(
+                    PhonePrefix(
+                        country = "CM",
+                        prefixes = listOf("+23795")
+                    ),
+                ),
+                logos = listOf(
+                    Logo(type = "PICTORIAL", url = "http://www.goole.com/images/mtn.png")
+                )
+            ),
+            MobileCarrier(
+                code = "orange",
+                name = "ORANGE",
+                countries = listOf("CM"),
+                phonePrefixes = listOf(
+                    PhonePrefix(
+                        country = "CM",
+                        prefixes = listOf("+237745")
+                    ),
+                ),
+                logos = listOf(
+                    Logo(type = "PICTORIAL", url = "http://www.goole.com/images/orange.png")
+                )
+            )
+        ),
+        fees = listOf(
+            Fee(
+                transactionType = TransactionType.CHARGE.name,
+                amount = 0.0,
+                percent = 0.1
+            ),
+        )
+    )
+
     @BeforeEach
     open fun setUp() {
         tracingContext = TestTracingContext(tenantId = TENANT_ID.toString())
 
-        val tenant = Tenant(
-            id = 1,
-            name = "test",
-            logos = listOf(
-                Logo(type = "PICTORIAL", url = "http://www.goole.com/images/1.png")
-            ),
-            countries = listOf("CM"),
-            languages = listOf("en", "fr"),
-            currency = "XAF",
-            domainName = "www.wutsi.com",
-            mobileCarriers = listOf(
-                MobileCarrier(
-                    code = "mtn",
-                    name = "MTN",
-                    countries = listOf("CM", "CD"),
-                    phonePrefixes = listOf(
-                        PhonePrefix(
-                            country = "CM",
-                            prefixes = listOf("+23795")
-                        ),
-                    ),
-                    logos = listOf(
-                        Logo(type = "PICTORIAL", url = "http://www.goole.com/images/mtn.png")
-                    )
-                ),
-                MobileCarrier(
-                    code = "orange",
-                    name = "ORANGE",
-                    countries = listOf("CM"),
-                    phonePrefixes = listOf(
-                        PhonePrefix(
-                            country = "CM",
-                            prefixes = listOf("+237745")
-                        ),
-                    ),
-                    logos = listOf(
-                        Logo(type = "PICTORIAL", url = "http://www.goole.com/images/orange.png")
-                    )
-                )
-            ),
-            fees = listOf(
-                Fee(
-                    transactionType = TransactionType.CHARGE.name,
-                    amount = 0.0,
-                    percent = 0.1
-                ),
-            )
-        )
         doReturn(GetTenantResponse(tenant)).whenever(tenantApi).getTenant(any())
 
         user = Account(

@@ -20,6 +20,7 @@ wutsi:
       flutterwave:
         enabled: true
         secret-key: ${FLUTTERWAVE_SECRET_KEY}
+        secret-hash: ${FLUTTERWAVE_SECRET_HASH}
     security:
       api-key: ${API_KEY}
     stream:
