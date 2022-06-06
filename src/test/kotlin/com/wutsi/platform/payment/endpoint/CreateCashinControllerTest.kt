@@ -110,6 +110,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertNull(tx.description)
         assertNull(tx.errorCode)
+        assertNull(tx.orderId)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(request.amount, balance.amount)

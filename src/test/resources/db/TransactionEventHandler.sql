@@ -11,7 +11,7 @@ INSERT INTO public.t_transaction(id, type, status, payment_method_token, amount,
 	    ('300', 3, 1, 'xxx', 1000, 'XAF', 'TRANSFER - SUCCESSFUL', 'gw-300', null, null, null, 1, 1, 1, 100, 900, 11),
 	    ('301', 3, 3, 'xxx', 1000, 'XAF', 'TRANSFER - FAILED', 'gw-1', null, null, null, 1, 1, 1, 100, 900, 11),
 
-	    ('400', 4, 2, 'xxx', 1000, 'XAF', 'CHARGE - PENDING', 'gw-40', null, null, null, 1, 1, 1, 100, 900, 11),
+	    ('400', 4, 2, 'xxx', 1000, 'XAF', 'CHARGE - PENDING', 'gw-400', null, null, null, 1, 1, 1, 100, 900, 11),
 	    ('401', 4, 3, 'xxx', 1000, 'XAF', 'CHARGE - FAILED', 'gw-11', null, null, null, 1, 1, 11, 100, 900, 11),
 	    ('402', 4, 1, 'xxx', 1000, 'XAF', 'CHARGE - SUCCESSFUL', 'gw-111', 'fin-111', null, null, 1, 111, 1, 100, 900, 11)
     ;

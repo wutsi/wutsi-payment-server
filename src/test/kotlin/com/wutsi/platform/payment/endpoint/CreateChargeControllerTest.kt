@@ -111,6 +111,7 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertEquals(request.description, tx.description)
         assertNull(tx.errorCode)
+        assertEquals(request.orderId, tx.orderId)
 
         assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
         assertEquals(100000.0 + tx.net, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)

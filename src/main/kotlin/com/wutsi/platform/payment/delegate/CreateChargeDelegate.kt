@@ -154,7 +154,8 @@ public class CreateChargeDelegate(
                 net = request.amount - fees,
                 currency = tenant.currency,
                 created = OffsetDateTime.now(),
-                description = request.description
+                description = request.description,
+                orderId = request.orderId
             )
         )
     }

@@ -112,6 +112,7 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertNull(tx.description)
         assertNull(tx.errorCode)
+        assertNull(tx.orderId)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(100000 - tx.amount, balance.amount)
