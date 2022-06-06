@@ -92,10 +92,10 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         // THEN
         assertEquals(200, response.statusCodeValue)
 
-        assertEquals(Status.SUCCESSFUL.name, response.body.status)
+        assertEquals(Status.SUCCESSFUL.name, response.body!!.status)
 
         val fees = 0.0
-        val tx = txDao.findById(response.body.id).get()
+        val tx = txDao.findById(response.body!!.id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
@@ -142,10 +142,10 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         // THEN
         assertEquals(200, response.statusCodeValue)
 
-        assertEquals(Status.PENDING.name, response.body.status)
+        assertEquals(Status.PENDING.name, response.body!!.status)
 
         val fees = 0.0
-        val tx = txDao.findById(response.body.id).get()
+        val tx = txDao.findById(response.body!!.id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
@@ -156,7 +156,7 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)
         assertEquals(TransactionType.CASHOUT, tx.type)
         assertEquals(Status.PENDING, tx.status)
-        assertNull(tx.gatewayTransactionId)
+        assertEquals(paymentResponse.transactionId, tx.gatewayTransactionId)
         assertNull(tx.financialTransactionId)
         assertNull(tx.supplierErrorCode)
         assertNull(tx.description)

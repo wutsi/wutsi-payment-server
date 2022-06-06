@@ -63,7 +63,7 @@ class CreateCashinDelegate(
             if (response.status == Status.SUCCESSFUL) {
                 onSuccess(tx, response, tenant)
             } else {
-                onPending(tx)
+                onPending(tx, response.transactionId)
             }
 
             return CreateCashinResponse(
@@ -111,7 +111,7 @@ class CreateCashinDelegate(
         val gateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
         logger.add("gateway", gateway::class.java.simpleName)
 
-        return gateway.createPayment(
+        val response = gateway.createPayment(
             CreatePaymentRequest(
                 payer = Party(
                     fullName = paymentMethod.ownerName,
@@ -123,6 +123,7 @@ class CreateCashinDelegate(
                 payerMessage = null
             )
         )
+        return response
     }
 
     @Transactional

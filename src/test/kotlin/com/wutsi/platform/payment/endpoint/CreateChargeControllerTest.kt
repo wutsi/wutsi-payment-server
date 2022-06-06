@@ -152,7 +152,7 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)
         assertEquals(TransactionType.CHARGE, tx.type)
         assertEquals(Status.PENDING, tx.status)
-        assertNull(tx.gatewayTransactionId)
+        assertEquals(paymentResponse.transactionId, tx.gatewayTransactionId)
         assertNull(tx.financialTransactionId)
         assertNull(tx.supplierErrorCode)
         assertEquals(request.description, tx.description)

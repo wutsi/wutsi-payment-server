@@ -154,7 +154,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         assertEquals(PaymentMethodProvider.MTN, tx.paymentMethodProvider)
         assertEquals(TransactionType.CASHIN, tx.type)
         assertEquals(Status.PENDING, tx.status)
-        assertNull(tx.gatewayTransactionId)
+        assertEquals(paymentResponse.transactionId, tx.gatewayTransactionId)
         assertNull(tx.financialTransactionId)
         assertNull(tx.supplierErrorCode)
         assertNull(tx.description)

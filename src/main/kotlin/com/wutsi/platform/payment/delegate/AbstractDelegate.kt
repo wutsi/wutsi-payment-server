@@ -49,11 +49,12 @@ class AbstractDelegate {
     @Autowired
     protected lateinit var eventStream: EventStream
 
-    protected fun onPending(tx: TransactionEntity) {
+    protected fun onPending(tx: TransactionEntity, gatewayTransactionId: String?) {
         if (tx.status == Status.PENDING)
             return
 
         tx.status = Status.PENDING
+        tx.gatewayTransactionId = gatewayTransactionId
         transactionDao.save(tx)
 
         publish(EventURN.TRANSACTION_PENDING, tx)

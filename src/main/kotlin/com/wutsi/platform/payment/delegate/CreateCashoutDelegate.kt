@@ -65,7 +65,7 @@ class CreateCashoutDelegate(
             if (response.status == Status.SUCCESSFUL) {
                 onSuccess(tx, response, tenant)
             } else {
-                onPending(tx)
+                onPending(tx, response.transactionId)
             }
 
             return CreateCashoutResponse(

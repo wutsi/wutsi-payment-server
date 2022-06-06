@@ -46,7 +46,7 @@ class CreateTransferDelegate(
         try {
             validateTransaction(tx)
             if (tx.status == Status.PENDING) {
-                onPending(tx)
+                onPending(tx, null)
             } else if (tx.status == Status.SUCCESSFUL) {
                 onSuccess(tx, tenant)
             }
