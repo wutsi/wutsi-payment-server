@@ -44,12 +44,13 @@ public class FWWebhookController(
 
     private fun log(request: FWWebhookRequest) {
         logger.add("request_event", request.event)
-        logger.add("request_status", request.data.status)
-        logger.add("request_flw_ref", request.data.flw_ref)
-        logger.add("request_tx_ref", request.data.tx_ref)
-        logger.add("request_app_fee", request.data.app_fee)
-        logger.add("request_fee", request.data.fee)
-        logger.add("request_amount", request.data.amount)
-        logger.add("request_currency", request.data.currency)
+        logger.add("request_data_id", request.data.id)
+        logger.add("request_data_status", request.data.status)
+        logger.add("request_data_flw_ref", request.data.flw_ref)
+        logger.add("request_data_tx_ref", request.data.tx_ref)
+        logger.add("request_data_app_fee", request.data.app_fee)
+        logger.add("request_data_fee", request.data.fee)
+        logger.add("request_data_amount", request.data.amount)
+        logger.add("request_data_currency", request.data.currency)
     }
 }
