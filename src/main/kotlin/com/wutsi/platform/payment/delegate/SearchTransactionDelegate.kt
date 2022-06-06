@@ -58,7 +58,7 @@ public class SearchTransactionDelegate(
     private fun where(request: SearchTransactionRequest): String {
         val criteria = mutableListOf<String>()
 
-        if (tracingContext.tenantId() != null)
+        if (tracingContext.tenantId() != null) // IMPORTANT: This will happens when handling request coming from webhooks, where there is no security context, so no tenant!!!
             criteria.add("a.tenantId=:tenant_id")
         if (request.accountId != null)
             criteria.add("(a.accountId=:account_id OR a.recipientId=:account_id)")
