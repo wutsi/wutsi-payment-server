@@ -27,11 +27,11 @@ class TransactionEventHandler(
     private val logger: KVLogger,
 ) {
     fun onSync(transactionId: String) {
-        val tx = dao.findById(transactionId).get()
-        val gateway = tx.paymentMethodProvider?.let { gatewayProvider.get(it) }
+        logger.add("transaction_id", transactionId)
+        val tx = dao.findById(transactionId).orElse(null)
+        val gateway = tx?.paymentMethodProvider?.let { gatewayProvider.get(it) }
             ?: return
 
-        logger.add("transaction_id", tx.id)
         logger.add("transaction_type", tx.type)
         logger.add("transaction_status", tx.status)
         logger.add("provider", tx.paymentMethodProvider)

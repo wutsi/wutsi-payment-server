@@ -46,7 +46,7 @@ public class FWWebhookController(
         logger.add("request_event", request.event)
         logger.add("request_status", request.data.status)
         logger.add("request_flw_ref", request.data.flw_ref)
-        logger.add("request_flw_ref", request.data.tx_ref)
+        logger.add("request_tx_ref", request.data.tx_ref)
         logger.add("request_app_fee", request.data.app_fee)
         logger.add("request_fee", request.data.fee)
         logger.add("request_amount", request.data.amount)
