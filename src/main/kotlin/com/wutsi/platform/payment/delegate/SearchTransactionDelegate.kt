@@ -1,6 +1,7 @@
 package com.wutsi.platform.payment.`delegate`
 
 import com.wutsi.platform.core.logging.KVLogger
+import com.wutsi.platform.core.tracing.TracingContext
 import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dto.SearchTransactionRequest
 import com.wutsi.platform.payment.dto.SearchTransactionResponse
@@ -16,6 +17,7 @@ public class SearchTransactionDelegate(
     private val tenantProvider: TenantProvider,
     private val logger: KVLogger,
     private val em: EntityManager,
+    private val tracingContext: TracingContext
 ) {
     public fun invoke(request: SearchTransactionRequest): SearchTransactionResponse {
         logger.add("account_id", request.accountId)
@@ -56,7 +58,8 @@ public class SearchTransactionDelegate(
     private fun where(request: SearchTransactionRequest): String {
         val criteria = mutableListOf<String>()
 
-        criteria.add("a.tenantId=:tenant_id")
+        if (tracingContext.tenantId() != null)
+            criteria.add("a.tenantId=:tenant_id")
         if (request.accountId != null)
             criteria.add("(a.accountId=:account_id OR a.recipientId=:account_id)")
         if (request.status.isNotEmpty())
@@ -69,7 +72,8 @@ public class SearchTransactionDelegate(
     }
 
     private fun parameters(request: SearchTransactionRequest, query: Query) {
-        query.setParameter("tenant_id", tenantProvider.id())
+        if (tracingContext.tenantId() != null)
+            query.setParameter("tenant_id", tracingContext.tenantId()!!.toLong())
         if (request.accountId != null)
             query.setParameter("account_id", request.accountId)
         if (request.status.isNotEmpty())
