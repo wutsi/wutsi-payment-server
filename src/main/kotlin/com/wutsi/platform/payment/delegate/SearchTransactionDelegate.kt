@@ -7,14 +7,12 @@ import com.wutsi.platform.payment.dto.SearchTransactionRequest
 import com.wutsi.platform.payment.dto.SearchTransactionResponse
 import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.entity.TransactionType
-import com.wutsi.platform.payment.service.TenantProvider
 import org.springframework.stereotype.Service
 import javax.persistence.EntityManager
 import javax.persistence.Query
 
 @Service
 public class SearchTransactionDelegate(
-    private val tenantProvider: TenantProvider,
     private val logger: KVLogger,
     private val em: EntityManager,
     private val tracingContext: TracingContext
