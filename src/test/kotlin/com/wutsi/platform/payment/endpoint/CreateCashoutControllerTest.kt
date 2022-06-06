@@ -36,7 +36,7 @@ import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.boot.web.server.LocalServerPort
+import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.web.client.HttpClientErrorException
 import kotlin.test.assertEquals
@@ -45,10 +45,10 @@ import kotlin.test.assertNull
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(value = ["/db/clean.sql", "/db/CreateCashoutController.sql"])
 public class CreateCashoutControllerTest : AbstractSecuredController() {
+    private lateinit var url: String
+
     @LocalServerPort
     public val port: Int = 0
-
-    private lateinit var url: String
 
     @Autowired
     private lateinit var txDao: TransactionRepository

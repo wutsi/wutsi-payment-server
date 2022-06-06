@@ -7,7 +7,7 @@ import com.wutsi.platform.payment.error.ErrorURN
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.web.server.LocalServerPort
+import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.web.client.HttpClientErrorException
 import kotlin.test.assertEquals

@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RestController
-import javax.validation.Valid
 
 /**
  * See https://developer.flutterwave.com/docs/integration-guides/webhooks
@@ -25,7 +24,7 @@ public class FWWebhookController(
     @Transactional
     @PostMapping("/webhooks/flutterwave")
     public fun invoke(
-        @Valid @RequestBody request: FWWebhookRequest,
+        @RequestBody request: FWWebhookRequest,
         @RequestHeader(name = "verif-hash", required = false) verifHash: String? = null
     ) {
         log(request)
@@ -50,5 +49,7 @@ public class FWWebhookController(
         logger.add("request_flw_ref", request.data.tx_ref)
         logger.add("request_app_fee", request.data.app_fee)
         logger.add("request_fee", request.data.fee)
+        logger.add("request_amount", request.data.amount)
+        logger.add("request_currency", request.data.currency)
     }
 }
