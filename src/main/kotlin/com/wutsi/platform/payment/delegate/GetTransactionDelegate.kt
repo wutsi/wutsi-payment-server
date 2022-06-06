@@ -49,6 +49,7 @@ public class GetTransactionDelegate(
         logger.add("transaction_business", tx.business)
         logger.add("transaction_currency", tx.currency)
         logger.add("transaction_payment_method_provider", tx.paymentMethodProvider)
+        logger.add("gateway_transaction_id", tx.gatewayTransactionId)
         return GetTransactionResponse(
             transaction = tx.toTransaction()
         )
