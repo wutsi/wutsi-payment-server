@@ -54,7 +54,7 @@ internal class TransactionEventHandlerTest : AbstractSecuredController() {
             any(),
             eq(
                 CreatePaymentResponse(
-                    transactionId = "100",
+                    transactionId = "gw-100",
                     financialTransactionId = response.financialTransactionId,
                     status = response.status
                 )
@@ -93,7 +93,7 @@ internal class TransactionEventHandlerTest : AbstractSecuredController() {
             any(),
             eq(
                 CreateTransferResponse(
-                    transactionId = "200",
+                    transactionId = "gw-200",
                     financialTransactionId = response.financialTransactionId,
                     status = response.status
                 )
@@ -131,7 +131,7 @@ internal class TransactionEventHandlerTest : AbstractSecuredController() {
             any(),
             eq(
                 CreatePaymentResponse(
-                    transactionId = "400",
+                    transactionId = "gw-400",
                     financialTransactionId = response.financialTransactionId,
                     status = response.status
                 )

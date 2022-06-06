@@ -53,19 +53,19 @@ class TransactionEventHandler(
     private fun syncCashin(tx: TransactionEntity, gateway: Gateway) {
         val response = gateway.getPayment(tx.gatewayTransactionId!!)
         if (response.status == Status.SUCCESSFUL)
-            onSuccess(tx, response.financialTransactionId, response.status)
+            onSuccess(tx, tx.gatewayTransactionId!!, response.financialTransactionId, response.status)
     }
 
     private fun syncCashout(tx: TransactionEntity, gateway: Gateway) {
         val response = gateway.getTransfer(tx.gatewayTransactionId!!)
         if (response.status == Status.SUCCESSFUL)
-            onSuccess(tx, response.financialTransactionId, response.status)
+            onSuccess(tx, tx.gatewayTransactionId!!, response.financialTransactionId, response.status)
     }
 
     private fun syncCharge(tx: TransactionEntity, gateway: Gateway) {
         val response = gateway.getPayment(tx.gatewayTransactionId!!)
         if (response.status == Status.SUCCESSFUL)
-            onSuccess(tx, response.financialTransactionId, response.status)
+            onSuccess(tx, tx.gatewayTransactionId!!, response.financialTransactionId, response.status)
     }
 
     private fun onError(tx: TransactionEntity, ex: PaymentException) {
@@ -79,6 +79,7 @@ class TransactionEventHandler(
 
     private fun onSuccess(
         tx: TransactionEntity,
+        gatewayTransactionId: String,
         financialTransactionId: String?,
         status: Status
     ) {
@@ -87,7 +88,7 @@ class TransactionEventHandler(
                 tx = tx,
                 tenant = tenantApi.getTenant(tx.tenantId).tenant,
                 response = CreatePaymentResponse(
-                    transactionId = tx.id!!,
+                    transactionId = gatewayTransactionId,
                     financialTransactionId = financialTransactionId,
                     status = status
                 )
@@ -96,7 +97,7 @@ class TransactionEventHandler(
             TransactionType.CASHOUT -> cashoutDelegate.onSuccess(
                 tx = tx,
                 response = CreateTransferResponse(
-                    transactionId = tx.id!!,
+                    transactionId = gatewayTransactionId ?: "-",
                     financialTransactionId = financialTransactionId,
                     status = status
                 )
@@ -106,7 +107,7 @@ class TransactionEventHandler(
                 tx = tx,
                 tenant = tenantApi.getTenant(tx.tenantId).tenant,
                 response = CreatePaymentResponse(
-                    transactionId = tx.id!!,
+                    transactionId = gatewayTransactionId ?: "-",
                     financialTransactionId = financialTransactionId,
                     status = status
                 )
