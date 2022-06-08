@@ -15,6 +15,7 @@ import com.wutsi.platform.payment.model.CreatePaymentResponse
 import com.wutsi.platform.payment.model.CreateTransferResponse
 import com.wutsi.platform.tenant.WutsiTenantApi
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class TransactionEventHandler(
@@ -26,6 +27,7 @@ class TransactionEventHandler(
     private val chargeDelegate: CreateChargeDelegate,
     private val logger: KVLogger,
 ) {
+    @Transactional
     fun onSync(transactionId: String) {
         logger.add("transaction_id", transactionId)
         val tx = dao.findById(transactionId).orElse(null)
@@ -49,6 +51,10 @@ class TransactionEventHandler(
             logger.add("transaction_status", tx.status)
             logger.add("provider", tx.paymentMethodProvider)
             logger.add("transaction_gateway_id", tx.gatewayTransactionId)
+            logger.add("transaction_gateway_fees", tx.gatewayFees)
+            logger.add("transaction_fees", tx.fees)
+            logger.add("transaction_amount", tx.amount)
+            logger.add("transaction_net", tx.net)
             logger.add("gateway", gateway::class.java.simpleName)
         }
     }

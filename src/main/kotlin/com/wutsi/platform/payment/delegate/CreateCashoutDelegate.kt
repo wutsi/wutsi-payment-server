@@ -135,7 +135,6 @@ class CreateCashoutDelegate(
         )
     }
 
-    @Transactional
     fun onError(tx: TransactionEntity, ex: PaymentException, tenant: Tenant) {
         if (tx.status == Status.FAILED)
             return
@@ -147,7 +146,6 @@ class CreateCashoutDelegate(
         super.onError(tx, ex)
     }
 
-    @Transactional
     fun onSuccess(
         tx: TransactionEntity,
         response: CreateTransferResponse

@@ -86,7 +86,6 @@ public class CreateChargeDelegate(
         }
     }
 
-    @Transactional
     fun onSuccess(
         tx: TransactionEntity,
         response: CreatePaymentResponse,

@@ -29,7 +29,6 @@ import com.wutsi.platform.tenant.dto.Tenant
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Transactional
 
 @Service
 class AbstractDelegate {
@@ -62,8 +61,7 @@ class AbstractDelegate {
         publish(EventURN.TRANSACTION_PENDING, tx)
     }
 
-    @Transactional
-    open fun onError(tx: TransactionEntity, ex: PaymentException) {
+    fun onError(tx: TransactionEntity, ex: PaymentException) {
         if (tx.status == Status.FAILED)
             return
 

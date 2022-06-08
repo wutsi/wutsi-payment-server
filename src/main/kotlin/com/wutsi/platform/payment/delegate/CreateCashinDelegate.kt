@@ -131,7 +131,6 @@ class CreateCashinDelegate(
         )
     }
 
-    @Transactional
     fun onSuccess(
         tx: TransactionEntity,
         response: CreatePaymentResponse,
@@ -141,7 +140,7 @@ class CreateCashinDelegate(
             return
 
         // Update balance
-        updateBalance(tx.accountId, tx.net, tenant)
+        val balance = updateBalance(tx.accountId, tx.net, tenant)
 
         // Update transaction
         tx.status = Status.SUCCESSFUL
