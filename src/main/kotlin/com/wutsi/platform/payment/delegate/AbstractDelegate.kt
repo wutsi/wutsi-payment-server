@@ -234,5 +234,4 @@ class AbstractDelegate {
         logger.add("gateway_fees", response.fees.value)
         logger.add("gateway_fees_currency", response.fees.currency)
     }
-
 }
