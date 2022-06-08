@@ -42,7 +42,6 @@ public class CreateChargeDelegate(
         logger.add("description", request.description)
         logger.add("order_id", request.orderId)
 
-        val payer = accountApi.getAccount(securityManager.currentUserId()).account
         val tenant = tenantProvider.get()
         val accounts = accountApi.searchAccount(
             request = SearchAccountRequest(
@@ -64,6 +63,7 @@ public class CreateChargeDelegate(
 
         // Perform the charge
         try {
+            val payer = accountApi.getAccount(securityManager.currentUserId()).account
             val response = charge(tx, paymentMethod, request, payer)
             logger.add("gateway_status", response.status)
             logger.add("gateway_transaction_id", response.transactionId)

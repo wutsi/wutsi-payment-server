@@ -1,5 +1,6 @@
 package com.wutsi.platform.payment.`delegate`
 
+import com.wutsi.platform.account.dto.Account
 import com.wutsi.platform.account.dto.AccountSummary
 import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.account.dto.SearchAccountRequest
@@ -56,7 +57,8 @@ class CreateCashinDelegate(
 
         // Perform the transfer
         try {
-            val response = cashin(tx, paymentMethod)
+            val payer = accountApi.getAccount(securityManager.currentUserId()).account
+            val response = cashin(tx, paymentMethod, payer)
             logger.add("gateway_status", response.status)
             logger.add("gateway_transaction_id", response.transactionId)
 
@@ -107,7 +109,11 @@ class CreateCashinDelegate(
         return tx
     }
 
-    private fun cashin(tx: TransactionEntity, paymentMethod: PaymentMethod): CreatePaymentResponse {
+    private fun cashin(
+        tx: TransactionEntity,
+        paymentMethod: PaymentMethod,
+        payer: Account
+    ): CreatePaymentResponse {
         val gateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
         logger.add("gateway", gateway::class.java.simpleName)
 
@@ -115,7 +121,8 @@ class CreateCashinDelegate(
             CreatePaymentRequest(
                 payer = Party(
                     fullName = paymentMethod.ownerName,
-                    phoneNumber = paymentMethod.phone!!.number
+                    phoneNumber = paymentMethod.phone!!.number,
+                    email = payer.email
                 ),
                 amount = Money(tx.amount, tx.currency),
                 externalId = tx.id!!,

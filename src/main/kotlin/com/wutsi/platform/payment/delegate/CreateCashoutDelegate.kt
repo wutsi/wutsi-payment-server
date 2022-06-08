@@ -1,5 +1,6 @@
 package com.wutsi.platform.payment.delegate
 
+import com.wutsi.platform.account.dto.Account
 import com.wutsi.platform.account.dto.AccountSummary
 import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.account.dto.SearchAccountRequest
@@ -58,7 +59,8 @@ class CreateCashoutDelegate(
             validateTransaction(tx)
             updateBalance(tx.accountId, -tx.amount, tenant)
 
-            val response = cashout(tx, paymentMethod)
+            val payer = accountApi.getAccount(securityManager.currentUserId()).account
+            val response = cashout(tx, paymentMethod, payer)
             logger.add("gateway_status", response.status)
             logger.add("gateway_transaction_id", response.transactionId)
 
@@ -115,7 +117,7 @@ class CreateCashoutDelegate(
         return tx
     }
 
-    private fun cashout(tx: TransactionEntity, paymentMethod: PaymentMethod): CreateTransferResponse {
+    private fun cashout(tx: TransactionEntity, paymentMethod: PaymentMethod, payer: Account): CreateTransferResponse {
         val gateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
         logger.add("gateway", gateway::class.java.simpleName)
 
@@ -123,7 +125,8 @@ class CreateCashoutDelegate(
             CreateTransferRequest(
                 payee = Party(
                     fullName = paymentMethod.ownerName,
-                    phoneNumber = paymentMethod.phone!!.number
+                    phoneNumber = paymentMethod.phone!!.number,
+                    email = payer.email
                 ),
                 amount = Money(tx.amount, tx.currency),
                 externalId = tx.id!!,
