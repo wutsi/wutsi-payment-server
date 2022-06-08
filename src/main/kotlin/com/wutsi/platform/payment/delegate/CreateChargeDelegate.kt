@@ -65,8 +65,7 @@ public class CreateChargeDelegate(
         try {
             val payer = accountApi.getAccount(securityManager.currentUserId()).account
             val response = charge(tx, paymentMethod, request, payer)
-            logger.add("gateway_status", response.status)
-            logger.add("gateway_transaction_id", response.transactionId)
+            log(response)
 
             if (response.status == Status.SUCCESSFUL) {
                 onSuccess(tx, response, tenant)

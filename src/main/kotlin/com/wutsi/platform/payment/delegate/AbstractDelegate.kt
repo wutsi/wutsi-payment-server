@@ -22,6 +22,8 @@ import com.wutsi.platform.payment.error.ErrorURN
 import com.wutsi.platform.payment.error.TransactionException
 import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.event.TransactionEventPayload
+import com.wutsi.platform.payment.model.CreatePaymentResponse
+import com.wutsi.platform.payment.model.CreateTransferResponse
 import com.wutsi.platform.payment.service.SecurityManager
 import com.wutsi.platform.tenant.dto.Tenant
 import org.slf4j.LoggerFactory
@@ -216,4 +218,21 @@ class AbstractDelegate {
         logger.add("transaction_net", tx.net)
         logger.add("transaction_gateway_fees", tx.gatewayFees)
     }
+
+    protected fun log(response: CreatePaymentResponse) {
+        logger.add("gateway_status", response.status)
+        logger.add("gateway_transaction_id", response.transactionId)
+        logger.add("gateway_financial_transaction_id", response.financialTransactionId)
+        logger.add("gateway_fees", response.fees.value)
+        logger.add("gateway_fees_currency", response.fees.currency)
+    }
+
+    protected fun log(response: CreateTransferResponse) {
+        logger.add("gateway_status", response.status)
+        logger.add("gateway_transaction_id", response.transactionId)
+        logger.add("gateway_financial_transaction_id", response.financialTransactionId)
+        logger.add("gateway_fees", response.fees.value)
+        logger.add("gateway_fees_currency", response.fees.currency)
+    }
+
 }

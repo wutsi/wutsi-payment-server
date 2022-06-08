@@ -59,8 +59,7 @@ class CreateCashinDelegate(
         try {
             val payer = accountApi.getAccount(securityManager.currentUserId()).account
             val response = cashin(tx, paymentMethod, payer)
-            logger.add("gateway_status", response.status)
-            logger.add("gateway_transaction_id", response.transactionId)
+            log(response)
 
             if (response.status == Status.SUCCESSFUL) {
                 onSuccess(tx, response, tenant)
@@ -117,7 +116,7 @@ class CreateCashinDelegate(
         val gateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
         logger.add("gateway", gateway::class.java.simpleName)
 
-        val response = gateway.createPayment(
+        return gateway.createPayment(
             CreatePaymentRequest(
                 payer = Party(
                     fullName = paymentMethod.ownerName,
@@ -130,7 +129,6 @@ class CreateCashinDelegate(
                 payerMessage = null
             )
         )
-        return response
     }
 
     @Transactional

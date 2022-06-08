@@ -32,22 +32,25 @@ class TransactionEventHandler(
         val gateway = tx?.paymentMethodProvider?.let { gatewayProvider.get(it) }
             ?: return
 
-        logger.add("transaction_type", tx.type)
-        logger.add("transaction_status", tx.status)
-        logger.add("provider", tx.paymentMethodProvider)
-        logger.add("transaction_gateway_id", tx.gatewayTransactionId)
-        logger.add("gateway", gateway::class.java.simpleName)
-        if (tx.status == Status.PENDING && tx.gatewayTransactionId != null)
-            try {
-                when (tx.type) {
-                    TransactionType.CHARGE -> syncCharge(tx, gateway)
-                    TransactionType.CASHOUT -> syncCashout(tx, gateway)
-                    TransactionType.CASHIN -> syncCashin(tx, gateway)
-                    else -> {}
+        try {
+            if (tx.status == Status.PENDING && tx.gatewayTransactionId != null)
+                try {
+                    when (tx.type) {
+                        TransactionType.CHARGE -> syncCharge(tx, gateway)
+                        TransactionType.CASHOUT -> syncCashout(tx, gateway)
+                        TransactionType.CASHIN -> syncCashin(tx, gateway)
+                        else -> {}
+                    }
+                } catch (ex: PaymentException) {
+                    onError(tx, ex)
                 }
-            } catch (ex: PaymentException) {
-                onError(tx, ex)
-            }
+        } finally {
+            logger.add("transaction_type", tx.type)
+            logger.add("transaction_status", tx.status)
+            logger.add("provider", tx.paymentMethodProvider)
+            logger.add("transaction_gateway_id", tx.gatewayTransactionId)
+            logger.add("gateway", gateway::class.java.simpleName)
+        }
     }
 
     private fun syncCashin(tx: TransactionEntity, gateway: Gateway) {
