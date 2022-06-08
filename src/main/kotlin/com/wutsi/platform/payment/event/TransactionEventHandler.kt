@@ -4,6 +4,7 @@ import com.wutsi.platform.core.logging.KVLogger
 import com.wutsi.platform.payment.Gateway
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentException
+import com.wutsi.platform.payment.core.Money
 import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.delegate.CreateCashinDelegate
@@ -62,19 +63,19 @@ class TransactionEventHandler(
     private fun syncCashin(tx: TransactionEntity, gateway: Gateway) {
         val response = gateway.getPayment(tx.gatewayTransactionId!!)
         if (response.status == Status.SUCCESSFUL)
-            onSuccess(tx, tx.gatewayTransactionId!!, response.financialTransactionId, response.status)
+            onSuccess(tx, tx.gatewayTransactionId!!, response.financialTransactionId, response.status, response.fees)
     }
 
     private fun syncCashout(tx: TransactionEntity, gateway: Gateway) {
         val response = gateway.getTransfer(tx.gatewayTransactionId!!)
         if (response.status == Status.SUCCESSFUL)
-            onSuccess(tx, tx.gatewayTransactionId!!, response.financialTransactionId, response.status)
+            onSuccess(tx, tx.gatewayTransactionId!!, response.financialTransactionId, response.status, response.fees)
     }
 
     private fun syncCharge(tx: TransactionEntity, gateway: Gateway) {
         val response = gateway.getPayment(tx.gatewayTransactionId!!)
         if (response.status == Status.SUCCESSFUL)
-            onSuccess(tx, tx.gatewayTransactionId!!, response.financialTransactionId, response.status)
+            onSuccess(tx, tx.gatewayTransactionId!!, response.financialTransactionId, response.status, response.fees)
     }
 
     private fun onError(tx: TransactionEntity, ex: PaymentException) {
@@ -90,7 +91,8 @@ class TransactionEventHandler(
         tx: TransactionEntity,
         gatewayTransactionId: String,
         financialTransactionId: String?,
-        status: Status
+        status: Status,
+        fees: Money
     ) {
         when (tx.type) {
             TransactionType.CHARGE -> chargeDelegate.onSuccess(
@@ -99,7 +101,8 @@ class TransactionEventHandler(
                 response = CreatePaymentResponse(
                     transactionId = gatewayTransactionId,
                     financialTransactionId = financialTransactionId,
-                    status = status
+                    status = status,
+                    fees = fees
                 )
             )
 
@@ -108,7 +111,8 @@ class TransactionEventHandler(
                 response = CreateTransferResponse(
                     transactionId = gatewayTransactionId ?: "-",
                     financialTransactionId = financialTransactionId,
-                    status = status
+                    status = status,
+                    fees = fees
                 )
             )
 
@@ -118,7 +122,8 @@ class TransactionEventHandler(
                 response = CreatePaymentResponse(
                     transactionId = gatewayTransactionId ?: "-",
                     financialTransactionId = financialTransactionId,
-                    status = status
+                    status = status,
+                    fees = fees
                 )
             )
             else -> {}

@@ -7,6 +7,7 @@ import com.nhaarman.mockitokotlin2.eq
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import com.wutsi.platform.payment.PaymentException
+import com.wutsi.platform.payment.core.Money
 import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.delegate.CreateCashinDelegate
 import com.wutsi.platform.payment.delegate.CreateCashoutDelegate
@@ -42,7 +43,8 @@ internal class TransactionEventHandlerTest : AbstractSecuredController() {
         // GIVEN
         val response = GetPaymentResponse(
             status = Status.SUCCESSFUL,
-            financialTransactionId = "xxxx"
+            financialTransactionId = "xxxx",
+            fees = Money(100.0, "XAF")
         )
         doReturn(response).whenever(gateway).getPayment(any())
 
@@ -56,7 +58,8 @@ internal class TransactionEventHandlerTest : AbstractSecuredController() {
                 CreatePaymentResponse(
                     transactionId = "gw-100",
                     financialTransactionId = response.financialTransactionId,
-                    status = response.status
+                    status = response.status,
+                    fees = Money(100.0, "XAF")
                 )
             ),
             eq(tenant)
@@ -81,7 +84,8 @@ internal class TransactionEventHandlerTest : AbstractSecuredController() {
         // GIVEN
         val response = GetTransferResponse(
             status = Status.SUCCESSFUL,
-            financialTransactionId = "xxxx"
+            financialTransactionId = "xxxx",
+            fees = Money(100.0, "XAF")
         )
         doReturn(response).whenever(gateway).getTransfer(any())
 
@@ -95,7 +99,8 @@ internal class TransactionEventHandlerTest : AbstractSecuredController() {
                 CreateTransferResponse(
                     transactionId = "gw-200",
                     financialTransactionId = response.financialTransactionId,
-                    status = response.status
+                    status = response.status,
+                    fees = Money(100.0, "XAF")
                 )
             )
         )
@@ -119,7 +124,8 @@ internal class TransactionEventHandlerTest : AbstractSecuredController() {
         // GIVEN
         val response = GetPaymentResponse(
             status = Status.SUCCESSFUL,
-            financialTransactionId = "xxxx"
+            financialTransactionId = "xxxx",
+            fees = Money(100.0, "XAF")
         )
         doReturn(response).whenever(gateway).getPayment(any())
 
@@ -133,7 +139,8 @@ internal class TransactionEventHandlerTest : AbstractSecuredController() {
                 CreatePaymentResponse(
                     transactionId = "gw-400",
                     financialTransactionId = response.financialTransactionId,
-                    status = response.status
+                    status = response.status,
+                    fees = Money(100.0, "XAF")
                 )
             ),
             eq(tenant)
