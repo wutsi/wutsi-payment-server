@@ -109,6 +109,7 @@ class CreateCashinControllerTest : AbstractSecuredController() {
         assertNull(tx.description)
         assertNull(tx.errorCode)
         assertNull(tx.orderId)
+        assertEquals(request.idempotencyKey, tx.idempotencyKey)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(request.amount, balance.amount)
@@ -170,6 +171,7 @@ class CreateCashinControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertNull(tx.description)
         assertNull(tx.errorCode)
+        assertEquals(request.idempotencyKey, tx.idempotencyKey)
 
         val balance = balanceDao.findByAccountId(USER_ID)
         assertFalse(balance.isPresent)
@@ -233,13 +235,13 @@ class CreateCashinControllerTest : AbstractSecuredController() {
         assertEquals(e.error.supplierErrorCode, tx.supplierErrorCode)
         assertEquals(e.error.code.name, tx.errorCode)
         assertEquals(e.error.transactionId, tx.gatewayTransactionId)
+        assertEquals(request.idempotencyKey, tx.idempotencyKey)
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
         assertEquals(TransactionType.CASHIN.name, payload.firstValue.type)
         assertEquals(tx.id, payload.firstValue.transactionId)
     }
-
 
     @Test
     @Sql(value = ["/db/clean.sql", "/db/CreateCashinController.sql"])
@@ -259,7 +261,6 @@ class CreateCashinControllerTest : AbstractSecuredController() {
 
         verify(eventStream, never()).publish(any(), any())
     }
-
 
     @Test
     fun badCurrency() {

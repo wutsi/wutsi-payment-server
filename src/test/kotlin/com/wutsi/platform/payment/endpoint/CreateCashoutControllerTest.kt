@@ -6,6 +6,7 @@ import com.nhaarman.mockitokotlin2.argumentCaptor
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.doThrow
 import com.nhaarman.mockitokotlin2.eq
+import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import com.wutsi.platform.account.dto.AccountSummary
@@ -21,8 +22,6 @@ import com.wutsi.platform.payment.core.Money
 import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dao.BalanceRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
-import com.wutsi.platform.payment.dto.CreateCashinRequest
-import com.wutsi.platform.payment.dto.CreateCashinResponse
 import com.wutsi.platform.payment.dto.CreateCashoutRequest
 import com.wutsi.platform.payment.dto.CreateCashoutResponse
 import com.wutsi.platform.payment.entity.TransactionType
@@ -39,16 +38,17 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.web.client.HttpClientErrorException
+import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(value = ["/db/clean.sql", "/db/CreateCashoutController.sql"])
-public class CreateCashoutControllerTest : AbstractSecuredController() {
+class CreateCashoutControllerTest : AbstractSecuredController() {
     private lateinit var url: String
 
     @LocalServerPort
-    public val port: Int = 0
+    val port: Int = 0
 
     @Autowired
     private lateinit var txDao: TransactionRepository
@@ -82,11 +82,7 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         doReturn(paymentResponse).whenever(gateway).createTransfer(any())
 
         // WHEN
-        val request = CreateCashoutRequest(
-            paymentMethodToken = "11111",
-            amount = 50000.0,
-            currency = "XAF"
-        )
+        val request = createRequest()
         val response = rest.postForEntity(url, request, CreateCashoutResponse::class.java)
 
         // THEN
@@ -126,6 +122,23 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
 
     @Test
     @Sql(value = ["/db/clean.sql", "/db/CreateCashoutController.sql"])
+    fun successIdempotent() {
+        // WHEN
+        val request = createRequest(idempotencyKey = "i-100")
+        val response = rest.postForEntity(url, request, CreateCashoutResponse::class.java)
+
+        // THEN
+        assertEquals(200, response.statusCodeValue)
+
+        assertEquals(Status.SUCCESSFUL.name, response.body!!.status)
+        assertEquals("100", response.body!!.id)
+
+        verify(eventStream, never()).publish(any(), any())
+    }
+
+
+    @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateCashoutController.sql"])
     fun pending() {
         // GIVEN
         val gwFees = 100.0
@@ -133,12 +146,8 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         doReturn(paymentResponse).whenever(gateway).createTransfer(any())
 
         // WHEN
-        val request = CreateCashinRequest(
-            paymentMethodToken = "11111",
-            amount = 50000.0,
-            currency = "XAF"
-        )
-        val response = rest.postForEntity(url, request, CreateCashinResponse::class.java)
+        val request = createRequest()
+        val response = rest.postForEntity(url, request, CreateCashoutResponse::class.java)
 
         // THEN
         assertEquals(200, response.statusCodeValue)
@@ -174,6 +183,22 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
     }
 
     @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateCashoutController.sql"])
+    fun pendingIdempotent() {
+        // WHEN
+        val request = createRequest(idempotencyKey = "i-200")
+        val response = rest.postForEntity(url, request, CreateCashoutResponse::class.java)
+
+        // THEN
+        assertEquals(200, response.statusCodeValue)
+
+        assertEquals(Status.PENDING.name, response.body!!.status)
+        assertEquals("200", response.body!!.id)
+
+        verify(eventStream, never()).publish(any(), any())
+    }
+
+    @Test
     fun failure() {
         // GIVEN
         val e =
@@ -181,13 +206,9 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         doThrow(e).whenever(gateway).createTransfer(any())
 
         // WHEN
-        val request = CreateCashinRequest(
-            paymentMethodToken = "11111",
-            amount = 50000.0,
-            currency = "XAF"
-        )
+        val request = createRequest()
         val ex = assertThrows<HttpClientErrorException> {
-            rest.postForEntity(url, request, CreateCashinResponse::class.java)
+            rest.postForEntity(url, request, CreateCashoutResponse::class.java)
         }
 
         // THEN
@@ -227,13 +248,28 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
     }
 
     @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateCashoutController.sql"])
+    fun errorIdempotency() {
+        // WHEN
+        val request = createRequest(idempotencyKey = "i-300")
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateCashoutResponse::class.java)
+        }
+
+        // THEN
+        assertEquals(409, ex.rawStatusCode)
+
+        val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.TRANSACTION_FAILED.urn, response.error.code)
+        assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, response.error.downstreamCode)
+
+        verify(eventStream, never()).publish(any(), any())
+    }
+
+    @Test
     public fun notEnoughFunds() {
         // WHEN
-        val request = CreateCashoutRequest(
-            amount = 50000000.0,
-            currency = "XAF",
-            paymentMethodToken = "xxxx"
-        )
+        val request = createRequest(amount = 50000000.0)
         val ex = assertThrows<HttpClientErrorException> {
             rest.postForEntity(url, request, CreateCashoutResponse::class.java)
         }
@@ -272,13 +308,9 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
     @Test
     fun badCurrency() {
         // WHEN
-        val request = CreateCashoutRequest(
-            paymentMethodToken = "11111",
-            amount = 50000.0,
-            currency = "EUR"
-        )
+        val request = createRequest(currency = "EUR")
         val ex = assertThrows<HttpClientErrorException> {
-            rest.postForEntity(url, request, CreateCashinResponse::class.java)
+            rest.postForEntity(url, request, CreateCashoutResponse::class.java)
         }
 
         // THEN
@@ -299,13 +331,9 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         doReturn(SearchAccountResponse(listOf(account))).whenever(accountApi).searchAccount(any())
 
         // WHEN
-        val request = CreateCashoutRequest(
-            paymentMethodToken = "11111",
-            amount = 50000.0,
-            currency = "EUR"
-        )
+        val request = createRequest()
         val ex = assertThrows<HttpClientErrorException> {
-            rest.postForEntity(url, request, CreateCashinResponse::class.java)
+            rest.postForEntity(url, request, CreateCashoutResponse::class.java)
         }
 
         // THEN
@@ -314,4 +342,12 @@ public class CreateCashoutControllerTest : AbstractSecuredController() {
         val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
         assertEquals(ErrorURN.USER_NOT_ACTIVE.urn, response.error.code)
     }
+
+    private fun createRequest(amount: Double = 50000.0, currency: String = "XAF", idempotencyKey: String? = null) =
+        CreateCashoutRequest(
+            paymentMethodToken = "11111",
+            amount = amount,
+            currency = currency,
+            idempotencyKey = idempotencyKey ?: UUID.randomUUID().toString()
+        )
 }

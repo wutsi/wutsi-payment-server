@@ -4,6 +4,8 @@ import com.wutsi.platform.account.dto.Account
 import com.wutsi.platform.account.dto.AccountSummary
 import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.account.dto.SearchAccountRequest
+import com.wutsi.platform.core.error.Error
+import com.wutsi.platform.core.error.exception.ForbiddenException
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
@@ -12,6 +14,7 @@ import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dto.CreateCashoutRequest
 import com.wutsi.platform.payment.dto.CreateCashoutResponse
 import com.wutsi.platform.payment.entity.TransactionEntity
+import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.payment.entity.TransactionType.CASHOUT
 import com.wutsi.platform.payment.error.ErrorURN
 import com.wutsi.platform.payment.error.TransactionException
@@ -36,6 +39,26 @@ class CreateCashoutDelegate(
         logger.add("currency", request.currency)
         logger.add("amount", request.amount)
         logger.add("payment_token", request.paymentMethodToken)
+        logger.add("idempotency_key", request.idempotencyKey)
+
+        // Idempotency
+        val opt = transactionDao.findByIdempotencyKey(request.idempotencyKey)
+        if (opt.isPresent) {
+            val tx = opt.get()
+            log(tx)
+            logger.add("idempotency_hit", true)
+
+            checkIdempotency(request, tx)
+            if (tx.status == Status.FAILED)
+                throw createTransactionException(tx, ErrorURN.TRANSACTION_FAILED, tx.errorCode)
+
+            return CreateCashoutResponse(
+                id = tx.id!!,
+                status = tx.status.name
+            )
+        } else {
+            logger.add("idempotency_hit", false)
+        }
 
         // Tenant
         val tenant = tenantProvider.get()
@@ -163,5 +186,21 @@ class CreateCashoutDelegate(
         transactionDao.save(tx)
 
         publish(EventURN.TRANSACTION_SUCCESSFUL, tx)
+    }
+
+    private fun checkIdempotency(request: CreateCashoutRequest, tx: TransactionEntity) {
+        val matches = request.idempotencyKey == tx.idempotencyKey &&
+            request.amount == tx.amount &&
+            request.currency == tx.currency &&
+            request.paymentMethodToken == tx.paymentMethodToken &&
+            securityManager.currentUserId() == tx.accountId &&
+            TransactionType.CASHOUT == tx.type
+
+        if (!matches)
+            throw ForbiddenException(
+                error = Error(
+                    code = ErrorURN.IDEMPOTENCY_MISMATCH.urn
+                )
+            )
     }
 }

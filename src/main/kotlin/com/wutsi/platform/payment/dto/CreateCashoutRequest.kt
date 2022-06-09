@@ -13,5 +13,7 @@ public data class CreateCashoutRequest(
     public val amount: Double = 0.0,
     @get:NotBlank
     @get:Size(max = 3)
-    public val currency: String = ""
+    public val currency: String = "",
+    @get:NotBlank
+    public val idempotencyKey: String = ""
 )

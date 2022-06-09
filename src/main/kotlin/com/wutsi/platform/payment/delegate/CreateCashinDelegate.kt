@@ -5,7 +5,7 @@ import com.wutsi.platform.account.dto.AccountSummary
 import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.account.dto.SearchAccountRequest
 import com.wutsi.platform.core.error.Error
-import com.wutsi.platform.core.error.exception.ConflictException
+import com.wutsi.platform.core.error.exception.ForbiddenException
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
@@ -128,6 +128,7 @@ class CreateCashinDelegate(
                 net = request.amount,
                 currency = tenant.currency,
                 created = OffsetDateTime.now(),
+                idempotencyKey = request.idempotencyKey
             )
         )
         return tx
@@ -181,11 +182,12 @@ class CreateCashinDelegate(
         val matches = request.idempotencyKey == tx.idempotencyKey &&
             request.amount == tx.amount &&
             request.currency == tx.currency &&
+            request.paymentMethodToken == tx.paymentMethodToken &&
             securityManager.currentUserId() == tx.accountId &&
             TransactionType.CASHIN == tx.type
 
         if (!matches)
-            throw ConflictException(
+            throw ForbiddenException(
                 error = Error(
                     code = ErrorURN.IDEMPOTENCY_MISMATCH.urn
                 )
