@@ -4,6 +4,8 @@ import com.wutsi.platform.account.dto.Account
 import com.wutsi.platform.account.dto.AccountSummary
 import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.account.dto.SearchAccountRequest
+import com.wutsi.platform.core.error.Error
+import com.wutsi.platform.core.error.exception.ConflictException
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
@@ -12,6 +14,7 @@ import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dto.CreateCashinRequest
 import com.wutsi.platform.payment.dto.CreateCashinResponse
 import com.wutsi.platform.payment.entity.TransactionEntity
+import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.payment.entity.TransactionType.CASHIN
 import com.wutsi.platform.payment.error.ErrorURN
 import com.wutsi.platform.payment.error.TransactionException
@@ -33,9 +36,29 @@ class CreateCashinDelegate(
 ) : AbstractDelegate() {
     @Transactional(noRollbackFor = [TransactionException::class])
     fun invoke(request: CreateCashinRequest): CreateCashinResponse {
+        logger.add("idempotency_key", request.idempotencyKey)
         logger.add("currency", request.currency)
         logger.add("amount", request.amount)
         logger.add("payment_token", "******")
+
+        // Idempotency
+        val opt = transactionDao.findByIdempotencyKey(request.idempotencyKey)
+        if (opt.isPresent) {
+            val tx = opt.get()
+            log(tx)
+            logger.add("idempotency_hit", true)
+
+            checkIdempotency(request, tx)
+            if (tx.status == Status.FAILED)
+                throw createTransactionException(tx, ErrorURN.TRANSACTION_FAILED, tx.errorCode)
+
+            return CreateCashinResponse(
+                id = tx.id!!,
+                status = tx.status.name
+            )
+        } else {
+            logger.add("idempotency_hit", false)
+        }
 
         // Tenant
         val tenant = tenantProvider.get()
@@ -152,5 +175,20 @@ class CreateCashinDelegate(
         transactionDao.save(tx)
 
         publish(EventURN.TRANSACTION_SUCCESSFUL, tx)
+    }
+
+    private fun checkIdempotency(request: CreateCashinRequest, tx: TransactionEntity) {
+        val matches = request.idempotencyKey == tx.idempotencyKey &&
+            request.amount == tx.amount &&
+            request.currency == tx.currency &&
+            securityManager.currentUserId() == tx.accountId &&
+            TransactionType.CASHIN == tx.type
+
+        if (!matches)
+            throw ConflictException(
+                error = Error(
+                    code = ErrorURN.IDEMPOTENCY_MISMATCH.urn
+                )
+            )
     }
 }

@@ -5,7 +5,7 @@ import com.wutsi.platform.account.dto.AccountSummary
 import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.account.dto.SearchAccountRequest
 import com.wutsi.platform.core.error.Error
-import com.wutsi.platform.core.error.exception.ConflictException
+import com.wutsi.platform.core.error.exception.ForbiddenException
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
@@ -48,9 +48,10 @@ class CreateChargeDelegate(
         // Idempotency
         val opt = transactionDao.findByIdempotencyKey(request.idempotencyKey)
         if (opt.isPresent) {
+            val tx = opt.get()
+            log(tx)
             logger.add("idempotency_hit", true)
 
-            val tx = opt.get()
             checkIdempotency(request, tx)
             if (tx.status == Status.FAILED)
                 throw createTransactionException(tx, ErrorURN.TRANSACTION_FAILED, tx.errorCode)
@@ -199,7 +200,7 @@ class CreateChargeDelegate(
             TransactionType.CHARGE == tx.type
 
         if (!matches)
-            throw ConflictException(
+            throw ForbiddenException(
                 error = Error(
                     code = ErrorURN.IDEMPOTENCY_MISMATCH.urn
                 )

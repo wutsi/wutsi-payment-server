@@ -16,6 +16,7 @@ import com.wutsi.platform.core.stream.EventStream
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
 import com.wutsi.platform.payment.core.Error
+import com.wutsi.platform.payment.core.ErrorCode
 import com.wutsi.platform.payment.core.ErrorCode.NOT_ENOUGH_FUNDS
 import com.wutsi.platform.payment.core.Money
 import com.wutsi.platform.payment.core.Status
@@ -37,6 +38,7 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.web.client.HttpClientErrorException
+import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
@@ -120,6 +122,22 @@ class CreateCashinControllerTest : AbstractSecuredController() {
 
     @Test
     @Sql(value = ["/db/clean.sql", "/db/CreateCashinController.sql"])
+    fun successIdempotent() {
+        // WHEN
+        val request = createRequest(idempotencyKey = "i-100")
+        val response = rest.postForEntity(url, request, CreateCashinResponse::class.java)
+
+        // THEN
+        assertEquals(200, response.statusCodeValue)
+
+        assertEquals(Status.SUCCESSFUL.name, response.body!!.status)
+        assertEquals("100", response.body!!.id)
+
+        verify(eventStream, never()).publish(any(), any())
+    }
+
+    @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateCashinController.sql"])
     fun pending() {
         // GIVEN
         val gwFees = 100.0
@@ -160,6 +178,22 @@ class CreateCashinControllerTest : AbstractSecuredController() {
         verify(eventStream).publish(eq(EventURN.TRANSACTION_PENDING.urn), payload.capture())
         assertEquals(TransactionType.CASHIN.name, payload.firstValue.type)
         assertEquals(tx.id, payload.firstValue.transactionId)
+    }
+
+    @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateCashinController.sql"])
+    fun pendingIdempotent() {
+        // WHEN
+        val request = createRequest(idempotencyKey = "i-200")
+        val response = rest.postForEntity(url, request, CreateCashinResponse::class.java)
+
+        // THEN
+        assertEquals(200, response.statusCodeValue)
+
+        assertEquals(Status.PENDING.name, response.body!!.status)
+        assertEquals("200", response.body!!.id)
+
+        verify(eventStream, never()).publish(any(), any())
     }
 
     @Test
@@ -206,6 +240,27 @@ class CreateCashinControllerTest : AbstractSecuredController() {
         assertEquals(tx.id, payload.firstValue.transactionId)
     }
 
+
+    @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateCashinController.sql"])
+    fun errorIdempotency() {
+        // WHEN
+        val request = createRequest(idempotencyKey = "i-300")
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateCashinResponse::class.java)
+        }
+
+        // THEN
+        assertEquals(409, ex.rawStatusCode)
+
+        val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.TRANSACTION_FAILED.urn, response.error.code)
+        assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, response.error.downstreamCode)
+
+        verify(eventStream, never()).publish(any(), any())
+    }
+
+
     @Test
     fun badCurrency() {
         // WHEN
@@ -249,9 +304,10 @@ class CreateCashinControllerTest : AbstractSecuredController() {
         verify(eventStream, never()).publish(any(), any())
     }
 
-    private fun createRequest(currency: String = "XAF") = CreateCashinRequest(
+    private fun createRequest(currency: String = "XAF", idempotencyKey: String? = null) = CreateCashinRequest(
         paymentMethodToken = "11111",
         amount = 50000.0,
         currency = currency,
+        idempotencyKey = idempotencyKey ?: UUID.randomUUID().toString()
     )
 }

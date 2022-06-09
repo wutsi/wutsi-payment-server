@@ -209,9 +209,13 @@ components:
           type: string
           description: 3 letter currency code
           maxLength: 3
+        idempotencyKey:
+          type: string
+          description: Idemportent Key
       required:
         - paymentMethodToken
         - currency
+        - idempotencyKey
 
     CreateCashinResponse:
       type: object
