@@ -196,6 +196,7 @@ class CreateChargeDelegate(
             request.currency == tx.currency &&
             request.orderId == tx.orderId &&
             request.recipientId == tx.recipientId &&
+            request.paymentMethodToken == tx.paymentMethodToken &&
             securityManager.currentUserId() == tx.accountId &&
             TransactionType.CHARGE == tx.type
 

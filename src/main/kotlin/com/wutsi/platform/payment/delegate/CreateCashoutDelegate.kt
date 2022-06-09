@@ -136,6 +136,7 @@ class CreateCashoutDelegate(
                 net = request.amount,
                 currency = tenant.currency,
                 created = OffsetDateTime.now(),
+                idempotencyKey = request.idempotencyKey
             )
         )
         return tx

@@ -10,6 +10,7 @@ import com.wutsi.platform.payment.core.Status.SUCCESSFUL
 import com.wutsi.platform.payment.dto.CreateTransferRequest
 import com.wutsi.platform.payment.dto.CreateTransferResponse
 import com.wutsi.platform.payment.entity.TransactionEntity
+import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.payment.entity.TransactionType.TRANSFER
 import com.wutsi.platform.payment.error.ErrorURN
 import com.wutsi.platform.payment.error.TransactionException
@@ -31,18 +32,38 @@ class CreateTransferDelegate(
         logger.add("amount", request.amount)
         logger.add("recipient_id", request.recipientId)
         logger.add("description", request.description)
+        logger.add("idempotency_key", request.idempotencyKey)
 
+        // Idempotency
+        val opt = transactionDao.findByIdempotencyKey(request.idempotencyKey)
+        if (opt.isPresent) {
+            val tx = opt.get()
+            log(tx)
+            logger.add("idempotency_hit", true)
+
+            checkIdempotency(request, tx)
+            if (tx.status == Status.FAILED)
+                throw createTransactionException(tx, ErrorURN.TRANSACTION_FAILED, tx.errorCode)
+
+            return CreateTransferResponse(
+                id = tx.id!!,
+                status = tx.status.name
+            )
+        } else {
+            logger.add("idempotency_hit", false)
+        }
+
+        // Validate the request
         val tenant = tenantProvider.get()
-
         val senderId = securityManager.currentUserId()!!
         val accounts = accountApi.searchAccount(
             request = SearchAccountRequest(
                 ids = listOfNotNull(request.recipientId, senderId)
             )
         ).accounts.map { it.id to it }.toMap()
-
         validateRequest(request, tenant, accounts)
 
+        // Transaction
         val tx = createTransaction(request, tenant, accounts, senderId)
         try {
             validateTransaction(tx)
@@ -95,6 +116,7 @@ class CreateTransferDelegate(
                 created = now,
                 description = request.description,
                 business = business,
+                idempotencyKey = request.idempotencyKey
             )
         )
         return tx
@@ -124,5 +146,21 @@ class CreateTransferDelegate(
 
     private fun validateTransaction(tx: TransactionEntity) {
         ensureBalanceAbove(securityManager.currentUserId()!!, tx)
+    }
+
+    private fun checkIdempotency(request: CreateTransferRequest, tx: TransactionEntity) {
+        val matches = request.idempotencyKey == tx.idempotencyKey &&
+            request.amount == tx.amount &&
+            request.currency == tx.currency &&
+            request.recipientId == tx.recipientId &&
+            securityManager.currentUserId() == tx.accountId &&
+            TransactionType.TRANSFER == tx.type
+
+        if (!matches)
+            throw ForbiddenException(
+                error = Error(
+                    code = ErrorURN.IDEMPOTENCY_MISMATCH.urn
+                )
+            )
     }
 }

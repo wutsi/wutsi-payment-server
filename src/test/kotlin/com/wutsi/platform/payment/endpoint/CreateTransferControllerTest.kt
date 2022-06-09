@@ -17,6 +17,7 @@ import com.wutsi.platform.payment.core.Status
 import com.wutsi.platform.payment.dao.BalanceRepository
 import com.wutsi.platform.payment.dao.TransactionRepository
 import com.wutsi.platform.payment.dto.CreateCashinResponse
+import com.wutsi.platform.payment.dto.CreateCashoutResponse
 import com.wutsi.platform.payment.dto.CreateTransferRequest
 import com.wutsi.platform.payment.dto.CreateTransferResponse
 import com.wutsi.platform.payment.entity.TransactionType
@@ -32,6 +33,7 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.web.client.HttpClientErrorException
+import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
@@ -40,9 +42,9 @@ import kotlin.test.assertTrue
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(value = ["/db/clean.sql", "/db/CreateTransferController.sql"])
-public class CreateTransferControllerTest : AbstractSecuredController() {
+class CreateTransferControllerTest : AbstractSecuredController() {
     @LocalServerPort
-    public val port: Int = 0
+    val port: Int = 0
     private lateinit var url: String
 
     @Autowired
@@ -68,14 +70,9 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
     @Test
     @Sql(value = ["/db/clean.sql", "/db/CreateTransferController.sql"])
-    public fun transfer() {
+    public fun success() {
         // WHEN
-        val request = CreateTransferRequest(
-            amount = 50000.0,
-            currency = "XAF",
-            recipientId = 200,
-            description = "Yo man",
-        )
+        val request = createRequest()
         val response = rest.postForEntity(url, request, CreateTransferResponse::class.java)
 
         // THEN
@@ -102,6 +99,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertFalse(tx.business)
         assertNull(tx.orderId)
+        assertEquals(request.idempotencyKey, tx.idempotencyKey)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(100000 - tx.amount, balance.amount)
@@ -120,6 +118,22 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
     @Test
     @Sql(value = ["/db/clean.sql", "/db/CreateTransferController.sql"])
+    fun successIdempotent() {
+        // WHEN
+        val request = createRequest(idempotencyKey = "i-100")
+        val response = rest.postForEntity(url, request, CreateTransferResponse::class.java)
+
+        // THEN
+        assertEquals(200, response.statusCodeValue)
+
+        assertEquals(Status.SUCCESSFUL.name, response.body!!.status)
+        assertEquals("100", response.body!!.id)
+
+        verify(eventStream, never()).publish(any(), any())
+    }
+
+    @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateTransferController.sql"])
     public fun transferToBusiness() {
         // GIVEN
         val account = AccountSummary(id = USER_ID, status = "ACTIVE")
@@ -127,12 +141,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         doReturn(SearchAccountResponse(listOf(account, recipient))).whenever(accountApi).searchAccount(any())
 
         // WHEN
-        val request = CreateTransferRequest(
-            amount = 50000.0,
-            currency = "XAF",
-            recipientId = 200,
-            description = "Yo man"
-        )
+        val request = createRequest()
         val response = rest.postForEntity(url, request, CreateTransferResponse::class.java)
 
         // THEN
@@ -159,6 +168,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertTrue(tx.business)
         assertNull(tx.orderId)
+        assertEquals(request.idempotencyKey, tx.idempotencyKey)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(50000.0, balance.amount)
@@ -175,12 +185,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
     @Test
     public fun notEnoughFunds() {
         // WHEN
-        val request = CreateTransferRequest(
-            amount = 50000000.0,
-            currency = "XAF",
-            recipientId = 200,
-            description = "Yo man"
-        )
+        val request = createRequest(amount = 50000000.0)
         val ex = assertThrows<HttpClientErrorException> {
             rest.postForEntity(url, request, CreateCashinResponse::class.java)
         }
@@ -211,11 +216,31 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, tx.errorCode)
         assertNull(tx.supplierErrorCode)
         assertFalse(tx.business)
+        assertEquals(request.idempotencyKey, tx.idempotencyKey)
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
         assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
         assertEquals(tx.id, payload.firstValue.transactionId)
+    }
+
+    @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateTransferController.sql"])
+    fun errorIdempotency() {
+        // WHEN
+        val request = createRequest(idempotencyKey = "i-300")
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateCashoutResponse::class.java)
+        }
+
+        // THEN
+        assertEquals(409, ex.rawStatusCode)
+
+        val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.TRANSACTION_FAILED.urn, response.error.code)
+        assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, response.error.downstreamCode)
+
+        verify(eventStream, never()).publish(any(), any())
     }
 
     @Test
@@ -226,12 +251,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         doReturn(SearchAccountResponse(listOf(account, recipient))).whenever(accountApi).searchAccount(any())
 
         // WHEN
-        val request = CreateTransferRequest(
-            amount = 100.0,
-            currency = "XAF",
-            recipientId = 200,
-            description = "Yo man"
-        )
+        val request = createRequest()
         val e = assertThrows<HttpClientErrorException> {
             rest.postForEntity(url, request, CreateCashinResponse::class.java)
         }
@@ -255,12 +275,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
         doReturn(SearchAccountResponse(listOf(account, recipient))).whenever(accountApi).searchAccount(any())
 
         // WHEN
-        val request = CreateTransferRequest(
-            amount = 100.0,
-            currency = "XAF",
-            recipientId = 200,
-            description = "Yo man"
-        )
+        val request = createRequest()
         val e = assertThrows<HttpClientErrorException> {
             rest.postForEntity(url, request, CreateCashinResponse::class.java)
         }
@@ -279,12 +294,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
     @Test
     public fun selfTransaction() {
         // WHEN
-        val request = CreateTransferRequest(
-            amount = 100.0,
-            currency = "XAF",
-            recipientId = USER_ID,
-            description = "Yo man"
-        )
+        val request = createRequest(recipientId = USER_ID)
         val e = assertThrows<HttpClientErrorException> {
             rest.postForEntity(url, request, CreateCashinResponse::class.java)
         }
@@ -303,12 +313,7 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
     @Test
     public fun invalidRecipient() {
         // WHEN
-        val request = CreateTransferRequest(
-            amount = 50000.0,
-            currency = "XAF",
-            recipientId = 444,
-            description = "Yo man",
-        )
+        val request = createRequest(recipientId = 444L)
         val e = assertThrows<HttpClientErrorException> {
             rest.postForEntity(url, request, CreateCashinResponse::class.java)
         }
@@ -323,4 +328,13 @@ public class CreateTransferControllerTest : AbstractSecuredController() {
 
         verify(eventStream, never()).publish(any(), any())
     }
+
+    private fun createRequest(recipientId: Long = 200, amount: Double = 50000.0, idempotencyKey: String? = null) =
+        CreateTransferRequest(
+            amount = amount,
+            currency = "XAF",
+            recipientId = recipientId,
+            description = "Yo man",
+            idempotencyKey = idempotencyKey ?: UUID.randomUUID().toString()
+        )
 }

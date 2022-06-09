@@ -288,8 +288,12 @@ components:
           type: string
           description: Description of the transfer
           nullable: true
+        idempotencyKey:
+          type: string
+          description: Idemportent Key
       required:
         - currency
+        - idempotencyKey
 
     CreateTransferResponse:
       type: object

@@ -109,6 +109,7 @@ class CreateCashoutControllerTest : AbstractSecuredController() {
         assertNull(tx.description)
         assertNull(tx.errorCode)
         assertNull(tx.orderId)
+        assertEquals(request.idempotencyKey, tx.idempotencyKey)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(100000 - tx.amount, balance.amount)
@@ -135,7 +136,6 @@ class CreateCashoutControllerTest : AbstractSecuredController() {
 
         verify(eventStream, never()).publish(any(), any())
     }
-
 
     @Test
     @Sql(value = ["/db/clean.sql", "/db/CreateCashoutController.sql"])
@@ -171,6 +171,7 @@ class CreateCashoutControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertNull(tx.description)
         assertNull(tx.errorCode)
+        assertEquals(request.idempotencyKey, tx.idempotencyKey)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(100000.0 - tx.amount, balance.amount)
@@ -236,6 +237,7 @@ class CreateCashoutControllerTest : AbstractSecuredController() {
         assertEquals(e.error.supplierErrorCode, tx.supplierErrorCode)
         assertEquals(e.error.code.name, tx.errorCode)
         assertEquals(e.error.transactionId, tx.gatewayTransactionId)
+        assertEquals(request.idempotencyKey, tx.idempotencyKey)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(100000.0, balance.amount)
