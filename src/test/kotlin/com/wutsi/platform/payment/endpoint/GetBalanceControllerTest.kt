@@ -27,7 +27,7 @@ public class GetBalanceControllerTest : AbstractSecuredController() {
         // THEN
         assertEquals(200, response.statusCodeValue)
 
-        val balance = response.body.balance
+        val balance = response.body!!.balance
         assertEquals(100000.0, balance.amount)
         assertEquals("XAF", balance.currency)
         assertEquals(USER_ID, balance.userId)

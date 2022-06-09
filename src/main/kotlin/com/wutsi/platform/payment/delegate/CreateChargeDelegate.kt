@@ -4,6 +4,8 @@ import com.wutsi.platform.account.dto.Account
 import com.wutsi.platform.account.dto.AccountSummary
 import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.account.dto.SearchAccountRequest
+import com.wutsi.platform.core.error.Error
+import com.wutsi.platform.core.error.exception.ConflictException
 import com.wutsi.platform.payment.GatewayProvider
 import com.wutsi.platform.payment.PaymentException
 import com.wutsi.platform.payment.PaymentMethodProvider
@@ -28,7 +30,7 @@ import java.time.OffsetDateTime
 import java.util.UUID
 
 @Service
-public class CreateChargeDelegate(
+class CreateChargeDelegate(
     private val tenantProvider: TenantProvider,
     private val gatewayProvider: GatewayProvider,
     private val feesCalculator: FeesCalculator,
@@ -41,29 +43,48 @@ public class CreateChargeDelegate(
         logger.add("recipient_id", request.recipientId)
         logger.add("description", request.description)
         logger.add("order_id", request.orderId)
+        logger.add("idempotency_key", request.idempotencyKey)
 
+        // Idempotency
+        val opt = transactionDao.findByIdempotencyKey(request.idempotencyKey)
+        if (opt.isPresent) {
+            logger.add("idempotency_hit", true)
+
+            val tx = opt.get()
+            checkIdempotency(request, tx)
+            if (tx.status == Status.FAILED)
+                throw createTransactionException(tx, ErrorURN.TRANSACTION_FAILED, tx.errorCode)
+
+            return CreateChargeResponse(
+                id = tx.id!!,
+                status = tx.status.name
+            )
+        } else {
+            logger.add("idempotency_hit", false)
+        }
+
+        // Validate the request
         val tenant = tenantProvider.get()
         val accounts = accountApi.searchAccount(
             request = SearchAccountRequest(
                 ids = listOfNotNull(request.recipientId, securityManager.currentUserId())
             )
         ).accounts.map { it.id to it }.toMap()
-
-        // Validate the request
         validateRequest(request, tenant, accounts)
 
         // Gateway
+        val userId = securityManager.currentUserId()!!
         val paymentMethod = accountApi.getPaymentMethod(
-            id = securityManager.currentUserId(),
+            id = userId,
             token = request.paymentMethodToken
         ).paymentMethod
 
         // Create transaction
-        val tx = createTransaction(request, paymentMethod, tenant)
+        val payer = accountApi.getAccount(userId).account
+        val tx = createTransaction(request, paymentMethod, tenant, payer)
 
         // Perform the charge
         try {
-            val payer = accountApi.getAccount(securityManager.currentUserId()).account
             val response = charge(tx, paymentMethod, request, payer)
             log(response)
 
@@ -136,12 +157,13 @@ public class CreateChargeDelegate(
         request: CreateChargeRequest,
         paymentMethod: PaymentMethod,
         tenant: Tenant,
+        payer: Account,
     ): TransactionEntity {
         val fees = feesCalculator.compute(TransactionType.CHARGE, request.amount, tenant)
         return transactionDao.save(
             TransactionEntity(
                 id = UUID.randomUUID().toString(),
-                accountId = securityManager.currentUserId(),
+                accountId = payer.id,
                 recipientId = request.recipientId,
                 tenantId = tenant.id,
                 paymentMethodToken = request.paymentMethodToken,
@@ -153,7 +175,8 @@ public class CreateChargeDelegate(
                 currency = tenant.currency,
                 created = OffsetDateTime.now(),
                 description = request.description,
-                orderId = request.orderId
+                orderId = request.orderId,
+                idempotencyKey = request.idempotencyKey
             )
         )
     }
@@ -164,5 +187,22 @@ public class CreateChargeDelegate(
         ensureRecipientValid(request.recipientId, accounts)
         ensureRecipientActive(request.recipientId, accounts)
         ensureBusinessAccount(request.recipientId, accounts)
+    }
+
+    private fun checkIdempotency(request: CreateChargeRequest, tx: TransactionEntity) {
+        val matches = request.idempotencyKey == tx.idempotencyKey &&
+            request.amount == tx.amount &&
+            request.currency == tx.currency &&
+            request.orderId == tx.orderId &&
+            request.recipientId == tx.recipientId &&
+            securityManager.currentUserId() == tx.accountId &&
+            TransactionType.CHARGE == tx.type
+
+        if (!matches)
+            throw ConflictException(
+                error = Error(
+                    code = ErrorURN.IDEMPOTENCY_MISMATCH.urn
+                )
+            )
     }
 }

@@ -2,6 +2,7 @@ package com.wutsi.platform.payment.service
 
 import com.wutsi.platform.core.error.Error
 import com.wutsi.platform.core.error.exception.ForbiddenException
+import com.wutsi.platform.core.security.SubjectType
 import com.wutsi.platform.core.security.WutsiPrincipal
 import com.wutsi.platform.core.tracing.TracingContext
 import com.wutsi.platform.payment.entity.BalanceEntity
@@ -14,7 +15,10 @@ import org.springframework.stereotype.Service
 class SecurityManager(
     private val tracingContext: TracingContext
 ) {
-    fun currentUserId() = currentPrincipal().id.toLong()
+    fun currentUserId() = if (currentPrincipal().type == SubjectType.USER)
+        currentPrincipal().id.toLong()
+    else
+        null
 
     private fun currentPrincipal(): WutsiPrincipal =
         SecurityContextHolder.getContext().authentication.principal as WutsiPrincipal

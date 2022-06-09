@@ -109,7 +109,7 @@ class TransactionEventHandler(
             TransactionType.CASHOUT -> cashoutDelegate.onSuccess(
                 tx = tx,
                 response = CreateTransferResponse(
-                    transactionId = gatewayTransactionId ?: "-",
+                    transactionId = gatewayTransactionId,
                     financialTransactionId = financialTransactionId,
                     status = status,
                     fees = fees
@@ -120,7 +120,7 @@ class TransactionEventHandler(
                 tx = tx,
                 tenant = tenantApi.getTenant(tx.tenantId).tenant,
                 response = CreatePaymentResponse(
-                    transactionId = gatewayTransactionId ?: "-",
+                    transactionId = gatewayTransactionId,
                     financialTransactionId = financialTransactionId,
                     status = status,
                     fees = fees

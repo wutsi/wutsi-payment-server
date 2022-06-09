@@ -29,7 +29,7 @@ public class SearchTransactionControllerTest : AbstractSecuredController() {
         // THEN
         assertEquals(200, response.statusCodeValue)
 
-        val txs = response.body.transactions
+        val txs = response.body!!.transactions
         assertEquals(3, txs.size)
 
         assertEquals("3", txs[0].id)
@@ -51,7 +51,7 @@ public class SearchTransactionControllerTest : AbstractSecuredController() {
         // THEN
         assertEquals(200, response.statusCodeValue)
 
-        val txs = response.body.transactions
+        val txs = response.body!!.transactions
         assertEquals(1, txs.size)
 
         assertEquals("40", txs[0].id)
@@ -70,7 +70,7 @@ public class SearchTransactionControllerTest : AbstractSecuredController() {
         // THEN
         assertEquals(200, response.statusCodeValue)
 
-        val txs = response.body.transactions
+        val txs = response.body!!.transactions
         assertEquals(4, txs.size)
     }
 }

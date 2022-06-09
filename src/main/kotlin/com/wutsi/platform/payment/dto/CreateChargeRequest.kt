@@ -18,5 +18,7 @@ public data class CreateChargeRequest(
     public val currency: String = "",
     public val orderId: String? = null,
     @get:Size(max = 100)
-    public val description: String? = null
+    public val description: String? = null,
+    @get:NotBlank
+    public val idempotencyKey: String = ""
 )

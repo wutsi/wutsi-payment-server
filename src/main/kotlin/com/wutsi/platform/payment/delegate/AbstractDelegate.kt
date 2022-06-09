@@ -9,6 +9,7 @@ import com.wutsi.platform.core.error.ParameterType.PARAMETER_TYPE_PAYLOAD
 import com.wutsi.platform.core.error.exception.BadRequestException
 import com.wutsi.platform.core.error.exception.ConflictException
 import com.wutsi.platform.core.error.exception.ForbiddenException
+import com.wutsi.platform.core.error.exception.UnauthorizedException
 import com.wutsi.platform.core.logging.KVLogger
 import com.wutsi.platform.core.stream.EventStream
 import com.wutsi.platform.payment.PaymentException
@@ -80,10 +81,17 @@ class AbstractDelegate {
         error: ErrorURN,
         ex: PaymentException
     ): TransactionException =
+        createTransactionException(tx, error, ex.error.code.name)
+
+    protected fun createTransactionException(
+        tx: TransactionEntity,
+        error: ErrorURN,
+        paymentError: String?
+    ): TransactionException =
         TransactionException(
             error = Error(
                 code = error.urn,
-                downstreamCode = ex.error.code.name,
+                downstreamCode = paymentError,
                 data = mapOf(
                     "transaction-id" to tx.id!!
                 )
@@ -133,6 +141,12 @@ class AbstractDelegate {
     @Deprecated("")
     protected fun ensureCurrentUserActive() {
         val userId = securityManager.currentUserId()
+            ?: throw UnauthorizedException(
+                error = Error(
+                    code = ErrorURN.NO_CURRENT_USER.urn
+                )
+            )
+
         val user = accountApi.getAccount(userId).account
         ensureAccountActive(user.id, user.status, ErrorURN.USER_NOT_ACTIVE)
     }

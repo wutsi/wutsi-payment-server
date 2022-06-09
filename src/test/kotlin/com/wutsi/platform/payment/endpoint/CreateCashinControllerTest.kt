@@ -43,9 +43,9 @@ import kotlin.test.assertNull
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(value = ["/db/clean.sql", "/db/CreateCashinController.sql"])
-public class CreateCashinControllerTest : AbstractSecuredController() {
+class CreateCashinControllerTest : AbstractSecuredController() {
     @LocalServerPort
-    public val port: Int = 0
+    val port: Int = 0
 
     private lateinit var url: String
 
@@ -81,11 +81,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         doReturn(paymentResponse).whenever(gateway).createPayment(any())
 
         // WHEN
-        val request = CreateCashinRequest(
-            paymentMethodToken = "11111",
-            amount = 50000.0,
-            currency = "XAF",
-        )
+        val request = createRequest()
         val response = rest.postForEntity(url, request, CreateCashinResponse::class.java)
 
         // THEN
@@ -131,11 +127,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         doReturn(paymentResponse).whenever(gateway).createPayment(any())
 
         // WHEN
-        val request = CreateCashinRequest(
-            paymentMethodToken = "11111",
-            amount = 50000.0,
-            currency = "XAF"
-        )
+        val request = createRequest()
         val response = rest.postForEntity(url, request, CreateCashinResponse::class.java)
 
         // THEN
@@ -178,11 +170,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         doThrow(e).whenever(gateway).createPayment(any())
 
         // WHEN
-        val request = CreateCashinRequest(
-            paymentMethodToken = "11111",
-            amount = 50000.0,
-            currency = "XAF"
-        )
+        val request = createRequest()
         val ex = assertThrows<HttpClientErrorException> {
             rest.postForEntity(url, request, CreateCashinResponse::class.java)
         }
@@ -221,11 +209,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
     @Test
     fun badCurrency() {
         // WHEN
-        val request = CreateCashinRequest(
-            paymentMethodToken = "11111",
-            amount = 50000.0,
-            currency = "EUR"
-        )
+        val request = createRequest(currency = "EUR")
         val ex = assertThrows<HttpClientErrorException> {
             rest.postForEntity(url, request, CreateCashinResponse::class.java)
         }
@@ -251,11 +235,7 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
         doReturn(SearchAccountResponse(listOf(account))).whenever(accountApi).searchAccount(any())
 
         // WHEN
-        val request = CreateCashinRequest(
-            paymentMethodToken = "11111",
-            amount = 50000.0,
-            currency = "EUR"
-        )
+        val request = createRequest()
         val ex = assertThrows<HttpClientErrorException> {
             rest.postForEntity(url, request, CreateCashinResponse::class.java)
         }
@@ -268,4 +248,10 @@ public class CreateCashinControllerTest : AbstractSecuredController() {
 
         verify(eventStream, never()).publish(any(), any())
     }
+
+    private fun createRequest(currency: String = "XAF") = CreateCashinRequest(
+        paymentMethodToken = "11111",
+        amount = 50000.0,
+        currency = currency,
+    )
 }

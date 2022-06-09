@@ -21,4 +21,6 @@ enum class ErrorURN(val urn: String) {
     TRANSACTION_NOT_PENDING("urn:wutsi:error:account:transaction-not-pending"),
     NO_APPROVAL_REQUIRED("urn:wutsi:error:account:no-approval-required"),
     TRANSACTION_NOT_TRANSFER("urn:wutsi:error:account:transaction-not-transfer"),
+    IDEMPOTENCY_MISMATCH("urn:wutsi:error:account:idempotency-mismatch"),
+    NO_CURRENT_USER("urn:wutsi:error:account:no-current-user")
 }

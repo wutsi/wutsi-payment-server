@@ -603,9 +603,13 @@ components:
           description: Description of the transaction
           nullable: true
           maxLength: 100
+        idempotencyKey:
+          type: string
+          description: Idemportent Key
       required:
         - paymentMethodToken
         - currency
+        - idempotencyKey
 
     CreateChargeResponse:
       type: object

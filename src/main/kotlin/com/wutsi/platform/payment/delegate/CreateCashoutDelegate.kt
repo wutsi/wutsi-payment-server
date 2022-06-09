@@ -47,20 +47,21 @@ class CreateCashoutDelegate(
         validateRequest(request, tenant, accounts)
 
         // Gateway
+        val userId = securityManager.currentUserId()!!
         val paymentMethod = accountApi.getPaymentMethod(
-            id = securityManager.currentUserId(),
+            id = userId,
             token = request.paymentMethodToken
         ).paymentMethod
 
         // Create transaction
-        val tx = createTransaction(request, paymentMethod, tenant)
+        val payee = accountApi.getAccount(userId).account
+        val tx = createTransaction(request, paymentMethod, tenant, payee)
         try {
             // Update balance
             validateTransaction(tx)
             updateBalance(tx.accountId, -tx.amount, tenant)
 
-            val payer = accountApi.getAccount(securityManager.currentUserId()).account
-            val response = cashout(tx, paymentMethod, payer)
+            val response = cashout(tx, paymentMethod, payee)
             log(response)
 
             if (response.status == Status.SUCCESSFUL) {
@@ -90,18 +91,19 @@ class CreateCashoutDelegate(
     }
 
     private fun validateTransaction(tx: TransactionEntity) {
-        ensureBalanceAbove(securityManager.currentUserId(), tx)
+        ensureBalanceAbove(securityManager.currentUserId()!!, tx)
     }
 
     private fun createTransaction(
         request: CreateCashoutRequest,
         paymentMethod: PaymentMethod,
         tenant: Tenant,
+        payee: Account
     ): TransactionEntity {
         val tx = transactionDao.save(
             TransactionEntity(
                 id = UUID.randomUUID().toString(),
-                accountId = securityManager.currentUserId(),
+                accountId = payee.id,
                 tenantId = tenant.id,
                 paymentMethodToken = request.paymentMethodToken,
                 paymentMethodProvider = PaymentMethodProvider.valueOf(paymentMethod.provider),
@@ -116,7 +118,7 @@ class CreateCashoutDelegate(
         return tx
     }
 
-    private fun cashout(tx: TransactionEntity, paymentMethod: PaymentMethod, payer: Account): CreateTransferResponse {
+    private fun cashout(tx: TransactionEntity, paymentMethod: PaymentMethod, payee: Account): CreateTransferResponse {
         val gateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
         logger.add("gateway", gateway::class.java.simpleName)
 
@@ -125,7 +127,7 @@ class CreateCashoutDelegate(
                 payee = Party(
                     fullName = paymentMethod.ownerName,
                     phoneNumber = paymentMethod.phone!!.number,
-                    email = payer.email
+                    email = payee.email
                 ),
                 amount = Money(tx.amount, tx.currency),
                 externalId = tx.id!!,

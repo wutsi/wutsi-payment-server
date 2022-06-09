@@ -36,5 +36,6 @@ data class TransactionEntity(
 
     var business: Boolean = false,
     var orderId: String? = null,
-    var gatewayFees: Double = 0.0
+    var gatewayFees: Double = 0.0,
+    var idempotencyKey: String? = null
 )

@@ -47,17 +47,18 @@ class CreateCashinDelegate(
         validateRequest(request, tenant, accounts)
 
         // Gateway
+        val userId = securityManager.currentUserId()!!
         val paymentMethod = accountApi.getPaymentMethod(
-            id = securityManager.currentUserId(),
+            id = userId,
             token = request.paymentMethodToken
         ).paymentMethod
 
         // Create transaction
-        val tx = createTransaction(request, paymentMethod, tenant)
+        val payer = accountApi.getAccount(userId).account
+        val tx = createTransaction(request, paymentMethod, tenant, payer)
 
         // Perform the transfer
         try {
-            val payer = accountApi.getAccount(securityManager.currentUserId()).account
             val response = cashin(tx, paymentMethod, payer)
             log(response)
 
@@ -89,11 +90,12 @@ class CreateCashinDelegate(
         request: CreateCashinRequest,
         paymentMethod: PaymentMethod,
         tenant: Tenant,
+        payer: Account
     ): TransactionEntity {
         val tx = transactionDao.save(
             TransactionEntity(
                 id = UUID.randomUUID().toString(),
-                accountId = securityManager.currentUserId(),
+                accountId = payer.id,
                 tenantId = tenant.id,
                 paymentMethodToken = request.paymentMethodToken,
                 paymentMethodProvider = PaymentMethodProvider.valueOf(paymentMethod.provider),
@@ -140,7 +142,7 @@ class CreateCashinDelegate(
             return
 
         // Update balance
-        val balance = updateBalance(tx.accountId, tx.net, tenant)
+        updateBalance(tx.accountId, tx.net, tenant)
 
         // Update transaction
         tx.status = Status.SUCCESSFUL

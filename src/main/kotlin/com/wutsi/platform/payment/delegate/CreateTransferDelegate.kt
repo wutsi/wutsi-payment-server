@@ -34,15 +34,16 @@ class CreateTransferDelegate(
 
         val tenant = tenantProvider.get()
 
+        val senderId = securityManager.currentUserId()!!
         val accounts = accountApi.searchAccount(
             request = SearchAccountRequest(
-                ids = listOfNotNull(request.recipientId, securityManager.currentUserId())
+                ids = listOfNotNull(request.recipientId, senderId)
             )
         ).accounts.map { it.id to it }.toMap()
 
         validateRequest(request, tenant, accounts)
 
-        val tx = createTransaction(request, tenant, accounts)
+        val tx = createTransaction(request, tenant, accounts, senderId)
         try {
             validateTransaction(tx)
             if (tx.status == Status.PENDING) {
@@ -74,14 +75,15 @@ class CreateTransferDelegate(
     private fun createTransaction(
         request: CreateTransferRequest,
         tenant: Tenant,
-        accounts: Map<Long, AccountSummary?>
+        accounts: Map<Long, AccountSummary?>,
+        senderId: Long
     ): TransactionEntity {
         val business = isBusinessTransaction(request, accounts)
         val now = OffsetDateTime.now()
         val tx = transactionDao.save(
             TransactionEntity(
                 id = UUID.randomUUID().toString(),
-                accountId = securityManager.currentUserId(),
+                accountId = senderId,
                 recipientId = request.recipientId,
                 tenantId = tenant.id,
                 type = TRANSFER,
@@ -121,6 +123,6 @@ class CreateTransferDelegate(
     }
 
     private fun validateTransaction(tx: TransactionEntity) {
-        ensureBalanceAbove(securityManager.currentUserId(), tx)
+        ensureBalanceAbove(securityManager.currentUserId()!!, tx)
     }
 }

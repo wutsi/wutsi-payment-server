@@ -31,7 +31,7 @@ public class GetTransactionControllerTest : AbstractSecuredController() {
         // THEN
         assertEquals(200, response.statusCodeValue)
 
-        val tx = response.body.transaction
+        val tx = response.body!!.transaction
         assertEquals("XAF", tx.currency)
         assertEquals("CASHIN", tx.type)
         assertEquals("SUCCESSFUL", tx.status)
@@ -59,7 +59,7 @@ public class GetTransactionControllerTest : AbstractSecuredController() {
         // THEN
         assertEquals(200, response.statusCodeValue)
 
-        val tx = response.body.transaction
+        val tx = response.body!!.transaction
         assertEquals("XAF", tx.currency)
         assertEquals("TRANSFER", tx.type)
         assertEquals("SUCCESSFUL", tx.status)

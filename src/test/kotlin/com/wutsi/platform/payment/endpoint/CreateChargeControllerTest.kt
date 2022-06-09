@@ -39,17 +39,18 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.web.client.HttpClientErrorException
+import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class CreateChargeControllerTest : AbstractSecuredController() {
+class CreateChargeControllerTest : AbstractSecuredController() {
     companion object {
         const val RECIPIENT_ID = 100L
     }
 
     @LocalServerPort
-    public val port: Int = 0
+    val port: Int = 0
 
     private lateinit var url: String
 
@@ -112,6 +113,7 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(request.description, tx.description)
         assertNull(tx.errorCode)
         assertEquals(request.orderId, tx.orderId)
+        assertEquals(request.idempotencyKey, tx.idempotencyKey)
 
         assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
         assertEquals(100000.0 + tx.net, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
@@ -120,6 +122,30 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFUL.urn), payload.capture())
         assertEquals(TransactionType.CHARGE.name, payload.firstValue.type)
         assertEquals(tx.id, payload.firstValue.transactionId)
+    }
+
+    @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateChargeController.sql"])
+    fun successIdempotency() {
+        // GIVEN
+        val gwFees = 100.0
+        val paymentResponse = CreatePaymentResponse("111", "222", Status.SUCCESSFUL, Money(gwFees, "XAF"))
+        doReturn(paymentResponse).whenever(gateway).createPayment(any())
+
+        // WHEN
+        val request = createRequest(idempotencyKey = "i-100")
+        val response = rest.postForEntity(url, request, CreateChargeResponse::class.java)
+
+        // THEN
+        assertEquals(200, response.statusCodeValue)
+
+        assertEquals(Status.SUCCESSFUL.name, response.body!!.status)
+        assertEquals("100", response.body!!.id)
+
+        assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
+        assertEquals(100000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
+
+        verify(eventStream, never()).publish(any(), any())
     }
 
     @Test
@@ -158,6 +184,7 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         assertNull(tx.supplierErrorCode)
         assertEquals(request.description, tx.description)
         assertNull(tx.errorCode)
+        assertEquals(request.idempotencyKey, tx.idempotencyKey)
 
         assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
         assertEquals(100000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
@@ -166,6 +193,30 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         verify(eventStream).publish(eq(EventURN.TRANSACTION_PENDING.urn), payload.capture())
         assertEquals(TransactionType.CHARGE.name, payload.firstValue.type)
         assertEquals(tx.id, payload.firstValue.transactionId)
+    }
+
+    @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateChargeController.sql"])
+    fun pendingIdempotency() {
+        // GIVEN
+        val gwFees = 100.0
+        val paymentResponse = CreatePaymentResponse("111", "222", Status.SUCCESSFUL, Money(gwFees, "XAF"))
+        doReturn(paymentResponse).whenever(gateway).createPayment(any())
+
+        // WHEN
+        val request = createRequest(idempotencyKey = "i-200")
+        val response = rest.postForEntity(url, request, CreateChargeResponse::class.java)
+
+        // THEN
+        assertEquals(200, response.statusCodeValue)
+
+        assertEquals(Status.PENDING.name, response.body!!.status)
+        assertEquals("200", response.body!!.id)
+
+        assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
+        assertEquals(100000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
+
+        verify(eventStream, never()).publish(any(), any())
     }
 
     @Test
@@ -211,6 +262,7 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(e.error.supplierErrorCode, tx.supplierErrorCode)
         assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, tx.errorCode)
         assertEquals(e.error.transactionId, tx.gatewayTransactionId)
+        assertEquals(request.idempotencyKey, tx.idempotencyKey)
 
         assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
         assertEquals(100000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
@@ -219,6 +271,28 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
         assertEquals(TransactionType.CHARGE.name, payload.firstValue.type)
         assertEquals(tx.id, payload.firstValue.transactionId)
+    }
+
+    @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateChargeController.sql"])
+    fun errorIdempotency() {
+        // WHEN
+        val request = createRequest(idempotencyKey = "i-300")
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateChargeResponse::class.java)
+        }
+
+        // THEN
+        assertEquals(409, ex.rawStatusCode)
+
+        val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.TRANSACTION_FAILED.urn, response.error.code)
+        assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, response.error.downstreamCode)
+
+        assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
+        assertEquals(100000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
+
+        verify(eventStream, never()).publish(any(), any())
     }
 
     @Test
@@ -264,6 +338,7 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(e.error.supplierErrorCode, tx.supplierErrorCode)
         assertEquals(ErrorCode.DECLINED.name, tx.errorCode)
         assertEquals(e.error.transactionId, tx.gatewayTransactionId)
+        assertEquals(request.idempotencyKey, tx.idempotencyKey)
 
         assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
         assertEquals(100000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
@@ -374,12 +449,19 @@ public class CreateChargeControllerTest : AbstractSecuredController() {
         verify(eventStream, never()).publish(any(), any())
     }
 
-    private fun createRequest(amount: Double = 50000.0, currency: String = "XAF", recipientId: Long = RECIPIENT_ID) =
+    private fun createRequest(
+        amount: Double = 50000.0,
+        currency: String = "XAF",
+        recipientId: Long = RECIPIENT_ID,
+        idempotencyKey: String? = null
+    ) =
         CreateChargeRequest(
             paymentMethodToken = "11111",
             recipientId = recipientId,
             amount = amount,
             currency = currency,
-            description = "Hello world"
+            description = "Hello world",
+            idempotencyKey = idempotencyKey ?: UUID.randomUUID().toString(),
+            orderId = "order-100"
         )
 }
