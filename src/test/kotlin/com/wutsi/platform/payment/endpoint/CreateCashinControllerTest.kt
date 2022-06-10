@@ -176,6 +176,7 @@ class CreateCashinControllerTest : AbstractSecuredController() {
         assertNull(tx.description)
         assertNull(tx.errorCode)
         assertEquals(request.idempotencyKey, tx.idempotencyKey)
+        assertTrue(tx.applyFeesToSender)
 
         val balance = balanceDao.findByAccountId(USER_ID)
         assertFalse(balance.isPresent)
@@ -242,6 +243,7 @@ class CreateCashinControllerTest : AbstractSecuredController() {
         assertEquals(e.error.code.name, tx.errorCode)
         assertEquals(e.error.transactionId, tx.gatewayTransactionId)
         assertEquals(request.idempotencyKey, tx.idempotencyKey)
+        assertTrue(tx.applyFeesToSender)
 
         val balance = balanceDao.findByAccountId(USER_ID)
         assertFalse(balance.isPresent)

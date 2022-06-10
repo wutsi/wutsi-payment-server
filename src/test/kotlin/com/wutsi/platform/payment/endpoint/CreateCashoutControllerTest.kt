@@ -41,6 +41,7 @@ import org.springframework.web.client.HttpClientErrorException
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(value = ["/db/clean.sql", "/db/CreateCashoutController.sql"])
@@ -90,7 +91,7 @@ class CreateCashoutControllerTest : AbstractSecuredController() {
 
         assertEquals(Status.SUCCESSFUL.name, response.body!!.status)
 
-        val fees = 0.0
+        val fees = 1000.0
         val tx = txDao.findById(response.body!!.id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
@@ -110,6 +111,7 @@ class CreateCashoutControllerTest : AbstractSecuredController() {
         assertNull(tx.errorCode)
         assertNull(tx.orderId)
         assertEquals(request.idempotencyKey, tx.idempotencyKey)
+        assertTrue(tx.applyFeesToSender)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(100000 - tx.amount, balance.amount)
@@ -154,7 +156,7 @@ class CreateCashoutControllerTest : AbstractSecuredController() {
 
         assertEquals(Status.PENDING.name, response.body!!.status)
 
-        val fees = 0.0
+        val fees = 1000.0
         val tx = txDao.findById(response.body!!.id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
@@ -172,6 +174,7 @@ class CreateCashoutControllerTest : AbstractSecuredController() {
         assertNull(tx.description)
         assertNull(tx.errorCode)
         assertEquals(request.idempotencyKey, tx.idempotencyKey)
+        assertTrue(tx.applyFeesToSender)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(100000.0 - tx.amount, balance.amount)
@@ -221,7 +224,7 @@ class CreateCashoutControllerTest : AbstractSecuredController() {
 
         val txId = response.error.data?.get("transaction-id").toString()
         val tx = txDao.findById(txId).get()
-        val fees = 0.0
+        val fees = 1000.0
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount + fees, tx.amount)
@@ -238,6 +241,7 @@ class CreateCashoutControllerTest : AbstractSecuredController() {
         assertEquals(e.error.code.name, tx.errorCode)
         assertEquals(e.error.transactionId, tx.gatewayTransactionId)
         assertEquals(request.idempotencyKey, tx.idempotencyKey)
+        assertTrue(tx.applyFeesToSender)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(100000.0, balance.amount)
@@ -285,7 +289,7 @@ class CreateCashoutControllerTest : AbstractSecuredController() {
 
         val txId = response.error.data?.get("transaction-id").toString()
         val tx = txDao.findById(txId).get()
-        val fees = 0.0
+        val fees = 1000000.0
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount + fees, tx.amount)
