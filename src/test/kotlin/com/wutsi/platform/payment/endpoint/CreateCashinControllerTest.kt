@@ -42,6 +42,7 @@ import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Sql(value = ["/db/clean.sql", "/db/CreateCashinController.sql"])
@@ -91,12 +92,13 @@ class CreateCashinControllerTest : AbstractSecuredController() {
 
         assertEquals(Status.SUCCESSFUL.name, response.body!!.status)
 
+        val fees = 1250.0
         val tx = txDao.findById(response.body!!.id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount, tx.amount)
-        assertEquals(0.0, tx.fees)
+        assertEquals(request.amount + fees, tx.amount)
+        assertEquals(fees, tx.fees)
         assertEquals(gwFees, tx.gatewayFees)
         assertEquals(request.amount, tx.net)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
@@ -110,6 +112,7 @@ class CreateCashinControllerTest : AbstractSecuredController() {
         assertNull(tx.errorCode)
         assertNull(tx.orderId)
         assertEquals(request.idempotencyKey, tx.idempotencyKey)
+        assertTrue(tx.applyFeesToSender)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(request.amount, balance.amount)
@@ -154,12 +157,13 @@ class CreateCashinControllerTest : AbstractSecuredController() {
 
         assertEquals(Status.PENDING.name, response.body!!.status)
 
+        val fees = 1250.0
         val tx = txDao.findById(response.body!!.id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount, tx.amount)
-        assertEquals(0.0, tx.fees)
+        assertEquals(request.amount + fees, tx.amount)
+        assertEquals(fees, tx.fees)
         assertEquals(request.amount, tx.net)
         assertEquals(0.0, tx.gatewayFees)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
@@ -219,11 +223,13 @@ class CreateCashinControllerTest : AbstractSecuredController() {
         assertEquals(e.error.code.name, response.error.downstreamCode)
 
         val txId = response.error.data?.get("transaction-id").toString()
+
+        val fees = 1250.0
         val tx = txDao.findById(txId).get()
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount, tx.amount)
-        assertEquals(0.0, tx.fees)
+        assertEquals(request.amount + fees, tx.amount)
+        assertEquals(fees, tx.fees)
         assertEquals(0.0, tx.gatewayFees)
         assertEquals(request.amount, tx.net)
         assertEquals(request.paymentMethodToken, tx.paymentMethodToken)
@@ -236,6 +242,9 @@ class CreateCashinControllerTest : AbstractSecuredController() {
         assertEquals(e.error.code.name, tx.errorCode)
         assertEquals(e.error.transactionId, tx.gatewayTransactionId)
         assertEquals(request.idempotencyKey, tx.idempotencyKey)
+
+        val balance = balanceDao.findByAccountId(USER_ID)
+        assertFalse(balance.isPresent)
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())

@@ -14,28 +14,19 @@ class FeesCalculator {
         paymentMethod: PaymentMethod?,
         tenant: Tenant
     ) {
-        val fees = findFees(tx.type, paymentMethod?.type, tenant)
+        val obj = findFees(tx.type, paymentMethod?.type, tenant)
             ?: findFees(tx.type, null, tenant)
             ?: return
 
         val amount = tx.amount
-        tx.fees = amount * fees.percent + fees.amount
-        tx.net = max(0.0, amount - tx.fees)
-        tx.applyFeesToSender = fees.applyToSender
+        val fees = amount * obj.percent + obj.amount
+
+        tx.amount = if (obj.applyToSender) tx.amount + fees else tx.amount
+        tx.fees = fees
+        tx.net = max(0.0, tx.amount - tx.fees)
+        tx.applyFeesToSender = obj.applyToSender
     }
 
     private fun findFees(type: TransactionType, paymentMethodType: String?, tenant: Tenant) =
         tenant.fees.find { it.transactionType == type.name && it.paymentMethodType == paymentMethodType }
-
-    @Deprecated("")
-    fun compute(
-        type: TransactionType,
-        amount: Double,
-        tenant: Tenant
-    ): Double {
-        val fee = tenant.fees.find { it.transactionType == type.name }
-            ?: return 0.0
-
-        return amount * fee.percent + fee.amount
-    }
 }

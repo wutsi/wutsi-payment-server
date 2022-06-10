@@ -105,6 +105,13 @@ abstract class AbstractSecuredController {
                 amount = 0.0,
                 percent = 0.1
             ),
+            Fee(
+                transactionType = TransactionType.CASHIN.name,
+                paymentMethodType = PaymentMethodType.MOBILE.name,
+                amount = 0.0,
+                percent = 0.025,
+                applyToSender = true
+            ),
         )
     )
 

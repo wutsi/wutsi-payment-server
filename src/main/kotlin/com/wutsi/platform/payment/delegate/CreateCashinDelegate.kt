@@ -22,6 +22,7 @@ import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.model.CreatePaymentRequest
 import com.wutsi.platform.payment.model.CreatePaymentResponse
 import com.wutsi.platform.payment.model.Party
+import com.wutsi.platform.payment.service.FeesCalculator
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.tenant.dto.Tenant
 import org.springframework.stereotype.Service
@@ -33,6 +34,7 @@ import java.util.UUID
 class CreateCashinDelegate(
     private val tenantProvider: TenantProvider,
     private val gatewayProvider: GatewayProvider,
+    private val feesCalculator: FeesCalculator
 ) : AbstractDelegate() {
     @Transactional(noRollbackFor = [TransactionException::class])
     fun invoke(request: CreateCashinRequest): CreateCashinResponse {
@@ -115,22 +117,22 @@ class CreateCashinDelegate(
         tenant: Tenant,
         payer: Account
     ): TransactionEntity {
-        val tx = transactionDao.save(
-            TransactionEntity(
-                id = UUID.randomUUID().toString(),
-                accountId = payer.id,
-                tenantId = tenant.id,
-                paymentMethodToken = request.paymentMethodToken,
-                paymentMethodProvider = PaymentMethodProvider.valueOf(paymentMethod.provider),
-                type = CASHIN,
-                amount = request.amount,
-                fees = 0.0,
-                net = request.amount,
-                currency = tenant.currency,
-                created = OffsetDateTime.now(),
-                idempotencyKey = request.idempotencyKey
-            )
+        val tx = TransactionEntity(
+            id = UUID.randomUUID().toString(),
+            accountId = payer.id,
+            tenantId = tenant.id,
+            paymentMethodToken = request.paymentMethodToken,
+            paymentMethodProvider = PaymentMethodProvider.valueOf(paymentMethod.provider),
+            type = CASHIN,
+            amount = request.amount,
+            fees = 0.0,
+            net = request.amount,
+            currency = tenant.currency,
+            created = OffsetDateTime.now(),
+            idempotencyKey = request.idempotencyKey
         )
+        feesCalculator.apply(tx, paymentMethod, tenant)
+        transactionDao.save(tx)
         return tx
     }
 
