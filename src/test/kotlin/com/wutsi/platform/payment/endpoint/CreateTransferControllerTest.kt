@@ -100,7 +100,7 @@ class CreateTransferControllerTest : AbstractSecuredController() {
         assertFalse(tx.business)
         assertNull(tx.orderId)
         assertEquals(request.idempotencyKey, tx.idempotencyKey)
-        assertTrue(tx.applyFeesToSender)
+        assertFalse(tx.applyFeesToSender)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(100000 - tx.amount, balance.amount)
@@ -170,7 +170,7 @@ class CreateTransferControllerTest : AbstractSecuredController() {
         assertTrue(tx.business)
         assertNull(tx.orderId)
         assertEquals(request.idempotencyKey, tx.idempotencyKey)
-        assertTrue(tx.applyFeesToSender)
+        assertFalse(tx.applyFeesToSender)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(100000 - tx.amount, balance.amount)

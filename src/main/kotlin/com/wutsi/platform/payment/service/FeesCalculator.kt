@@ -5,6 +5,7 @@ import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.tenant.dto.Tenant
 import org.springframework.stereotype.Service
 import java.lang.Double.max
+import kotlin.math.ceil
 
 @Service
 class FeesCalculator {
@@ -22,7 +23,7 @@ class FeesCalculator {
             tx.applyFeesToSender = false
         } else {
             val amount = tx.amount
-            val fees = amount * obj.percent + obj.amount
+            val fees = ceil(amount * obj.percent + obj.amount)
 
             tx.amount = if (obj.applyToSender) tx.amount + fees else tx.amount
             tx.fees = fees
