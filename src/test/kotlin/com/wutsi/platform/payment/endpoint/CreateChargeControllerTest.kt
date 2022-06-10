@@ -41,6 +41,7 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.web.client.HttpClientErrorException
 import java.util.UUID
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -114,6 +115,7 @@ class CreateChargeControllerTest : AbstractSecuredController() {
         assertNull(tx.errorCode)
         assertEquals(request.orderId, tx.orderId)
         assertEquals(request.idempotencyKey, tx.idempotencyKey)
+        assertFalse(tx.applyFeesToSender)
 
         assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
         assertEquals(100000.0 + tx.net, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
@@ -185,6 +187,7 @@ class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(request.description, tx.description)
         assertNull(tx.errorCode)
         assertEquals(request.idempotencyKey, tx.idempotencyKey)
+        assertFalse(tx.applyFeesToSender)
 
         assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
         assertEquals(100000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
@@ -263,6 +266,7 @@ class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, tx.errorCode)
         assertEquals(e.error.transactionId, tx.gatewayTransactionId)
         assertEquals(request.idempotencyKey, tx.idempotencyKey)
+        assertFalse(tx.applyFeesToSender)
 
         assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
         assertEquals(100000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
@@ -339,6 +343,7 @@ class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(ErrorCode.DECLINED.name, tx.errorCode)
         assertEquals(e.error.transactionId, tx.gatewayTransactionId)
         assertEquals(request.idempotencyKey, tx.idempotencyKey)
+        assertFalse(tx.applyFeesToSender)
 
         assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
         assertEquals(100000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)

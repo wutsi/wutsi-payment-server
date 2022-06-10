@@ -160,26 +160,23 @@ class CreateChargeDelegate(
         tenant: Tenant,
         payer: Account,
     ): TransactionEntity {
-        val fees = feesCalculator.compute(TransactionType.CHARGE, request.amount, tenant)
-        return transactionDao.save(
-            TransactionEntity(
-                id = UUID.randomUUID().toString(),
-                accountId = payer.id,
-                recipientId = request.recipientId,
-                tenantId = tenant.id,
-                paymentMethodToken = request.paymentMethodToken,
-                paymentMethodProvider = PaymentMethodProvider.valueOf(paymentMethod.provider),
-                type = TransactionType.CHARGE,
-                amount = request.amount,
-                fees = fees,
-                net = request.amount - fees,
-                currency = tenant.currency,
-                created = OffsetDateTime.now(),
-                description = request.description,
-                orderId = request.orderId,
-                idempotencyKey = request.idempotencyKey
-            )
+        val tx = TransactionEntity(
+            id = UUID.randomUUID().toString(),
+            accountId = payer.id,
+            recipientId = request.recipientId,
+            tenantId = tenant.id,
+            paymentMethodToken = request.paymentMethodToken,
+            paymentMethodProvider = PaymentMethodProvider.valueOf(paymentMethod.provider),
+            type = TransactionType.CHARGE,
+            amount = request.amount,
+            currency = tenant.currency,
+            created = OffsetDateTime.now(),
+            description = request.description,
+            orderId = request.orderId,
+            idempotencyKey = request.idempotencyKey
         )
+        feesCalculator.apply(tx, paymentMethod, tenant)
+        return transactionDao.save(tx)
     }
 
     private fun validateRequest(request: CreateChargeRequest, tenant: Tenant, accounts: Map<Long, AccountSummary>) {
