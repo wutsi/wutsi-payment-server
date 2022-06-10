@@ -80,7 +80,7 @@ class CreateTransferControllerTest : AbstractSecuredController() {
 
         assertEquals(Status.SUCCESSFUL.name, response.body!!.status)
 
-        val fees = 100.0
+        val fees = 0.0
         val tx = txDao.findById(response.body!!.id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
@@ -150,7 +150,7 @@ class CreateTransferControllerTest : AbstractSecuredController() {
 
         assertEquals(Status.SUCCESSFUL.name, response.body!!.status)
 
-        val fees = 100.0
+        val fees = 0.0
         val tx = txDao.findById(response.body!!.id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
@@ -201,7 +201,7 @@ class CreateTransferControllerTest : AbstractSecuredController() {
         assertEquals(ErrorURN.TRANSACTION_FAILED.urn, response.error.code)
         assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, response.error.downstreamCode)
 
-        val fees = 100.0
+        val fees = 0.0
         val id = response.error.data?.get("transaction-id").toString()
         val tx = txDao.findById(id).get()
         assertEquals(1L, tx.tenantId)

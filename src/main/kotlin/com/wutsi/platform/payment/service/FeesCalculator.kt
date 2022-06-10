@@ -15,15 +15,20 @@ class FeesCalculator {
     ) {
         val obj = findFees(tx.type, paymentMethodType, tenant)
             ?: findFees(tx.type, null, tenant)
-            ?: return
 
-        val amount = tx.amount
-        val fees = amount * obj.percent + obj.amount
+        if (obj == null) {
+            tx.fees = 0.0
+            tx.net = max(0.0, tx.amount - tx.fees)
+            tx.applyFeesToSender = false
+        } else {
+            val amount = tx.amount
+            val fees = amount * obj.percent + obj.amount
 
-        tx.amount = if (obj.applyToSender) tx.amount + fees else tx.amount
-        tx.fees = fees
-        tx.net = max(0.0, tx.amount - tx.fees)
-        tx.applyFeesToSender = obj.applyToSender
+            tx.amount = if (obj.applyToSender) tx.amount + fees else tx.amount
+            tx.fees = fees
+            tx.net = max(0.0, tx.amount - tx.fees)
+            tx.applyFeesToSender = obj.applyToSender
+        }
     }
 
     private fun findFees(type: TransactionType, paymentMethodType: String?, tenant: Tenant) =

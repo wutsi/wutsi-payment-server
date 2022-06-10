@@ -119,12 +119,12 @@ abstract class AbstractSecuredController {
                 percent = 0.020,
                 applyToSender = true
             ),
-            Fee(
-                transactionType = TransactionType.TRANSFER.name,
-                amount = 100.0,
-                percent = 0.0,
-                applyToSender = true
-            ),
+//            Fee(
+//                transactionType = TransactionType.TRANSFER.name,
+//                amount = 100.0,
+//                percent = 0.0,
+//                applyToSender = true
+//            ),
         )
     )
 
