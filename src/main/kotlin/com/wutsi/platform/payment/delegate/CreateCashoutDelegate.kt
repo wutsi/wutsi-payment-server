@@ -86,6 +86,7 @@ class CreateCashoutDelegate(
             validateTransaction(tx)
             updateBalance(tx.accountId, -tx.amount, tenant)
 
+            // Cashout
             val response = cashout(tx, paymentMethod, payee)
             log(response)
 
@@ -138,7 +139,7 @@ class CreateCashoutDelegate(
             idempotencyKey = request.idempotencyKey,
             business = payee.business
         )
-        feesCalculator.apply(tx, paymentMethod, tenant)
+        feesCalculator.apply(tx, paymentMethod?.type, tenant)
         transactionDao.save(tx)
         return tx
     }
@@ -162,7 +163,7 @@ class CreateCashoutDelegate(
         )
     }
 
-    fun onError(tx: TransactionEntity, ex: PaymentException, tenant: Tenant) {
+    override fun onError(tx: TransactionEntity, ex: PaymentException, tenant: Tenant) {
         if (tx.status == Status.FAILED)
             return
 
@@ -170,7 +171,7 @@ class CreateCashoutDelegate(
         updateBalance(tx.accountId, tx.amount, tenant)
 
         // Update the transaction
-        super.onError(tx, ex)
+        super.onError(tx, ex, tenant)
     }
 
     fun onSuccess(

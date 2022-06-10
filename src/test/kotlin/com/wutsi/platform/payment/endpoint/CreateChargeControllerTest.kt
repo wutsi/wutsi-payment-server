@@ -117,8 +117,8 @@ class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(request.idempotencyKey, tx.idempotencyKey)
         assertFalse(tx.applyFeesToSender)
 
-        assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
-        assertEquals(100000.0 + tx.net, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
+        assertEquals(100000.0, balanceDao.findByAccountId(USER_ID).get().amount)
+        assertEquals(200000.0 + tx.net, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFUL.urn), payload.capture())
@@ -144,8 +144,8 @@ class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(Status.SUCCESSFUL.name, response.body!!.status)
         assertEquals("100", response.body!!.id)
 
-        assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
-        assertEquals(100000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
+        assertEquals(100000.0, balanceDao.findByAccountId(USER_ID).get().amount)
+        assertEquals(200000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
 
         verify(eventStream, never()).publish(any(), any())
     }
@@ -189,8 +189,8 @@ class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(request.idempotencyKey, tx.idempotencyKey)
         assertFalse(tx.applyFeesToSender)
 
-        assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
-        assertEquals(100000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
+        assertEquals(100000.0, balanceDao.findByAccountId(USER_ID).get().amount)
+        assertEquals(200000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_PENDING.urn), payload.capture())
@@ -216,8 +216,8 @@ class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(Status.PENDING.name, response.body!!.status)
         assertEquals("200", response.body!!.id)
 
-        assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
-        assertEquals(100000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
+        assertEquals(100000.0, balanceDao.findByAccountId(USER_ID).get().amount)
+        assertEquals(200000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
 
         verify(eventStream, never()).publish(any(), any())
     }
@@ -236,7 +236,7 @@ class CreateChargeControllerTest : AbstractSecuredController() {
         doThrow(e).whenever(gateway).createPayment(any())
 
         // WHEN
-        val request = createRequest(amount = 50000000.0)
+        val request = createRequest(amount = 1000.0)
         val ex = assertThrows<HttpClientErrorException> {
             rest.postForEntity(url, request, CreateChargeResponse::class.java)
         }
@@ -250,7 +250,7 @@ class CreateChargeControllerTest : AbstractSecuredController() {
 
         val txId = response.error.data?.get("transaction-id").toString()
         val tx = txDao.findById(txId).get()
-        val fees = 5000000.0
+        val fees = 100.0
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount, tx.amount)
@@ -268,8 +268,8 @@ class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(request.idempotencyKey, tx.idempotencyKey)
         assertFalse(tx.applyFeesToSender)
 
-        assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
-        assertEquals(100000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
+        assertEquals(100000.0, balanceDao.findByAccountId(USER_ID).get().amount)
+        assertEquals(200000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
@@ -293,8 +293,8 @@ class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(ErrorURN.TRANSACTION_FAILED.urn, response.error.code)
         assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, response.error.downstreamCode)
 
-        assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
-        assertEquals(100000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
+        assertEquals(100000.0, balanceDao.findByAccountId(USER_ID).get().amount)
+        assertEquals(200000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
 
         verify(eventStream, never()).publish(any(), any())
     }
@@ -345,8 +345,8 @@ class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(request.idempotencyKey, tx.idempotencyKey)
         assertFalse(tx.applyFeesToSender)
 
-        assertEquals(5000.0, balanceDao.findByAccountId(USER_ID).get().amount)
-        assertEquals(100000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
+        assertEquals(100000.0, balanceDao.findByAccountId(USER_ID).get().amount)
+        assertEquals(200000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())

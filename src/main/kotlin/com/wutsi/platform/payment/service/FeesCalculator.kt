@@ -1,6 +1,5 @@
 package com.wutsi.platform.payment.service
 
-import com.wutsi.platform.account.dto.PaymentMethod
 import com.wutsi.platform.payment.entity.TransactionEntity
 import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.tenant.dto.Tenant
@@ -11,10 +10,10 @@ import java.lang.Double.max
 class FeesCalculator {
     fun apply(
         tx: TransactionEntity,
-        paymentMethod: PaymentMethod?,
+        paymentMethodType: String?,
         tenant: Tenant
     ) {
-        val obj = findFees(tx.type, paymentMethod?.type, tenant)
+        val obj = findFees(tx.type, paymentMethodType, tenant)
             ?: findFees(tx.type, null, tenant)
             ?: return
 

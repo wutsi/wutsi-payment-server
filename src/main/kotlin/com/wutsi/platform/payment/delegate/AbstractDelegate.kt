@@ -62,7 +62,7 @@ class AbstractDelegate {
         publish(EventURN.TRANSACTION_PENDING, tx)
     }
 
-    fun onError(tx: TransactionEntity, ex: PaymentException) {
+    open fun onError(tx: TransactionEntity, ex: PaymentException, tenant: Tenant) {
         if (tx.status == Status.FAILED)
             return
 

@@ -76,7 +76,7 @@ internal class TransactionEventHandlerTest : AbstractSecuredController() {
         handler.onSync("100")
 
         // THEN
-        verify(cashinDelegate).onError(any(), eq(ex))
+        verify(cashinDelegate).onError(any(), eq(ex), any())
     }
 
     @Test
@@ -116,7 +116,7 @@ internal class TransactionEventHandlerTest : AbstractSecuredController() {
         handler.onSync("200")
 
         // THEN
-        verify(cashoutDelegate).onError(any(), eq(ex))
+        verify(cashoutDelegate).onError(any(), eq(ex), any())
     }
 
     @Test
@@ -157,6 +157,6 @@ internal class TransactionEventHandlerTest : AbstractSecuredController() {
         handler.onSync("400")
 
         // THEN
-        verify(chargeDelegate).onError(any(), eq(ex))
+        verify(chargeDelegate).onError(any(), eq(ex), any())
     }
 }

@@ -113,6 +113,30 @@ paths:
       security:
         - api_key: [ 'payment-manage' ]
 
+  /v1/transactions/fees:
+    post:
+      operationId: "compute-fees"
+      description: Compute fees
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComputeFeesRequest'
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComputeFeesResponse'
+        409:
+          description: The operation failed
+      tags:
+        - Transactions
+      security:
+        - api_key: [ 'payment-manage' ]
+
   /v1/transactions/{id}:
     get:
       operationId: "get-transaction"
@@ -642,3 +666,68 @@ components:
           enum:
             - PENDING
             - SUCESS
+
+    ComputeFeesRequest:
+      type: object
+      properties:
+        transactionType:
+          type: string
+          enum:
+            - CASHIN
+            - CASHOUT
+            - TRANSFER
+            - CHARGE
+        paymentMethodType:
+          type: string
+          enum:
+            - MOBILE
+            - BANK
+          description: Type of Payment method
+          nullable: true
+        amount:
+          type: number
+          format: double
+          description: Amount to transfer to the user's wallet
+          minimum: 0
+        currency:
+          type: string
+          description: 3 letter currency code
+      required:
+        - transactionType
+        - currency
+
+    ComputeFeesResponse:
+      type: object
+      properties:
+        fee:
+          type: object
+          $ref: "#/components/schemas/TransactionFee"
+
+    TransactionFee:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: double
+          description: Amount to transfer to the user's wallet
+        fees:
+          type: number
+          format: double
+          description: Total fees
+        applyFeesToSender:
+          type: boolean
+          description: Fees are apply to sender
+        senderAmount:
+          type: number
+          format: double
+          description: Amount that will be applied to sender
+        recipientAmount:
+          type: number
+          format: double
+          description: Amount that will be applied to recipient
+        currency:
+          type: string
+          description: 3 letter currency code
+      required:
+        - transactionType
+        - currency

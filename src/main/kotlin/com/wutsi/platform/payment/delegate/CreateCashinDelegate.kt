@@ -99,7 +99,7 @@ class CreateCashinDelegate(
             )
         } catch (ex: PaymentException) {
             log(ex)
-            onError(tx, ex)
+            onError(tx, ex, tenant)
             throw createTransactionException(tx, ErrorURN.TRANSACTION_FAILED, ex)
         } finally {
             log(tx)
@@ -130,7 +130,7 @@ class CreateCashinDelegate(
             idempotencyKey = request.idempotencyKey,
             business = payer.business
         )
-        feesCalculator.apply(tx, paymentMethod, tenant)
+        feesCalculator.apply(tx, paymentMethod?.type, tenant)
         transactionDao.save(tx)
         return tx
     }

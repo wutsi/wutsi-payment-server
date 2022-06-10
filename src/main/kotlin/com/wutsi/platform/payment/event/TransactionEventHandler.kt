@@ -15,6 +15,7 @@ import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.payment.model.CreatePaymentResponse
 import com.wutsi.platform.payment.model.CreateTransferResponse
 import com.wutsi.platform.tenant.WutsiTenantApi
+import com.wutsi.platform.tenant.dto.Tenant
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -45,7 +46,8 @@ class TransactionEventHandler(
                         else -> {}
                     }
                 } catch (ex: PaymentException) {
-                    onError(tx, ex)
+                    val tenant = tenantApi.getTenant(tx.tenantId).tenant
+                    onError(tx, tenant, ex)
                 }
         } finally {
             logger.add("transaction_type", tx.type)
@@ -78,11 +80,11 @@ class TransactionEventHandler(
             onSuccess(tx, tx.gatewayTransactionId!!, response.financialTransactionId, response.status, response.fees)
     }
 
-    private fun onError(tx: TransactionEntity, ex: PaymentException) {
+    private fun onError(tx: TransactionEntity, tenant: Tenant, ex: PaymentException) {
         when (tx.type) {
-            TransactionType.CHARGE -> chargeDelegate.onError(tx, ex)
-            TransactionType.CASHOUT -> cashoutDelegate.onError(tx, ex)
-            TransactionType.CASHIN -> cashinDelegate.onError(tx, ex)
+            TransactionType.CHARGE -> chargeDelegate.onError(tx, ex, tenant)
+            TransactionType.CASHOUT -> cashoutDelegate.onError(tx, ex, tenant)
+            TransactionType.CASHIN -> cashinDelegate.onError(tx, ex, tenant)
             else -> {}
         }
     }

@@ -81,7 +81,7 @@ class CreateTransferDelegate(
         } catch (ex: PaymentException) {
             log(ex)
 
-            onError(tx, ex)
+            onError(tx, ex, tenant)
             throw createTransactionException(tx, ErrorURN.TRANSACTION_FAILED, ex)
         } finally {
             log(tx)

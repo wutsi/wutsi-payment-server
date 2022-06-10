@@ -86,6 +86,7 @@ class CreateChargeDelegate(
 
         // Perform the charge
         try {
+            // Charge
             val response = charge(tx, paymentMethod, request, payer)
             log(response)
 
@@ -101,7 +102,7 @@ class CreateChargeDelegate(
             )
         } catch (ex: PaymentException) {
             log(ex)
-            onError(tx, ex)
+            onError(tx, ex, tenant)
             throw createTransactionException(tx, ErrorURN.TRANSACTION_FAILED, ex)
         } finally {
             log(tx)
@@ -177,7 +178,7 @@ class CreateChargeDelegate(
             idempotencyKey = request.idempotencyKey,
             business = accounts[request.recipientId]?.business ?: false
         )
-        feesCalculator.apply(tx, paymentMethod, tenant)
+        feesCalculator.apply(tx, paymentMethod?.type, tenant)
         return transactionDao.save(tx)
     }
 
@@ -187,6 +188,10 @@ class CreateChargeDelegate(
         ensureRecipientValid(request.recipientId, accounts)
         ensureRecipientActive(request.recipientId, accounts)
         ensureBusinessAccount(request.recipientId, accounts)
+    }
+
+    private fun validateTransaction(tx: TransactionEntity) {
+        ensureBalanceAbove(securityManager.currentUserId()!!, tx)
     }
 
     private fun checkIdempotency(request: CreateChargeRequest, tx: TransactionEntity) {
