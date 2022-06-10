@@ -80,7 +80,7 @@ class CreateTransferControllerTest : AbstractSecuredController() {
 
         assertEquals(Status.SUCCESSFUL.name, response.body!!.status)
 
-        val fees = 0.0
+        val fees = 100.0
         val tx = txDao.findById(response.body!!.id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
@@ -100,6 +100,7 @@ class CreateTransferControllerTest : AbstractSecuredController() {
         assertFalse(tx.business)
         assertNull(tx.orderId)
         assertEquals(request.idempotencyKey, tx.idempotencyKey)
+        assertTrue(tx.applyFeesToSender)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
         assertEquals(100000 - tx.amount, balance.amount)
@@ -149,14 +150,14 @@ class CreateTransferControllerTest : AbstractSecuredController() {
 
         assertEquals(Status.SUCCESSFUL.name, response.body!!.status)
 
-        val fees = 0.0
+        val fees = 100.0
         val tx = txDao.findById(response.body!!.id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount, tx.amount)
+        assertEquals(request.amount + fees, tx.amount)
         assertEquals(fees, tx.fees)
-        assertEquals(request.amount - fees, tx.net)
+        assertEquals(request.amount, tx.net)
         assertNull(tx.paymentMethodToken)
         assertNull(tx.paymentMethodProvider)
         assertEquals(TransactionType.TRANSFER, tx.type)
@@ -169,12 +170,15 @@ class CreateTransferControllerTest : AbstractSecuredController() {
         assertTrue(tx.business)
         assertNull(tx.orderId)
         assertEquals(request.idempotencyKey, tx.idempotencyKey)
+        assertTrue(tx.applyFeesToSender)
 
         val balance = balanceDao.findByAccountId(USER_ID).get()
-        assertEquals(50000.0, balance.amount)
+        assertEquals(100000 - tx.amount, balance.amount)
+        assertEquals(request.currency, balance.currency)
 
         val balance2 = balanceDao.findByAccountId(request.recipientId).get()
-        assertEquals(250000.0, balance2.amount)
+        assertEquals(200000 + tx.net, balance2.amount)
+        assertEquals(request.currency, balance2.currency)
 
         val payload = argumentCaptor<TransactionEventPayload>()
         verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFUL.urn), payload.capture())
@@ -197,7 +201,7 @@ class CreateTransferControllerTest : AbstractSecuredController() {
         assertEquals(ErrorURN.TRANSACTION_FAILED.urn, response.error.code)
         assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, response.error.downstreamCode)
 
-        val fees = 0.0
+        val fees = 100.0
         val id = response.error.data?.get("transaction-id").toString()
         val tx = txDao.findById(id).get()
         assertEquals(1L, tx.tenantId)

@@ -82,7 +82,7 @@ class CreateChargeDelegate(
 
         // Create transaction
         val payer = accountApi.getAccount(userId).account
-        val tx = createTransaction(request, paymentMethod, tenant, payer)
+        val tx = createTransaction(request, paymentMethod, tenant, payer, accounts)
 
         // Perform the charge
         try {
@@ -159,6 +159,7 @@ class CreateChargeDelegate(
         paymentMethod: PaymentMethod,
         tenant: Tenant,
         payer: Account,
+        accounts: Map<Long, AccountSummary>
     ): TransactionEntity {
         val tx = TransactionEntity(
             id = UUID.randomUUID().toString(),
@@ -173,7 +174,8 @@ class CreateChargeDelegate(
             created = OffsetDateTime.now(),
             description = request.description,
             orderId = request.orderId,
-            idempotencyKey = request.idempotencyKey
+            idempotencyKey = request.idempotencyKey,
+            business = accounts[request.recipientId]?.business ?: false
         )
         feesCalculator.apply(tx, paymentMethod, tenant)
         return transactionDao.save(tx)

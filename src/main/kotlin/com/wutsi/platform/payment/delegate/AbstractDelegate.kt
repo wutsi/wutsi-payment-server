@@ -229,6 +229,8 @@ class AbstractDelegate {
         logger.add("transaction_fees", tx.fees)
         logger.add("transaction_net", tx.net)
         logger.add("transaction_gateway_fees", tx.gatewayFees)
+        logger.add("transaction_apply_fees_to_sender", tx.applyFeesToSender)
+        logger.add("transaction_business", tx.business)
     }
 
     protected fun log(response: CreatePaymentResponse) {

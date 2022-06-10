@@ -33,7 +33,8 @@ fun TransactionEntity.toTransaction() = Transaction(
     gatewayFees = this.gatewayFees,
     net = this.net,
     status = this.status.name,
-    orderId = this.orderId
+    orderId = this.orderId,
+    applyFeesToSender = this.applyFeesToSender
 )
 
 fun TransactionEntity.toTransactionSummary() = TransactionSummary(
@@ -54,4 +55,5 @@ fun TransactionEntity.toTransactionSummary() = TransactionSummary(
     errorCode = this.errorCode,
     supplierErrorCode = this.supplierErrorCode,
     orderId = this.orderId,
+    applyFeesToSender = this.applyFeesToSender
 )

@@ -2,6 +2,7 @@ package com.wutsi.platform.payment.dto
 
 import org.springframework.format.`annotation`.DateTimeFormat
 import java.time.OffsetDateTime
+import kotlin.Boolean
 import kotlin.Double
 import kotlin.Long
 import kotlin.String
@@ -26,5 +27,6 @@ public data class Transaction(
     public val supplierErrorCode: String? = null,
     @get:DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
     public val created: OffsetDateTime = OffsetDateTime.now(),
-    public val orderId: String? = null
+    public val orderId: String? = null,
+    public val applyFeesToSender: Boolean = false
 )

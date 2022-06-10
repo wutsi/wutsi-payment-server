@@ -133,11 +133,10 @@ class CreateCashoutDelegate(
             paymentMethodProvider = PaymentMethodProvider.valueOf(paymentMethod.provider),
             type = CASHOUT,
             amount = request.amount,
-            fees = 0.0,
-            net = request.amount,
             currency = tenant.currency,
             created = OffsetDateTime.now(),
-            idempotencyKey = request.idempotencyKey
+            idempotencyKey = request.idempotencyKey,
+            business = payee.business
         )
         feesCalculator.apply(tx, paymentMethod, tenant)
         transactionDao.save(tx)

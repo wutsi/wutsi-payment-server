@@ -420,6 +420,9 @@ components:
           type: string
           description: ID of the order associated with the transaction
           nullable: true
+        applyFeesToSender:
+          type: boolean
+          description: Fees are apply to sender
 
     SearchTransactionRequest:
       type: object
@@ -545,6 +548,9 @@ components:
           type: string
           description: ID of the order associated with the transaction
           nullable: true
+        applyFeesToSender:
+          type: boolean
+          description: Fees are apply to sender
 
     GetTransactionResponse:
       type: object

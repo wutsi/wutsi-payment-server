@@ -15,6 +15,7 @@ import com.wutsi.platform.payment.entity.TransactionType.TRANSFER
 import com.wutsi.platform.payment.error.ErrorURN
 import com.wutsi.platform.payment.error.TransactionException
 import com.wutsi.platform.payment.event.EventURN.TRANSACTION_SUCCESSFUL
+import com.wutsi.platform.payment.service.FeesCalculator
 import com.wutsi.platform.payment.service.TenantProvider
 import com.wutsi.platform.tenant.dto.Tenant
 import org.springframework.stereotype.Service
@@ -25,6 +26,7 @@ import java.util.UUID
 @Service
 class CreateTransferDelegate(
     private val tenantProvider: TenantProvider,
+    private val feesCalculator: FeesCalculator
 ) : AbstractDelegate() {
     @Transactional(noRollbackFor = [TransactionException::class])
     fun invoke(request: CreateTransferRequest): CreateTransferResponse {
@@ -64,7 +66,7 @@ class CreateTransferDelegate(
         validateRequest(request, tenant, accounts)
 
         // Transaction
-        val tx = createTransaction(request, tenant, accounts, senderId)
+        val tx = createTransaction(request, tenant, senderId, accounts)
         try {
             validateTransaction(tx)
             if (tx.status == Status.PENDING) {
@@ -96,34 +98,27 @@ class CreateTransferDelegate(
     private fun createTransaction(
         request: CreateTransferRequest,
         tenant: Tenant,
-        accounts: Map<Long, AccountSummary?>,
-        senderId: Long
+        senderId: Long,
+        accounts: Map<Long, AccountSummary>
     ): TransactionEntity {
-        val business = isBusinessTransaction(request, accounts)
-        val now = OffsetDateTime.now()
-        val tx = transactionDao.save(
-            TransactionEntity(
-                id = UUID.randomUUID().toString(),
-                accountId = senderId,
-                recipientId = request.recipientId,
-                tenantId = tenant.id,
-                type = TRANSFER,
-                amount = request.amount,
-                fees = 0.0,
-                net = request.amount,
-                currency = tenant.currency,
-                status = SUCCESSFUL,
-                created = now,
-                description = request.description,
-                business = business,
-                idempotencyKey = request.idempotencyKey
-            )
+        val tx = TransactionEntity(
+            id = UUID.randomUUID().toString(),
+            accountId = senderId,
+            recipientId = request.recipientId,
+            tenantId = tenant.id,
+            type = TRANSFER,
+            amount = request.amount,
+            currency = tenant.currency,
+            status = SUCCESSFUL,
+            created = OffsetDateTime.now(),
+            description = request.description,
+            idempotencyKey = request.idempotencyKey,
+            business = accounts[request.recipientId]?.business ?: false
         )
+        feesCalculator.apply(tx, null, tenant)
+        transactionDao.save(tx)
         return tx
     }
-
-    private fun isBusinessTransaction(request: CreateTransferRequest, accounts: Map<Long, AccountSummary?>): Boolean =
-        accounts[request.recipientId]?.business == true || accounts[securityManager.currentUserId()]?.business == true
 
     private fun validateRequest(
         request: CreateTransferRequest,
