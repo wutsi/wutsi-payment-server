@@ -1,0 +1,1 @@
+ALTER TABLE T_TRANSACTION RENAME user_id TO account_id;

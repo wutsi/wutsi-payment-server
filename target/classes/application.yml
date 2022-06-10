@@ -1,0 +1,109 @@
+server:
+  port: 8080
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+    min-response-size: 512
+
+management:
+  endpoint:
+    health:
+      show-details: always
+    info:
+      git:
+        mode: full
+  endpoints:
+    web:
+      exposure:
+        include: "beans,flyway,health,info,scheduledtasks,mappings"
+
+spring:
+  main:
+    lazy-initialization: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+
+  jackson:
+    deserialization:
+      FAIL_ON_UNKNOWN_PROPERTIES: false
+      ACCEPT_EMPTY_STRING_AS_NULL_OBJECT: true
+    mapper:
+      ACCEPT_CASE_INSENSITIVE_ENUMS: true
+      ACCEPT_CASE_INSENSITIVE_PROPERTIES: true
+    default-property-inclusion: non_null
+
+  flyway:
+    baseline-on-migrate: true
+    clean-disabled: false
+
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: none
+      dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  datasource:
+    url: "jdbc:postgresql://localhost:5432/wutsi-payment"
+    username: "postgres"
+    password: "postgres"
+    hikari:
+      connection-timeout: 20000 #maximum number of milliseconds that a client will wait for a connection
+      idle-timeout: 10000 #maximum idle time for connection
+      minimum-idle: 8 #minimum number of idle connections maintained by HikariCP in a connection pool
+      maximum-pool-size: 8 #maximum pool size
+      max-lifetime: 1000 # maximum lifetime in milliseconds of a connection in the pool after it is closed.
+
+wutsi:
+  application:
+    name: wutsi-payment
+    jobs:
+      pending-transaction:
+        cron: "0 0 * * * *"  # Runs every hour
+  platform:
+    payment:
+      mtn:
+        enabled: true
+        environment: sandbox
+        callback-url: https://wutsi-payment-server-test.herokuapp.com/mtn/callback
+        collection:
+          subscription-key: f54b576eb6514e8b8dda657402d2db4c  # account: h...@wutsi.com
+        disbursement:
+          subscription-key: ae3a40f49d0f4c87b44cf62da406dd26  # account: h...@wutsi.com
+      om:
+        enabled: true
+      flutterwave:
+        enabled: false
+        secret-key: "-----"
+        secret-hash: "----"
+    security:
+      type: jwt
+      api-key: ba6144d6-6430-11ec-b820-06df65522ffd
+      public-endpoints:
+        - "POST /webhooks/**"
+    cache:
+      name: ${wutsi.application.name}
+      type: none
+    stream:
+      name: ${wutsi.application.name}
+      type: local
+      rabbitmq:
+        dlq:
+          replay-cron: "0 */5 * * * *"  # Every 5 minutes
+    tracing:
+      client-id: ${wutsi.application.name}
+      device-id-provider:
+        type: header
+
+logging:
+  level:
+    root: INFO
+    com.wutsi.platform.payment: DEBUG
+    com.wutsi.platform.core: DEBUG
+    com.wutsi.platform.core.stream.local: ERROR
+  pattern:
+    console: "%d type=%level logger=%class{20} thread=%thread %m%n"
+    file: "%d type=%level logger=%class{20} thread=%thread %m%n"
+
+

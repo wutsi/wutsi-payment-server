@@ -212,7 +212,6 @@ class CreateTransferControllerTest : AbstractSecuredController() {
         assertEquals(200000.0, balance2.amount)
         assertEquals(request.currency, balance2.currency)
 
-
         verify(eventStream, never()).publish(any(), any())
     }
 

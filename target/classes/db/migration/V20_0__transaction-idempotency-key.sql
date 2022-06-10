@@ -1,0 +1,2 @@
+ALTER TABLE T_TRANSACTION ADD COLUMN idempotency_key VARCHAR(36);
+CREATE INDEX I_TRANSACTION__idempotency_key ON T_TRANSACTION(idempotency_key);

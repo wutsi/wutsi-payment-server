@@ -1,0 +1,30 @@
+spring:
+  flyway:
+    clean-disabled: true
+
+  jpa:
+    show-sql: false
+
+  datasource:
+    url: ${SPRING_DATABASE_URL}
+    username: ${SPRING_DATABASE_USERNAME}
+    password: ${SPRING_DATABASE_PASSWORD}
+
+wutsi:
+  platform:
+    payment:
+      mtn:
+        enabled: true
+      om:
+        enabled: true
+      flutterwave:
+        enabled: false
+        secret-key: ${FLUTTERWAVE_SECRET_KEY}
+        secret-hash: ${FLUTTERWAVE_SECRET_HASH}
+    security:
+      api-key: ${API_KEY}
+    stream:
+      type: rabbitmq
+      rabbitmq:
+        url: ${CLOUDAMQP_URL}
+
