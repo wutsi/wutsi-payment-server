@@ -9,7 +9,6 @@ import com.wutsi.platform.core.error.ParameterType.PARAMETER_TYPE_PAYLOAD
 import com.wutsi.platform.core.error.exception.BadRequestException
 import com.wutsi.platform.core.error.exception.ConflictException
 import com.wutsi.platform.core.error.exception.ForbiddenException
-import com.wutsi.platform.core.error.exception.UnauthorizedException
 import com.wutsi.platform.core.logging.KVLogger
 import com.wutsi.platform.core.stream.EventStream
 import com.wutsi.platform.payment.PaymentException
@@ -138,19 +137,6 @@ class AbstractDelegate {
         ensureAccountActive(user.id, user.status, ErrorURN.RECIPIENT_NOT_ACTIVE)
     }
 
-    @Deprecated("")
-    protected fun ensureCurrentUserActive() {
-        val userId = securityManager.currentUserId()
-            ?: throw UnauthorizedException(
-                error = Error(
-                    code = ErrorURN.NO_CURRENT_USER.urn
-                )
-            )
-
-        val user = accountApi.getAccount(userId).account
-        ensureAccountActive(user.id, user.status, ErrorURN.USER_NOT_ACTIVE)
-    }
-
     protected fun ensureAccountActive(id: Long, status: String, error: ErrorURN) {
         if (!status.equals(AccountStatus.ACTIVE.name, ignoreCase = true)) {
             throw ForbiddenException(
@@ -173,25 +159,6 @@ class AbstractDelegate {
         }
     }
 
-    protected fun ensureBalanceAbove(userId: Long, tx: TransactionEntity) {
-        val balance = balanceDao.findByAccountId(userId)
-            .orElseThrow {
-                ConflictException(
-                    error = Error(
-                        code = ErrorURN.TRANSACTION_FAILED.urn,
-                        downstreamCode = ErrorCode.NOT_ENOUGH_FUNDS.name
-                    )
-                )
-            }
-
-        if (balance.amount < tx.amount)
-            throw PaymentException(
-                error = com.wutsi.platform.payment.core.Error(
-                    code = ErrorCode.NOT_ENOUGH_FUNDS,
-                )
-            )
-    }
-
     protected fun updateBalance(userId: Long, amount: Double, tenant: Tenant): BalanceEntity {
         val balance = balanceDao.findByAccountId(userId)
             .orElseGet {
@@ -203,6 +170,14 @@ class AbstractDelegate {
                     )
                 )
             }
+
+        if (balance.amount + amount < 0)
+            throw ConflictException(
+                error = Error(
+                    code = ErrorURN.TRANSACTION_FAILED.urn,
+                    downstreamCode = ErrorCode.NOT_ENOUGH_FUNDS.name
+                )
+            )
 
         balance.amount += amount
         return balanceDao.save(balance)

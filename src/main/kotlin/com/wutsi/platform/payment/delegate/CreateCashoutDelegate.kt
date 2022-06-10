@@ -81,11 +81,11 @@ class CreateCashoutDelegate(
         // Create transaction
         val payee = accountApi.getAccount(userId).account
         val tx = createTransaction(request, paymentMethod, tenant, payee)
-        try {
-            // Update balance
-            validateTransaction(tx)
-            updateBalance(tx.accountId, -tx.amount, tenant)
 
+        // Update the balance
+        updateBalance(userId, -tx.amount, tenant)
+
+        try {
             // Cashout
             val response = cashout(tx, paymentMethod, payee)
             log(response)
@@ -114,10 +114,6 @@ class CreateCashoutDelegate(
     private fun validateRequest(request: CreateCashoutRequest, tenant: Tenant, accounts: Map<Long, AccountSummary>) {
         ensureCurrentUserActive(accounts)
         validateCurrency(request.currency, tenant)
-    }
-
-    private fun validateTransaction(tx: TransactionEntity) {
-        ensureBalanceAbove(securityManager.currentUserId()!!, tx)
     }
 
     private fun createTransaction(

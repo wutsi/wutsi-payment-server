@@ -190,10 +190,6 @@ class CreateChargeDelegate(
         ensureBusinessAccount(request.recipientId, accounts)
     }
 
-    private fun validateTransaction(tx: TransactionEntity) {
-        ensureBalanceAbove(securityManager.currentUserId()!!, tx)
-    }
-
     private fun checkIdempotency(request: CreateChargeRequest, tx: TransactionEntity) {
         val matches = request.idempotencyKey == tx.idempotencyKey &&
             request.amount == tx.amount &&

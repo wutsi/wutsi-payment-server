@@ -67,8 +67,11 @@ class CreateTransferDelegate(
 
         // Transaction
         val tx = createTransaction(request, tenant, senderId, accounts)
+
+        // Update the balance
+        updateBalance(tx.accountId, -tx.amount, tenant)
+
         try {
-            validateTransaction(tx)
             if (tx.status == Status.PENDING) {
                 onPending(tx, null)
             } else if (tx.status == Status.SUCCESSFUL) {
@@ -89,7 +92,6 @@ class CreateTransferDelegate(
     }
 
     fun onSuccess(tx: TransactionEntity, tenant: Tenant) {
-        updateBalance(tx.accountId, -tx.amount, tenant)
         updateBalance(tx.recipientId!!, tx.net, tenant)
 
         publish(TRANSACTION_SUCCESSFUL, tx)
@@ -137,10 +139,6 @@ class CreateTransferDelegate(
         ensureCurrentUserActive(accounts)
         ensureRecipientValid(request.recipientId, accounts)
         ensureRecipientActive(request.recipientId, accounts)
-    }
-
-    private fun validateTransaction(tx: TransactionEntity) {
-        ensureBalanceAbove(securityManager.currentUserId()!!, tx)
     }
 
     private fun checkIdempotency(request: CreateTransferRequest, tx: TransactionEntity) {

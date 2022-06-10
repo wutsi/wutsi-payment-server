@@ -36,7 +36,6 @@ import org.springframework.web.client.HttpClientErrorException
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -187,11 +186,12 @@ class CreateTransferControllerTest : AbstractSecuredController() {
     }
 
     @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateTransferController.sql"])
     public fun notEnoughFunds() {
         // WHEN
         val request = createRequest(amount = 50000000.0)
         val ex = assertThrows<HttpClientErrorException> {
-            rest.postForEntity(url, request, CreateCashinResponse::class.java)
+            rest.postForEntity(url, request, CreateTransferResponse::class.java)
         }
 
         // THEN
@@ -201,31 +201,19 @@ class CreateTransferControllerTest : AbstractSecuredController() {
         assertEquals(ErrorURN.TRANSACTION_FAILED.urn, response.error.code)
         assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, response.error.downstreamCode)
 
-        val fees = 0.0
-        val id = response.error.data?.get("transaction-id").toString()
-        val tx = txDao.findById(id).get()
-        assertEquals(1L, tx.tenantId)
-        assertEquals(USER_ID, tx.accountId)
-        assertEquals(request.currency, tx.currency)
-        assertEquals(request.amount + fees, tx.amount)
-        assertEquals(fees, tx.fees)
-        assertEquals(request.amount, tx.net)
-        assertNull(tx.paymentMethodToken)
-        assertNull(tx.paymentMethodProvider)
-        assertEquals(TransactionType.TRANSFER, tx.type)
-        assertEquals(Status.FAILED, tx.status)
-        assertEquals(request.description, tx.description)
-        assertNotNull(tx.gatewayTransactionId)
-        assertNull(tx.financialTransactionId)
-        assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, tx.errorCode)
-        assertNull(tx.supplierErrorCode)
-        assertFalse(tx.business)
-        assertEquals(request.idempotencyKey, tx.idempotencyKey)
+        val id = response.error.data?.get("transaction-id")
+        assertNull(id)
 
-        val payload = argumentCaptor<TransactionEventPayload>()
-        verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
-        assertEquals(TransactionType.TRANSFER.name, payload.firstValue.type)
-        assertEquals(tx.id, payload.firstValue.transactionId)
+        val balance = balanceDao.findByAccountId(USER_ID).get()
+        assertEquals(100000.0, balance.amount)
+        assertEquals(request.currency, balance.currency)
+
+        val balance2 = balanceDao.findByAccountId(request.recipientId).get()
+        assertEquals(200000.0, balance2.amount)
+        assertEquals(request.currency, balance2.currency)
+
+
+        verify(eventStream, never()).publish(any(), any())
     }
 
     @Test
