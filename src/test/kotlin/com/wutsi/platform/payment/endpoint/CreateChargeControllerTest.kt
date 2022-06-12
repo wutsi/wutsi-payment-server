@@ -192,10 +192,7 @@ class CreateChargeControllerTest : AbstractSecuredController() {
         assertEquals(100000.0, balanceDao.findByAccountId(USER_ID).get().amount)
         assertEquals(200000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
 
-        val payload = argumentCaptor<TransactionEventPayload>()
-        verify(eventStream).publish(eq(EventURN.TRANSACTION_PENDING.urn), payload.capture())
-        assertEquals(TransactionType.CHARGE.name, payload.firstValue.type)
-        assertEquals(tx.id, payload.firstValue.transactionId)
+        verify(eventStream, never()).publish(any(), any())
     }
 
     @Test

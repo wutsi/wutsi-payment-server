@@ -180,10 +180,7 @@ class CreateCashoutControllerTest : AbstractSecuredController() {
         assertEquals(100000.0 - tx.amount, balance.amount)
         assertEquals(request.currency, balance.currency)
 
-        val payload = argumentCaptor<TransactionEventPayload>()
-        verify(eventStream).publish(eq(EventURN.TRANSACTION_PENDING.urn), payload.capture())
-        assertEquals(TransactionType.CASHOUT.name, payload.firstValue.type)
-        assertEquals(tx.id, payload.firstValue.transactionId)
+        verify(eventStream, never()).publish(any(), any())
     }
 
     @Test
