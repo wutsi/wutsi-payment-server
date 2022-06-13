@@ -152,6 +152,52 @@ class CreateChargeControllerTest : AbstractSecuredController() {
 
     @Test
     @Sql(value = ["/db/clean.sql", "/db/CreateChargeController.sql"])
+    fun successFromWallet() {
+        // GIVEN
+
+        // WHEN
+        val request = createRequest(paymentMethodToken = null)
+        val response = rest.postForEntity(url, request, CreateChargeResponse::class.java)
+
+        // THEN
+        assertEquals(200, response.statusCodeValue)
+
+        assertEquals(Status.SUCCESSFUL.name, response.body!!.status)
+
+        val fees = 5000.0
+        val tx = txDao.findById(response.body!!.id).get()
+        assertEquals(1L, tx.tenantId)
+        assertEquals(USER_ID, tx.accountId)
+        assertEquals(RECIPIENT_ID, tx.recipientId)
+        assertEquals(request.currency, tx.currency)
+        assertEquals(request.amount, tx.amount)
+        assertEquals(fees, tx.fees)
+        assertEquals(0.0, tx.gatewayFees)
+        assertEquals(request.amount - fees, tx.net)
+        assertNull(tx.paymentMethodToken)
+        assertNull(tx.paymentMethodProvider)
+        assertEquals(TransactionType.CHARGE, tx.type)
+        assertEquals(Status.SUCCESSFUL, tx.status)
+        assertNull(tx.gatewayTransactionId)
+        assertNull(tx.financialTransactionId)
+        assertNull(tx.supplierErrorCode)
+        assertEquals(request.description, tx.description)
+        assertNull(tx.errorCode)
+        assertEquals(request.orderId, tx.orderId)
+        assertEquals(request.idempotencyKey, tx.idempotencyKey)
+        assertFalse(tx.applyFeesToSender)
+
+        assertEquals(100000.0 - request.amount, balanceDao.findByAccountId(USER_ID).get().amount)
+        assertEquals(200000.0 + tx.net, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
+
+        val payload = argumentCaptor<TransactionEventPayload>()
+        verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFUL.urn), payload.capture())
+        assertEquals(TransactionType.CHARGE.name, payload.firstValue.type)
+        assertEquals(tx.id, payload.firstValue.transactionId)
+    }
+
+    @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateChargeController.sql"])
     fun pending() {
         // GIVEN
         val gwFees = 100.0
@@ -272,6 +318,31 @@ class CreateChargeControllerTest : AbstractSecuredController() {
         verify(eventStream).publish(eq(EventURN.TRANSACTION_FAILED.urn), payload.capture())
         assertEquals(TransactionType.CHARGE.name, payload.firstValue.type)
         assertEquals(tx.id, payload.firstValue.transactionId)
+    }
+
+    @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateChargeController.sql"])
+    fun notEnoughFundsFromWallet() {
+        // WHEN
+        val request = createRequest(amount = 50000000.0, paymentMethodToken = null)
+        val ex = assertThrows<HttpClientErrorException> {
+            rest.postForEntity(url, request, CreateChargeResponse::class.java)
+        }
+
+        // THEN
+        assertEquals(409, ex.rawStatusCode)
+
+        val response = ObjectMapper().readValue(ex.responseBodyAsString, ErrorResponse::class.java)
+        assertEquals(ErrorURN.TRANSACTION_FAILED.urn, response.error.code)
+        assertEquals(ErrorCode.NOT_ENOUGH_FUNDS.name, response.error.downstreamCode)
+
+        val txId = response.error.data?.get("transaction-id")
+        assertNull(txId)
+
+        assertEquals(100000.0, balanceDao.findByAccountId(USER_ID).get().amount)
+        assertEquals(200000.0, balanceDao.findByAccountId(RECIPIENT_ID).get().amount)
+
+        verify(eventStream, never()).publish(any(), any())
     }
 
     @Test
@@ -455,10 +526,11 @@ class CreateChargeControllerTest : AbstractSecuredController() {
         amount: Double = 50000.0,
         currency: String = "XAF",
         recipientId: Long = RECIPIENT_ID,
-        idempotencyKey: String? = null
+        idempotencyKey: String? = null,
+        paymentMethodToken: String? = "11111"
     ) =
         CreateChargeRequest(
-            paymentMethodToken = "11111",
+            paymentMethodToken = paymentMethodToken,
             recipientId = recipientId,
             amount = amount,
             currency = currency,

@@ -8,8 +8,7 @@ import kotlin.Long
 import kotlin.String
 
 public data class CreateChargeRequest(
-    @get:NotBlank
-    public val paymentMethodToken: String = "",
+    public val paymentMethodToken: String? = null,
     public val recipientId: Long = 0,
     @get:Min(0)
     public val amount: Double = 0.0,

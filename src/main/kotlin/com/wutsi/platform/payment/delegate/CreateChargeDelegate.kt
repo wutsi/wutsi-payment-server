@@ -75,14 +75,20 @@ class CreateChargeDelegate(
 
         // Gateway
         val userId = securityManager.currentUserId()!!
-        val paymentMethod = accountApi.getPaymentMethod(
-            id = userId,
-            token = request.paymentMethodToken
-        ).paymentMethod
+        val paymentMethod = request.paymentMethodToken?.let {
+            accountApi.getPaymentMethod(
+                id = userId,
+                token = it
+            ).paymentMethod
+        }
 
         // Create transaction
         val payer = accountApi.getAccount(userId).account
         val tx = createTransaction(request, paymentMethod, tenant, payer, accounts)
+
+        // Update the balance
+        if (fromWallet(request.paymentMethodToken))
+            updateBalance(tx.accountId, -tx.amount, tenant)
 
         // Perform the charge
         try {
@@ -122,7 +128,7 @@ class CreateChargeDelegate(
 
         // Update transaction
         tx.status = Status.SUCCESSFUL
-        tx.gatewayTransactionId = response.transactionId
+        tx.gatewayTransactionId = response.transactionId.ifEmpty { null }
         tx.financialTransactionId = response.financialTransactionId
         tx.gatewayFees = response.fees.value
         transactionDao.save(tx)
@@ -130,12 +136,27 @@ class CreateChargeDelegate(
         publish(EventURN.TRANSACTION_SUCCESSFUL, tx)
     }
 
+    override fun onError(tx: TransactionEntity, ex: PaymentException, tenant: Tenant) {
+        if (tx.status == Status.FAILED)
+            return
+
+        // Revert balance
+        if (fromWallet(tx.paymentMethodToken))
+            updateBalance(tx.accountId, tx.amount, tenant)
+
+        // Update the transaction
+        super.onError(tx, ex, tenant)
+    }
+
     private fun charge(
         tx: TransactionEntity,
-        paymentMethod: PaymentMethod,
+        paymentMethod: PaymentMethod?,
         request: CreateChargeRequest,
         payer: Account
     ): CreatePaymentResponse {
+        if (paymentMethod == null)
+            return CreatePaymentResponse(status = Status.SUCCESSFUL)
+
         val gateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
         logger.add("gateway", gateway::class.java.simpleName)
 
@@ -157,7 +178,7 @@ class CreateChargeDelegate(
 
     private fun createTransaction(
         request: CreateChargeRequest,
-        paymentMethod: PaymentMethod,
+        paymentMethod: PaymentMethod?,
         tenant: Tenant,
         payer: Account,
         accounts: Map<Long, AccountSummary>
@@ -168,7 +189,7 @@ class CreateChargeDelegate(
             recipientId = request.recipientId,
             tenantId = tenant.id,
             paymentMethodToken = request.paymentMethodToken,
-            paymentMethodProvider = PaymentMethodProvider.valueOf(paymentMethod.provider),
+            paymentMethodProvider = paymentMethod?.let { PaymentMethodProvider.valueOf(it.provider) },
             type = TransactionType.CHARGE,
             amount = request.amount,
             currency = tenant.currency,
@@ -207,4 +228,7 @@ class CreateChargeDelegate(
                 )
             )
     }
+
+    private fun fromWallet(paymentMethodToken: String?): Boolean =
+        paymentMethodToken == null
 }

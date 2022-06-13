@@ -622,7 +622,8 @@ components:
       properties:
         paymentMethodToken:
           type: string
-          description: Token of account from where money will be debitted.
+          description: Token of account from where money will be debitted. If not provided, the user's wallet will be debitted.
+          nullable: true
         recipientId:
           type: integer
           format: int64
@@ -649,7 +650,6 @@ components:
           type: string
           description: Idemportent Key
       required:
-        - paymentMethodToken
         - currency
         - idempotencyKey
 

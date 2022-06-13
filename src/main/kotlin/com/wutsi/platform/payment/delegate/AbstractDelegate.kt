@@ -57,11 +57,9 @@ class AbstractDelegate {
         tx.status = Status.PENDING
         tx.gatewayTransactionId = gatewayTransactionId
         transactionDao.save(tx)
-//
-//        publish(EventURN.TRANSACTION_PENDING, tx)
     }
 
-    open fun onError(tx: TransactionEntity, ex: PaymentException, tenant: Tenant) {
+    fun onError(tx: TransactionEntity, ex: PaymentException, tenant: Tenant) {
         if (tx.status == Status.FAILED)
             return
 
