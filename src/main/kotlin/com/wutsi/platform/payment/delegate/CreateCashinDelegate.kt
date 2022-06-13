@@ -130,7 +130,7 @@ class CreateCashinDelegate(
             idempotencyKey = request.idempotencyKey,
             business = payer.business
         )
-        feesCalculator.apply(tx, paymentMethod?.type, tenant)
+        feesCalculator.apply(tx, paymentMethod.type, tenant)
         transactionDao.save(tx)
         return tx
     }
