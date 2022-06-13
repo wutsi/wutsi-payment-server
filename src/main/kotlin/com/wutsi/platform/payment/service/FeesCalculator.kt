@@ -18,22 +18,22 @@ class FeesCalculator(
         paymentMethodType: String?,
         tenant: Tenant
     ) {
-        val obj = findFees(tx.type, paymentMethodType, tenant)
+        val fee = findFees(tx.type, paymentMethodType, tenant)
             ?: findFees(tx.type, null, tenant)
-        log(obj)
+        log(fee)
 
-        if (obj == null) {
+        if (fee == null) {
             tx.fees = 0.0
             tx.net = max(0.0, tx.amount - tx.fees)
             tx.applyFeesToSender = false
         } else {
             val amount = tx.amount
-            val fees = ceil(amount * obj.percent + obj.amount)
+            val fees = ceil(amount * fee.percent + fee.amount)
 
-            tx.amount = if (obj.applyToSender) tx.amount + fees else tx.amount
+            tx.amount = if (fee.applyToSender) tx.amount + fees else tx.amount
             tx.fees = fees
             tx.net = max(0.0, tx.amount - tx.fees)
-            tx.applyFeesToSender = obj.applyToSender
+            tx.applyFeesToSender = fee.applyToSender
         }
     }
 
