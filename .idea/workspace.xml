@@ -93,7 +93,15 @@
       <recent name="com.wutsi.platform.payment.service" />
     </key>
   </component>
-  <component name="RunManager" selected="JUnit.com.wutsi.platform.payment.endpoint in wutsi-payment-server">
+  <component name="RunManager" selected="JUnit.All in wutsi-payment-server">
+    <configuration name="All in wutsi-payment-server" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="wutsi-payment-server" />
+      <option name="PACKAGE_NAME" value="" />
+      <option name="TEST_OBJECT" value="package" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="CreateCashoutControllerTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="wutsi-payment-server" />
       <extension name="coverage">
@@ -105,22 +113,6 @@
       <option name="PACKAGE_NAME" value="com.wutsi.platform.payment.endpoint" />
       <option name="MAIN_CLASS_NAME" value="com.wutsi.platform.payment.endpoint.CreateCashoutControllerTest" />
       <option name="TEST_OBJECT" value="class" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="CreateCashoutControllerTest.notEnoughFunds" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="wutsi-payment-server" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="com.wutsi.platform.payment.endpoint.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <option name="PACKAGE_NAME" value="com.wutsi.platform.payment.endpoint" />
-      <option name="MAIN_CLASS_NAME" value="com.wutsi.platform.payment.endpoint.CreateCashoutControllerTest" />
-      <option name="METHOD_NAME" value="notEnoughFunds" />
-      <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -179,11 +171,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.All in wutsi-payment-server" />
         <item itemvalue="JUnit.com.wutsi.platform.payment.endpoint in wutsi-payment-server" />
         <item itemvalue="JUnit.CreateTransferControllerTest.notEnoughFunds" />
         <item itemvalue="JUnit.CreateTransferControllerTest" />
         <item itemvalue="JUnit.CreateCashoutControllerTest" />
-        <item itemvalue="JUnit.CreateCashoutControllerTest.notEnoughFunds" />
       </list>
     </recent_temporary>
   </component>
@@ -333,7 +325,7 @@
       <workItem from="1654819161582" duration="12633000" />
       <workItem from="1654888752152" duration="5828000" />
       <workItem from="1655034096353" duration="1108000" />
-      <workItem from="1655087046743" duration="1770000" />
+      <workItem from="1655087046743" duration="3229000" />
     </task>
     <servers />
   </component>

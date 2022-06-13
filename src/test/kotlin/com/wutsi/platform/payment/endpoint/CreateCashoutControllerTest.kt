@@ -91,7 +91,7 @@ class CreateCashoutControllerTest : AbstractSecuredController() {
 
         assertEquals(Status.SUCCESSFUL.name, response.body!!.status)
 
-        val fees = 1000.0
+        val fees = 1021.0
         val tx = txDao.findById(response.body!!.id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
@@ -156,7 +156,7 @@ class CreateCashoutControllerTest : AbstractSecuredController() {
 
         assertEquals(Status.PENDING.name, response.body!!.status)
 
-        val fees = 1000.0
+        val fees = 1021.0
         val tx = txDao.findById(response.body!!.id).get()
         assertEquals(1L, tx.tenantId)
         assertEquals(USER_ID, tx.accountId)
@@ -221,7 +221,7 @@ class CreateCashoutControllerTest : AbstractSecuredController() {
 
         val txId = response.error.data?.get("transaction-id").toString()
         val tx = txDao.findById(txId).get()
-        val fees = 1000.0
+        val fees = 1021.0
         assertEquals(USER_ID, tx.accountId)
         assertEquals(request.currency, tx.currency)
         assertEquals(request.amount + fees, tx.amount)

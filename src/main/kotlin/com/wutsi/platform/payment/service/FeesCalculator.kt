@@ -27,11 +27,14 @@ class FeesCalculator(
             tx.net = max(0.0, tx.amount - tx.fees)
             tx.applyFeesToSender = false
         } else {
-            val amount = tx.amount
-            val fees = ceil(amount * fee.percent + fee.amount)
-
-            tx.amount = if (fee.applyToSender) tx.amount + fees else tx.amount
-            tx.fees = fees
+            tx.amount = if (fee.applyToSender)
+            // From equations:
+            // fees = total - net
+            // fees = total*fee_percent + fee_amount
+                ceil((tx.amount + fee.amount) / (1 - fee.percent))
+            else
+                tx.amount
+            tx.fees = ceil(tx.amount * fee.percent + fee.amount)
             tx.net = max(0.0, tx.amount - tx.fees)
             tx.applyFeesToSender = fee.applyToSender
         }

@@ -54,7 +54,7 @@ class ComputeFeesControllerTest : AbstractSecuredController() {
         assertEquals(200, response.statusCodeValue)
 
         // THEN
-        val amount = 25.0
+        val amount = 26.0
         val fee = response.body!!.fee
         assertEquals(request.currency, fee.currency)
         assertEquals(request.amount, fee.amount)
@@ -74,7 +74,7 @@ class ComputeFeesControllerTest : AbstractSecuredController() {
         assertEquals(200, response.statusCodeValue)
 
         // THEN
-        val amount = 20.0
+        val amount = 21.0
         val fee = response.body!!.fee
         assertEquals(request.currency, fee.currency)
         assertEquals(request.amount, fee.amount)
