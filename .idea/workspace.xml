@@ -4,10 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="6faf0673-40df-4b29-bece-907f4f625fa5" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/db/migration/V23_0__reset_balance.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/db/migration/V23_0__reset_balance.sql" afterDir="false" />
-    </list>
+    <list default="true" id="6faf0673-40df-4b29-bece-907f4f625fa5" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -335,7 +332,7 @@
       <workItem from="1655034096353" duration="1108000" />
       <workItem from="1655087046743" duration="4620000" />
       <workItem from="1655142914125" duration="2837000" />
-      <workItem from="1655206012461" duration="2953000" />
+      <workItem from="1655206012461" duration="3133000" />
     </task>
     <servers />
   </component>
