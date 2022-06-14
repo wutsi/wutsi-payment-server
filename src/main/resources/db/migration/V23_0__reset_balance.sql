@@ -7,7 +7,7 @@ INSERT INTO T_BALANCE(account_id, tenant_id, amount, currency)
 -- Transfer/Charge IN
 UPDATE T_BALANCE SET amount = amount +
     (
-        SELECT sum(net)
+        SELECT COALESCE (sum(net), 0)
         FROM T_TRANSACTION
         WHERE (type=3 OR type=4)  AND T_BALANCE.account_id=T_TRANSACTION.recipient_id
     );
@@ -22,7 +22,7 @@ INSERT INTO T_BALANCE(account_id, tenant_id, amount, currency)
 -- Cash OUT
 UPDATE T_BALANCE SET amount = amount -
     (
-        SELECT sum(amount)
+        SELECT COALESCE (sum(amount), 0)
         FROM T_TRANSACTION
         WHERE type=2 AND T_BALANCE.account_id=T_TRANSACTION.account_id
     );
@@ -30,7 +30,7 @@ UPDATE T_BALANCE SET amount = amount -
 -- Transfer/Charge OUT
 UPDATE T_BALANCE SET amount = amount -
     (
-        SELECT sum(amount)
+        SELECT COALESCE (sum(amount), 0)
         FROM T_TRANSACTION
         WHERE (type=3 OR type=4)  AND T_BALANCE.account_id=T_TRANSACTION.account_id
     );
