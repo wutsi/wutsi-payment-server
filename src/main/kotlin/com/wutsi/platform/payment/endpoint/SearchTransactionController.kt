@@ -11,7 +11,7 @@ import javax.validation.Valid
 
 @RestController
 public class SearchTransactionController(
-    private val `delegate`: SearchTransactionDelegate
+    public val `delegate`: SearchTransactionDelegate,
 ) {
     @PostMapping("/v1/transactions/search")
     @PreAuthorize(value = "hasAuthority('payment-read')")

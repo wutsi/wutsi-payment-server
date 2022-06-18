@@ -10,7 +10,7 @@ import kotlin.Long
 
 @RestController
 public class GetBalanceController(
-    private val `delegate`: GetBalanceDelegate
+    public val `delegate`: GetBalanceDelegate,
 ) {
     @GetMapping("/v1/accounts/{account-id}/balance")
     @PreAuthorize(value = "hasAuthority('payment-read')")

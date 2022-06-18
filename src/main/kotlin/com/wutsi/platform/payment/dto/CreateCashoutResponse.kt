@@ -4,5 +4,5 @@ import kotlin.String
 
 public data class CreateCashoutResponse(
     public val id: String = "",
-    public val status: String = ""
+    public val status: String = "",
 )

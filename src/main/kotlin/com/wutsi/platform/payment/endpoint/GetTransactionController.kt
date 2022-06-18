@@ -10,7 +10,7 @@ import kotlin.String
 
 @RestController
 public class GetTransactionController(
-    private val `delegate`: GetTransactionDelegate
+    public val `delegate`: GetTransactionDelegate,
 ) {
     @GetMapping("/v1/transactions/{id}")
     @PreAuthorize(value = "hasAuthority('payment-read')")

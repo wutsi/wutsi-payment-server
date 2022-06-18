@@ -26,5 +26,5 @@ public data class TransactionSummary(
     @get:DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
     public val created: OffsetDateTime = OffsetDateTime.now(),
     public val orderId: String? = null,
-    public val applyFeesToSender: Boolean = false
+    public val applyFeesToSender: Boolean = false,
 )

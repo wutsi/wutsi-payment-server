@@ -2,9 +2,8 @@
 <project name="maven-antrun-" default="ktlint">
   <target name="ktlint">
     <java fork="true" classname="com.pinterest.ktlint.Main" taskname="ktlint" failonerror="true" dir="/Users/htchepannou/Perso/wutsi/wutsi-payment-server" classpathref="maven.plugin.classpath">
+      <arg value="-F" />
       <arg value="src/**/*.kt" />
-      <arg value="--reporter=plain" />
-      <arg value="--reporter=checkstyle,output=/Users/htchepannou/Perso/wutsi/wutsi-payment-server/target/ktlint.xml" />
     </java>
   </target>
 </project>

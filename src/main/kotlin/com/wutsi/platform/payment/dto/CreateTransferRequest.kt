@@ -16,5 +16,5 @@ public data class CreateTransferRequest(
     public val currency: String = "",
     public val description: String? = null,
     @get:NotBlank
-    public val idempotencyKey: String = ""
+    public val idempotencyKey: String = "",
 )

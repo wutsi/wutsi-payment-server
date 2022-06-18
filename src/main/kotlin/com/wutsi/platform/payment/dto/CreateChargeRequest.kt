@@ -19,5 +19,5 @@ public data class CreateChargeRequest(
     @get:Size(max = 100)
     public val description: String? = null,
     @get:NotBlank
-    public val idempotencyKey: String = ""
+    public val idempotencyKey: String = "",
 )

@@ -494,6 +494,10 @@ components:
           type: string
           format: uuid
           description: ID of the transaction
+        tenantId:
+          type: integer
+          format: int64
+          description: ID of the tenant
         accountId:
           type: integer
           format: int64

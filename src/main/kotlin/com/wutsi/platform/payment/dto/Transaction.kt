@@ -9,6 +9,7 @@ import kotlin.String
 
 public data class Transaction(
     public val id: String = "",
+    public val tenantId: Long = 0,
     public val accountId: Long = 0,
     public val recipientId: Long? = null,
     public val type: String = "",
@@ -28,5 +29,5 @@ public data class Transaction(
     @get:DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssZ")
     public val created: OffsetDateTime = OffsetDateTime.now(),
     public val orderId: String? = null,
-    public val applyFeesToSender: Boolean = false
+    public val applyFeesToSender: Boolean = false,
 )

@@ -15,5 +15,5 @@ public data class CreateCashinRequest(
     @get:Size(max = 3)
     public val currency: String = "",
     @get:NotBlank
-    public val idempotencyKey: String = ""
+    public val idempotencyKey: String = "",
 )

@@ -12,5 +12,5 @@ public data class ComputeFeesRequest(
     @get:Min(0)
     public val amount: Double = 0.0,
     @get:NotBlank
-    public val currency: String = ""
+    public val currency: String = "",
 )

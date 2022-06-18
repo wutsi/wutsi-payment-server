@@ -11,7 +11,7 @@ import javax.validation.Valid
 
 @RestController
 public class CreateTransferController(
-    private val `delegate`: CreateTransferDelegate
+    public val `delegate`: CreateTransferDelegate,
 ) {
     @PostMapping("/v1/transactions/transfers")
     @PreAuthorize(value = "hasAuthority('payment-manage')")

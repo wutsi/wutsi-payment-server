@@ -11,7 +11,7 @@ import javax.validation.Valid
 
 @RestController
 public class CreateCashoutController(
-    private val `delegate`: CreateCashoutDelegate
+    public val `delegate`: CreateCashoutDelegate,
 ) {
     @PostMapping("/v1/transactions/cashouts")
     @PreAuthorize(value = "hasAuthority('payment-manage')")

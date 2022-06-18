@@ -20,6 +20,7 @@ fun TransactionEntity.toTransaction() = Transaction(
     type = this.type.name,
     created = this.created,
     accountId = this.accountId,
+    tenantId = this.tenantId,
     currency = this.currency,
     gatewayTransactionId = this.gatewayTransactionId,
     amount = this.amount,
@@ -34,7 +35,7 @@ fun TransactionEntity.toTransaction() = Transaction(
     net = this.net,
     status = this.status.name,
     orderId = this.orderId,
-    applyFeesToSender = this.applyFeesToSender
+    applyFeesToSender = this.applyFeesToSender,
 )
 
 fun TransactionEntity.toTransactionSummary() = TransactionSummary(

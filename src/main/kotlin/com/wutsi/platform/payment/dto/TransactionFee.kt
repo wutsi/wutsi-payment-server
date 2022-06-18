@@ -12,5 +12,5 @@ public data class TransactionFee(
     public val senderAmount: Double = 0.0,
     public val recipientAmount: Double = 0.0,
     @get:NotBlank
-    public val currency: String = ""
+    public val currency: String = "",
 )
