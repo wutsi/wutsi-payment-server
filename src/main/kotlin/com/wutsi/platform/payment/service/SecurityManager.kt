@@ -34,7 +34,10 @@ class SecurityManager(
     }
 
     fun checkTenant(tx: TransactionEntity): Boolean {
-        if (tx.tenantId.toString() != tracingContext.tenantId())
+        val tenantId = tracingContext.tenantId()
+            ?: return true
+
+        if (tx.tenantId.toString() != tenantId)
             throw ForbiddenException(
                 error = Error(
                     code = ErrorURN.ILLEGAL_TENANT_ACCESS.urn
