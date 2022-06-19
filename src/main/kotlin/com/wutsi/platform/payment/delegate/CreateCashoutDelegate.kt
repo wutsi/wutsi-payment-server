@@ -87,7 +87,7 @@ class CreateCashoutDelegate(
 
         try {
             // Cashout
-            val response = cashout(tx, paymentMethod, payee)
+            val response = cashout(tx, paymentMethod, payee, tenant)
             log(response)
 
             if (response.status == Status.SUCCESSFUL) {
@@ -140,7 +140,12 @@ class CreateCashoutDelegate(
         return tx
     }
 
-    private fun cashout(tx: TransactionEntity, paymentMethod: PaymentMethod, payee: Account): CreateTransferResponse {
+    private fun cashout(
+        tx: TransactionEntity,
+        paymentMethod: PaymentMethod,
+        payee: Account,
+        tenant: Tenant
+    ): CreateTransferResponse {
         val gateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
         logger.add("gateway", gateway::class.java.simpleName)
 
@@ -149,11 +154,12 @@ class CreateCashoutDelegate(
                 payee = Party(
                     fullName = paymentMethod.ownerName,
                     phoneNumber = paymentMethod.phone!!.number,
-                    email = payee.email
+                    country = paymentMethod.phone!!.country,
+                    email = toPartyEmail(payee, tenant)
                 ),
                 amount = Money(tx.amount, tx.currency),
                 externalId = tx.id!!,
-                description = "Cash-out",
+                description = "",
                 payerMessage = null
             )
         )

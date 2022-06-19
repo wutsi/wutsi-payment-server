@@ -1,6 +1,7 @@
 package com.wutsi.platform.payment.delegate
 
 import com.wutsi.platform.account.WutsiAccountApi
+import com.wutsi.platform.account.dto.Account
 import com.wutsi.platform.account.dto.AccountSummary
 import com.wutsi.platform.account.entity.AccountStatus
 import com.wutsi.platform.core.error.Error
@@ -221,4 +222,13 @@ class AbstractDelegate {
         logger.add("gateway_fees", response.fees.value)
         logger.add("gateway_fees_currency", response.fees.currency)
     }
+
+    protected fun toPartyEmail(account: Account, tenant: Tenant): String =
+        account.email ?: "user.${account.id}@" + getEmailDomainName(tenant)
+
+    private fun getEmailDomainName(tenant: Tenant): String =
+        if (tenant.domainName.startsWith("www."))
+            tenant.domainName.substring(4)
+        else
+            tenant.domainName
 }

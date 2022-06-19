@@ -119,13 +119,13 @@ abstract class AbstractSecuredController {
                 percent = 0.020,
                 applyToSender = true
             ),
-//            Fee(
-//                transactionType = TransactionType.TRANSFER.name,
-//                amount = 100.0,
-//                percent = 0.0,
-//                applyToSender = true
-//            ),
         )
+    )
+
+    val phone = Phone(
+        id = 888,
+        number = "+237995076666",
+        country = "CM"
     )
 
     @BeforeEach
@@ -134,23 +134,15 @@ abstract class AbstractSecuredController {
 
         doReturn(GetTenantResponse(tenant)).whenever(tenantApi).getTenant(any())
 
-        user = Account(
-            id = USER_ID,
-            displayName = "Ray Sponsible",
-            language = "en",
-            status = "ACTIVE",
-            email = "ray.sponsible@gmail.com"
-        )
+        user = createUser(phone = phone)
         doReturn(GetAccountResponse(user)).whenever(accountApi).getAccount(any())
 
         paymentMethod = PaymentMethod(
             token = "xxxx",
             type = PaymentMethodType.MOBILE.name,
             provider = PaymentMethodProvider.MTN.name,
-            phone = Phone(
-                number = "+237995076666"
-            ),
-            ownerName = user.displayName!!
+            phone = phone,
+            ownerName = user.displayName!!,
         )
         doReturn(GetPaymentMethodResponse(paymentMethod)).whenever(accountApi).getPaymentMethod(any(), any())
 
@@ -186,4 +178,13 @@ abstract class AbstractSecuredController {
         rest.interceptors.add(SpringAuthorizationRequestInterceptor(tokenProvider))
         return rest
     }
+
+    protected fun createUser(email: String? = "ray.sponsible@gmail.com", phone: Phone) = Account(
+        id = USER_ID,
+        displayName = "Ray Sponsible",
+        language = "en",
+        status = "ACTIVE",
+        email = email,
+        phone = phone
+    )
 }

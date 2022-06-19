@@ -93,7 +93,7 @@ class CreateChargeDelegate(
         // Perform the charge
         try {
             // Charge
-            val response = charge(tx, paymentMethod, request, payer)
+            val response = charge(tx, paymentMethod, request, payer, tenant)
             log(response)
 
             if (response.status == Status.SUCCESSFUL) {
@@ -152,7 +152,8 @@ class CreateChargeDelegate(
         tx: TransactionEntity,
         paymentMethod: PaymentMethod?,
         request: CreateChargeRequest,
-        payer: Account
+        payer: Account,
+        tenant: Tenant,
     ): CreatePaymentResponse {
         if (paymentMethod == null)
             return CreatePaymentResponse(status = Status.SUCCESSFUL)
@@ -166,7 +167,7 @@ class CreateChargeDelegate(
                     fullName = paymentMethod.ownerName,
                     phoneNumber = paymentMethod.phone!!.number,
                     country = paymentMethod.phone!!.country,
-                    email = payer.email ?: ""
+                    email = toPartyEmail(payer, tenant)
                 ),
                 amount = Money(tx.amount, tx.currency),
                 externalId = tx.id!!,

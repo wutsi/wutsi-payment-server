@@ -10,6 +10,7 @@ import com.nhaarman.mockitokotlin2.never
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
 import com.wutsi.platform.account.dto.AccountSummary
+import com.wutsi.platform.account.dto.GetAccountResponse
 import com.wutsi.platform.account.dto.SearchAccountResponse
 import com.wutsi.platform.account.entity.AccountStatus
 import com.wutsi.platform.core.error.ErrorResponse
@@ -29,6 +30,7 @@ import com.wutsi.platform.payment.entity.TransactionType
 import com.wutsi.platform.payment.error.ErrorURN
 import com.wutsi.platform.payment.event.EventURN
 import com.wutsi.platform.payment.event.TransactionEventPayload
+import com.wutsi.platform.payment.model.CreatePaymentRequest
 import com.wutsi.platform.payment.model.CreatePaymentResponse
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -124,6 +126,53 @@ class CreateChargeControllerTest : AbstractSecuredController() {
         verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFUL.urn), payload.capture())
         assertEquals(TransactionType.CHARGE.name, payload.firstValue.type)
         assertEquals(tx.id, payload.firstValue.transactionId)
+
+        val req = argumentCaptor<CreatePaymentRequest>()
+        verify(gateway).createPayment(req.capture())
+        assertEquals(request.description, req.firstValue.description)
+        assertNull(req.firstValue.payerMessage)
+        assertEquals(tx.amount, req.firstValue.amount.value)
+        assertEquals(tx.currency, req.firstValue.amount.currency)
+        assertEquals(tx.id, req.firstValue.externalId)
+        assertEquals(user.email, req.firstValue.payer.email)
+        assertEquals(paymentMethod.ownerName, req.firstValue.payer.fullName)
+        assertEquals(paymentMethod.phone!!.number, req.firstValue.payer.phoneNumber)
+        assertEquals(paymentMethod.phone!!.country, req.firstValue.payer.country)
+    }
+
+    @Test
+    @Sql(value = ["/db/clean.sql", "/db/CreateChargeController.sql"])
+    fun successForUserWithNoEmail() {
+        // GIVEN
+        val user = createUser(email = null, phone = phone)
+        doReturn(GetAccountResponse(user)).whenever(accountApi).getAccount(any())
+
+        val gwFees = 100.0
+        val paymentResponse = CreatePaymentResponse("111", "222", Status.SUCCESSFUL, Money(gwFees, "XAF"))
+        doReturn(paymentResponse).whenever(gateway).createPayment(any())
+
+        // WHEN
+        val request = createRequest()
+        val response = rest.postForEntity(url, request, CreateChargeResponse::class.java)
+
+        // THEN
+        assertEquals(200, response.statusCodeValue)
+
+        assertEquals(Status.SUCCESSFUL.name, response.body!!.status)
+
+        val tx = txDao.findById(response.body!!.id).get()
+
+        val req = argumentCaptor<CreatePaymentRequest>()
+        verify(gateway).createPayment(req.capture())
+        assertEquals(request.description, req.firstValue.description)
+        assertNull(req.firstValue.payerMessage)
+        assertEquals(tx.amount, req.firstValue.amount.value)
+        assertEquals(tx.currency, req.firstValue.amount.currency)
+        assertEquals(tx.id, req.firstValue.externalId)
+        assertEquals("user.${user.id}@wutsi.com", req.firstValue.payer.email)
+        assertEquals(paymentMethod.ownerName, req.firstValue.payer.fullName)
+        assertEquals(paymentMethod.phone!!.number, req.firstValue.payer.phoneNumber)
+        assertEquals(paymentMethod.phone!!.country, req.firstValue.payer.country)
     }
 
     @Test
@@ -194,6 +243,8 @@ class CreateChargeControllerTest : AbstractSecuredController() {
         verify(eventStream).publish(eq(EventURN.TRANSACTION_SUCCESSFUL.urn), payload.capture())
         assertEquals(TransactionType.CHARGE.name, payload.firstValue.type)
         assertEquals(tx.id, payload.firstValue.transactionId)
+
+        verify(gateway, never()).createPayment(any())
     }
 
     @Test

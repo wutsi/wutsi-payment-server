@@ -84,7 +84,7 @@ class CreateCashinDelegate(
 
         // Perform the transfer
         try {
-            val response = cashin(tx, paymentMethod, payer)
+            val response = cashin(tx, paymentMethod, payer, tenant)
             log(response)
 
             if (response.status == Status.SUCCESSFUL) {
@@ -138,7 +138,8 @@ class CreateCashinDelegate(
     private fun cashin(
         tx: TransactionEntity,
         paymentMethod: PaymentMethod,
-        payer: Account
+        payer: Account,
+        tenant: Tenant
     ): CreatePaymentResponse {
         val gateway = gatewayProvider.get(PaymentMethodProvider.valueOf(paymentMethod.provider))
         logger.add("gateway", gateway::class.java.simpleName)
@@ -148,7 +149,8 @@ class CreateCashinDelegate(
                 payer = Party(
                     fullName = paymentMethod.ownerName,
                     phoneNumber = paymentMethod.phone!!.number,
-                    email = payer.email
+                    country = paymentMethod.phone!!.country,
+                    email = toPartyEmail(payer, tenant),
                 ),
                 amount = Money(tx.amount, tx.currency),
                 externalId = tx.id!!,
