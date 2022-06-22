@@ -5,7 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6faf0673-40df-4b29-bece-907f4f625fa5" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.editorconfig" beforeDir="false" afterPath="$PROJECT_DIR$/.editorconfig" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/kotlin/com/wutsi/platform/payment/FlywayConfiguration.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/kotlin/com/wutsi/platform/payment/FlywayConfiguration.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/META-INF/build-info.properties" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/META-INF/build-info.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/application-prod.yml" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/application-prod.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/classes/git.properties" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/git.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/jacoco.exec" beforeDir="false" afterPath="$PROJECT_DIR$/target/jacoco.exec" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/test-classes/com/wutsi/platform/payment/FlywayConfiguration$Companion.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/test-classes/com/wutsi/platform/payment/FlywayConfiguration$Companion.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/target/test-classes/com/wutsi/platform/payment/FlywayConfiguration.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/test-classes/com/wutsi/platform/payment/FlywayConfiguration.class" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -341,6 +350,7 @@
       <workItem from="1655585896343" duration="821000" />
       <workItem from="1655592089128" duration="2791000" />
       <workItem from="1655597857004" duration="377000" />
+      <workItem from="1655897887812" duration="371000" />
     </task>
     <servers />
   </component>
